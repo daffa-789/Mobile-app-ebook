@@ -85,6 +85,12 @@ async function checkDatabase() {
       !txErr,
       txErr ? txErr.message : `${txCount ?? 0} riwayat transaksi`,
     );
+
+    // Check events table
+    const { count: eventCount, error: eventErr } = await supabase
+      .from('events')
+      .select('*', { count: 'exact', head: true });
+    report('Tabel Events', !eventErr, eventErr ? eventErr.message : `${eventCount ?? 0} agenda`);
   } catch (err) {
     report('Koneksi Database', false, err.message);
   }

@@ -98,7 +98,10 @@ export const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-cream-50 text-ink-900">
-      <main className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto min-w-0">
+      <main
+        aria-label="Panel Administrasi Wahidiyah Book"
+        className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto min-w-0"
+      >
         {error && (
           <div
             role="alert"
@@ -108,6 +111,7 @@ export const AdminDashboard = () => {
             <button
               type="button"
               onClick={loadDashboard}
+              aria-label="Muat ulang data dashboard"
               className="min-h-6 rounded-xl border border-semantic-danger/40 bg-cream-50 px-3 py-1.5 text-small font-bold text-semantic-danger transition hover:bg-semantic-dangerLight"
             >
               Coba muat ulang

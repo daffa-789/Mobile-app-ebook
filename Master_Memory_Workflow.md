@@ -1192,6 +1192,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R68–R70 | Penyegaran profil/navigasi, kwitansi PDF, dan konsolidasi dokumentasi. |
 | R71 | Pemangkasan besar 30 Okt 2026 — lihat daftar 15.1. |
 | R72 | Perapian 31 Okt 2026: Prettier, service layer 5 modul, dan pemecahan komponen admin — lihat 15.2. |
+| R73 | Pemeliharaan sistem 1 Nov 2026: Pemeriksaan kesehatan 7/7, script quality gate, dan optimasi aksesibilitas — lihat 15.3. |
 
 ### 15.1 Yang sudah tidak ada lagi (R71, 30 Oktober 2026)
 
@@ -1217,6 +1218,16 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `auth_service.js:350`.
+
+### 15.3 Pemeliharaan R73 (1 November 2026)
+
+| Perubahan | Rincian |
+|---|---|
+| Quality Gate | Menambahkan script `npm test` dan `npm run check` terpadu yang memverifikasi kepatuhan format Prettier dan kesehatan sistem Supabase/Midtrans. |
+| Health-Check 7/7 | Skrip `scripts/health-check.js` diperluas dengan verifikasi otomatis data tabel `events` (agenda kegiatan). |
+| Port Cleaner | Skrip `scripts/clean-ports.js` disempurnakan dengan dukungan pembersihan port lintas-platform (Windows & POSIX). |
+| Aksesibilitas Admin | Menambahkan atribut `aria-label` semantik pada navigasi dan tombol interaktif di `AdminDashboard.jsx`. |
+| Dokumentasi JSDoc | Melengkapi dokumentasi teknis dan tipe data pada modul helper `server/lib/http.js` dan endpoint `server/routes/books_routes.js`. |
 
 ### 15.2 Perubahan R72 (31 Oktober 2026)
 

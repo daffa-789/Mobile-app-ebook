@@ -66,6 +66,11 @@ export const authFailureMessage = (error, exposeDetail = includeErrorDetail) =>
     ? error?.message || 'Terjadi kesalahan pada server'
     : 'Terjadi kesalahan pada server';
 
+/**
+ * Bungkus handler async route Express untuk menangkap error dan mengalihkannya ke fail(res, error).
+ * @param {Function} handler - Fungsi handler route Express (req, res, next)
+ * @returns {Function} Express middleware wrapper
+ */
 export const wrap = (handler) => async (req, res, next) => {
   try {
     await handler(req, res, next);
@@ -74,6 +79,11 @@ export const wrap = (handler) => async (req, res, next) => {
   }
 };
 
+/**
+ * Tentukan MIME type konten buku yang aman dari ekstensi berkas.
+ * @param {Object} book - Objek buku dengan properti content_extension
+ * @returns {string} MIME type kanonis yang aman
+ */
 export const safeContentMime = (book) =>
   CONTENT_MIME_BY_EXTENSION[
     String(book?.content_extension || '')
@@ -83,6 +93,13 @@ export const safeContentMime = (book) =>
 
 const DATA_URL_PATTERN = /^data:([^;]+);base64,(.+)$/;
 
+/**
+ * Sajikan data URL base64 sebagai respons binary buffer dengan header keamanan.
+ * @param {import('express').Response} res - Objek respons Express
+ * @param {string} url - String data URL
+ * @param {Object} [options] - Opsi content type dan cache control
+ * @returns {boolean} True jika berhasil disajikan, false jika bukan data URL
+ */
 export const sendDataUrl = (res, url, { contentType, cacheControl } = {}) => {
   if (!url || !url.startsWith('data:')) return false;
   const matches = url.match(DATA_URL_PATTERN);

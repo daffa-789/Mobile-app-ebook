@@ -29,6 +29,7 @@ export const booksRouter = Router();
 
 const viewerOf = (req) => ({ user: req.user, authUser: req.authUser });
 
+// GET /api/books — Daftar buku publik dengan pencarian judul dan pengurutan
 booksRouter.get(
   '/books',
   wrap(async (req, res) => {
@@ -37,6 +38,7 @@ booksRouter.get(
   }),
 );
 
+// GET /api/books/:id — Detail data buku publik
 booksRouter.get(
   '/books/:id',
   wrap(async (req, res) => {
@@ -45,6 +47,7 @@ booksRouter.get(
   }),
 );
 
+// POST /api/books — Tambah buku baru (Admin)
 booksRouter.post(
   '/books',
   requireAuth,
@@ -61,6 +64,7 @@ booksRouter.post(
   }),
 );
 
+// POST /api/books/upload-intent — Siapkan tiket upload langsung ke Supabase Storage (Admin)
 booksRouter.post(
   '/books/upload-intent',
   requireAuth,
@@ -71,6 +75,7 @@ booksRouter.post(
   }),
 );
 
+// POST /api/books/upload — Simpan buku beserta naskah dari storage dan thumbnail (Admin)
 booksRouter.post(
   '/books/upload',
   requireAuth,
@@ -90,6 +95,7 @@ booksRouter.post(
   }),
 );
 
+// GET /api/books/:id/thumbnail — Sajikan cover buku (data URL atau redirect signed storage URL)
 booksRouter.get(
   '/books/:id/thumbnail',
   wrap(async (req, res) => {
@@ -109,6 +115,7 @@ booksRouter.get(
   }),
 );
 
+// GET /api/books/:id/html — Konversi konten dokumen (DOCX/TXT) menjadi HTML untuk pembaca
 booksRouter.get(
   '/books/:id/html',
   requireAuth,
@@ -118,6 +125,7 @@ booksRouter.get(
   }),
 );
 
+// GET /api/books/:id/content — Stream/unduh naskah buku (PDF inline atau berkas lampiran)
 booksRouter.get(
   '/books/:id/content',
   requireAuth,
@@ -144,6 +152,7 @@ booksRouter.get(
   }),
 );
 
+// PUT /api/books/:id — Perbarui data buku dan/atau naskah/thumbnail (Admin)
 booksRouter.put(
   '/books/:id',
   requireAuth,
@@ -164,6 +173,7 @@ booksRouter.put(
   }),
 );
 
+// DELETE /api/books/:id — Hapus buku beserta file naskah dari storage (Admin)
 booksRouter.delete(
   '/books/:id',
   requireAuth,

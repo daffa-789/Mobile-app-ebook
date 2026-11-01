@@ -65,6 +65,14 @@ async function cleanPort(port) {
     } catch (e) {
       console.log(`  ${pc.red('✖')} Gagal membebaskan Port ${port}: ${e.message}`);
     }
+  } else {
+    try {
+      const p = spawn('sh', ['-c', `fuser -k ${port}/tcp 2>/dev/null || true`]);
+      await new Promise((r) => p.on('close', r));
+      console.log(`  ${pc.green('✔')} Selesai memeriksa Port ${port} (POSIX).`);
+    } catch (e) {
+      console.log(`  ${pc.red('✖')} Gagal membebaskan Port ${port}: ${e.message}`);
+    }
   }
 }
 

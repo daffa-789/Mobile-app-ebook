@@ -17,6 +17,7 @@ Prasyarat: Node.js 24.x, konfigurasi Supabase, dan file .env yang diisi sesuai d
 - **npm run format** — rapikan seluruh kode dengan Prettier.
 - **npm run format:check** — periksa kepatuhan format tanpa mengubah berkas.
 - **npm run health** — periksa konfigurasi layanan.
+- **npm test** / **npm run check** — jalankan pemeriksaan kualitas format dan kesehatan sistem.
 - **npm start** — jalankan aplikasi dalam mode produksi.
 
 ## Dokumentasi

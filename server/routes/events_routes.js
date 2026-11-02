@@ -18,6 +18,7 @@ import {
 
 export const eventsRouter = Router();
 
+// GET /api/events — Daftar agenda kegiatan publik
 eventsRouter.get(
   '/events',
   wrap(async (req, res) => {
@@ -25,6 +26,7 @@ eventsRouter.get(
   }),
 );
 
+// POST /api/events — Tambah agenda kegiatan baru (Admin)
 eventsRouter.post(
   '/events',
   requireAuth,
@@ -45,6 +47,7 @@ eventsRouter.post(
   }),
 );
 
+// PUT /api/events/:id — Perbarui data agenda kegiatan (Admin)
 eventsRouter.put(
   '/events/:id',
   requireAuth,
@@ -55,6 +58,7 @@ eventsRouter.put(
   }),
 );
 
+// DELETE /api/events/:id — Hapus agenda kegiatan (Admin)
 eventsRouter.delete(
   '/events/:id',
   requireAuth,
@@ -65,6 +69,7 @@ eventsRouter.delete(
   }),
 );
 
+// POST /api/events/:id/send-reminder — Kirim siaran manual pengingat agenda via Web Push (Admin)
 eventsRouter.post(
   '/events/:id/send-reminder',
   requireAuth,

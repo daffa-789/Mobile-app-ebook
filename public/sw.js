@@ -1,5 +1,8 @@
-// Service Worker untuk Aplikasi Buku Wahidiyah
-// Mendukung App Shell Offline, Cache-First untuk Aset Statis, dan Network-First untuk Data Publik
+/**
+ * Service Worker — Wahidiyah Book PWA
+ * Mendukung App Shell Offline, Cache-First untuk Aset Statis, Network-First untuk Data Publik,
+ * dan Web Push Notification untuk pengingat kegiatan/agenda.
+ */
 
 // CACHE_NAME wajib di-bump setiap deploy (aturan proyek §R5.6) agar cache app shell
 // versi lama dibuang saat activate — kali ini karena server ikut melayani dist/.

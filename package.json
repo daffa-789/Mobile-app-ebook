@@ -16,6 +16,7 @@
     "format:check": "prettier --check .",
     "health": "node scripts/health-check.js",
     "check": "npm run format:check && npm run health",
+    "check:full": "npm run check && npm run build",
     "test": "npm run check",
     "clean:ports": "node scripts/clean-ports.js",
     "dev:frontend": "vite",

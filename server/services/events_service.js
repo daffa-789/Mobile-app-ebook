@@ -116,6 +116,10 @@ const syncEventSlide = async (
   return true;
 };
 
+/**
+ * Ambil daftar seluruh agenda kegiatan terurut berdasarkan tanggal terdekat.
+ * @returns {Promise<Array>} Daftar baris agenda
+ */
 export async function listEvents() {
   const { data, error } = await supabaseServer
     .from('events')
@@ -125,6 +129,11 @@ export async function listEvents() {
   return data || [];
 }
 
+/**
+ * Tambah agenda kegiatan baru, sinkronkan ke carousel dan kirim pengumuman Web Push jika diminta.
+ * @param {Object} body - Data masukan agenda
+ * @returns {Promise<{ eventId: string, carouselAdded: boolean, announcementSent: number, reminderSent: number }>}
+ */
 export async function createEvent(body = {}) {
   const row = toEventRow(body);
   requireEventFields(row);
@@ -183,6 +192,11 @@ export async function createEvent(body = {}) {
   return { eventId: id, carouselAdded, announcementSent, reminderSent: reminder?.sent || 0 };
 }
 
+/**
+ * Perbarui data agenda kegiatan dan perbarui sinkronisasi slide carousel.
+ * @param {{ id: string, body: Object }} params - ID agenda dan isi perubahan
+ * @returns {Promise<{ reminderSent: number }>}
+ */
 export async function updateEvent({ id, body = {} }) {
   const row = toEventRow(body);
   requireEventFields(row);
@@ -223,15 +237,21 @@ export async function updateEvent({ id, body = {} }) {
   return { reminderSent: reminder?.sent || 0 };
 }
 
+/**
+ * Hapus agenda kegiatan berdasarkan ID.
+ * @param {string} id - ID agenda
+ */
 export async function deleteEvent(id) {
   const { data, error } = await supabaseServer.from('events').delete().eq('id', id).select('id');
   if (error) throw error;
   if (!data?.length) throw createServiceError('Agenda tidak ditemukan', { statusCode: 404 });
 }
 
-/* Pemicu manual untuk admin: kirim ulang pengingat agenda tertentu tanpa
-   menunggu jam pengingat — berguna saat pengujian atau bila ada perangkat
-   yang baru mengaktifkan notifikasi setelah pengingat otomatis berjalan. */
+/**
+ * Pemicu manual pengiriman siaran/pengingat agenda tertentu lewat Web Push.
+ * @param {{ id: string, type: string }} params - ID agenda dan tipe pengingat ('auto' | 'announcement' | 'reminder')
+ * @returns {Promise<{ sent: number, failed?: number, skipped?: boolean, reason?: string, pruned?: number }>}
+ */
 export async function sendEventReminderManually({ id, type }) {
   const { data: event, error } = await supabaseServer
     .from('events')

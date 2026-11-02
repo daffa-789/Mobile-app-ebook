@@ -30,8 +30,10 @@ const qrImageRateLimiter = rateLimit({
   message: { success: false, message: 'Terlalu banyak permintaan kode QR. Tunggu sebentar.' },
 });
 
+// POST /api/qris/charge — Inisiasi tagihan pembayaran QRIS baru via Midtrans Core API
 paymentsRouter.post('/qris/charge', paymentRateLimiter, requireAuth, wrap(createQrisCharge));
 
+// GET /api/qris/:orderId/status — Cek status pembayaran transaksi QRIS (polling terproteksi limiter)
 paymentsRouter.get(
   '/qris/:orderId/status',
   requireAuth,
@@ -39,8 +41,11 @@ paymentsRouter.get(
   wrap(getQrisStatus),
 );
 
+// POST /api/qris/:orderId/cancel — Batalkan tagihan QRIS yang belum dibayar
 paymentsRouter.post('/qris/:orderId/cancel', paymentRateLimiter, requireAuth, wrap(cancelQris));
 
+// GET /api/qris/:orderId/qr.png — Dapatkan gambar kode QR resmi dari Midtrans
 paymentsRouter.get('/qris/:orderId/qr.png', qrImageRateLimiter, requireAuth, wrap(getQrImage));
 
+// POST /api/midtrans/notification — Webhook notifikasi status pembayaran dari server Midtrans
 paymentsRouter.post('/midtrans/notification', midtransNotification);

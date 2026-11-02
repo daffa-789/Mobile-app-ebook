@@ -20,6 +20,7 @@ import {
 
 export const carouselRouter = Router();
 
+// GET /api/carousel — Ambil slide banner carousel yang aktif untuk beranda
 carouselRouter.get(
   '/carousel',
   wrap(async (req, res) => {
@@ -28,6 +29,7 @@ carouselRouter.get(
   }),
 );
 
+// GET /api/carousel/all — Ambil seluruh slide banner carousel (Admin)
 carouselRouter.get(
   '/carousel/all',
   requireAuth,
@@ -38,6 +40,7 @@ carouselRouter.get(
   }),
 );
 
+// POST /api/carousel — Tambah slide banner carousel baru (Admin)
 carouselRouter.post(
   '/carousel',
   requireAuth,
@@ -48,6 +51,7 @@ carouselRouter.post(
   }),
 );
 
+// PUT /api/carousel/:id — Perbarui metadata slide carousel (Admin)
 carouselRouter.put(
   '/carousel/:id',
   requireAuth,
@@ -58,6 +62,7 @@ carouselRouter.put(
   }),
 );
 
+// DELETE /api/carousel/:id — Hapus slide carousel (Admin)
 carouselRouter.delete(
   '/carousel/:id',
   requireAuth,
@@ -68,6 +73,7 @@ carouselRouter.delete(
   }),
 );
 
+// POST /api/carousel/:id/image — Unggah berkas gambar banner slide carousel (Admin)
 carouselRouter.post(
   '/carousel/:id/image',
   requireAuth,

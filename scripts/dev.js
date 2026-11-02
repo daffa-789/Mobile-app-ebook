@@ -1,3 +1,11 @@
+/**
+ * Runner Mode Pengembangan (Dev Environment) — Wahidiyah Book.
+ *
+ * Mengaktifkan port terpadu tunggal (Express + Vite HMR middleware),
+ * membebaskan port 3000/5000 jika tertahan proses lain, dan menangani
+ * proses child spawn dengan pembersihan sinyal (SIGINT/SIGTERM/SIGHUP).
+ */
+
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';

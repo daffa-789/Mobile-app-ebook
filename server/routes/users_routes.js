@@ -21,6 +21,7 @@ import {
 
 export const usersRouter = Router();
 
+// PUT /api/users/profile — Pembaruan profil pengguna mandiri (nama)
 usersRouter.put('/users/profile', requireAuth, async (req, res) => {
   try {
     const { user, name } = await updateProfile({
@@ -42,6 +43,7 @@ usersRouter.put('/users/profile', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/users — Daftar seluruh pengguna sistem (Admin)
 usersRouter.get(
   '/users',
   requireAuth,
@@ -51,6 +53,7 @@ usersRouter.get(
   }),
 );
 
+// PUT /api/users/:id/role — Ubah peran/role pengguna (Admin)
 usersRouter.put(
   '/users/:id/role',
   requireAuth,
@@ -62,6 +65,7 @@ usersRouter.put(
   }),
 );
 
+// PUT /api/users/:id/pro — Ubah status keanggotaan Pro pengguna (Admin)
 usersRouter.put(
   '/users/:id/pro',
   requireAuth,
@@ -76,6 +80,7 @@ usersRouter.put(
   }),
 );
 
+// POST /api/users — Tambah akun pengguna baru secara manual (Admin)
 usersRouter.post(
   '/users',
   requireAuth,
@@ -96,6 +101,7 @@ usersRouter.post(
   }),
 );
 
+// DELETE /api/users/:id — Hapus akun pengguna (Admin)
 usersRouter.delete(
   '/users/:id',
   requireAuth,

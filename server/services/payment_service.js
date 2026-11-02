@@ -63,6 +63,8 @@ const isExpired = (transaction, now = Date.now()) =>
 /**
  * Memuat transaksi milik pemohon. Pemilik baris atau admin boleh melihat;
  * orang lain mendapat `forbidden` tanpa isi barisnya.
+ * @param {{ orderId: string, viewerId: string, viewerRole: string }} params
+ * @returns {Promise<{ transaction: Object|null, forbidden: boolean }>}
  */
 export async function loadTransactionForViewer({ orderId, viewerId, viewerRole }) {
   const { data, error } = await supabaseServer
@@ -80,7 +82,7 @@ export async function loadTransactionForViewer({ orderId, viewerId, viewerRole }
 }
 
 /**
- * Menuntas transaksi menjadi lunas + mengaktifkan langganan Pro.
+ * Menuntaskan transaksi menjadi lunas + mengaktifkan langganan Pro.
  *
  * IDEMPOTEN (§4.3 panduan): klaim baris dilakukan dengan UPDATE bersyarat
  * `.eq('status', 'pending')` — atomik di PostgreSQL, jadi webhook ulang maupun
@@ -88,6 +90,8 @@ export async function loadTransactionForViewer({ orderId, viewerId, viewerRole }
  * aktif Pro tidak pernah ditambah dua kali. Bila aktivasi gagal setelah klaim,
  * status dikembalikan ke `pending` supaya notifikasi ulang Midtrans bisa
  * mencobanya lagi (tidak ada uang yang tertelan).
+ * @param {Object} transaction - Data baris transaksi
+ * @returns {Promise<{ alreadyProcessed: boolean, activated: Object|null }>}
  */
 export async function settleTransaction(transaction) {
   if (!transaction || transaction.status === 'success') {
@@ -148,6 +152,9 @@ export async function settleTransaction(transaction) {
 /**
  * Menandai transaksi pending sebagai gagal (expire/cancel/deny/kedaluwarsa).
  * Idempoten: baris yang bukan `pending` lagi tidak pernah diubah.
+ * @param {Object} transaction - Data baris transaksi
+ * @param {string} reason - Alasan pembatalan/kegagalan
+ * @returns {Promise<{ alreadyProcessed: boolean }>}
  */
 export async function rejectTransaction(transaction, reason) {
   if (!transaction || transaction.status !== TRANSACTION_PENDING_STATUS) {

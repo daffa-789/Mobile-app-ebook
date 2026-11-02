@@ -474,6 +474,8 @@ export const ContinuousPdfViewer = ({
   return (
     <div
       ref={containerRef}
+      role="region"
+      aria-label="Area pembaca dokumen naskah PDF"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
@@ -497,6 +499,7 @@ export const ContinuousPdfViewer = ({
             key={pageNum}
             id={`pdf-page-${pageNum}`}
             data-page-number={pageNum}
+            aria-label={`Halaman ${pageNum} dari ${totalPages}`}
             ref={(el) => (pageContainerRefs.current[pageNum] = el)}
             className="relative shadow-md md:shadow-lg rounded-sm sm:rounded-md overflow-hidden bg-ui-card border border-ink-200/50 dark:border-ink-700/50"
             style={{

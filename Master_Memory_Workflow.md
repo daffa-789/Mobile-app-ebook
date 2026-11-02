@@ -1091,6 +1091,7 @@ npm install
 | **`npm run format:check`** | Memeriksa kepatuhan format tanpa mengubah berkas — dipakai sebelum commit. |
 | **`npm run health`** | **Uji Kesehatan Sistem (7/7 Checklist):** Supabase, Midtrans, WhatsApp Gateway, serta tabel `users`, `books`, `transactions`, `events`. |
 | **`npm test`** / **`npm run check`** | **Quality Gate Cepat:** Menjalankan `npm run format:check` diikuti `npm run health` untuk validasi kualitas berkas dan koneksi layanan secara terpadu. |
+| **`npm run check:full`** | **Quality Gate Penuh:** Menjalankan `npm run check` diikuti `npm run build` untuk validasi menyeluruh berkas, layanan, dan kompilasi bundel produksi. |
 | **`npm run clean:ports`** | Membebaskan port 3000 / 5000 di Windows dari proses `node.exe` yang tertinggal. |
 | **`npm run dev:frontend`** | Menjalankan Vite berdiri sendiri di port 3000 dengan proxy `/api` → `http://localhost:5000` (butuh `npm run dev:server` terpisah). |
 | **`npm run dev:server`** / **`npm run server:dev`** | Menjalankan backend Express saja (`node --watch server/server.js`) di port `PORT` (default 5000), tanpa middleware Vite. |
@@ -1193,6 +1194,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R71 | Pemangkasan besar 30 Okt 2026 — lihat daftar 15.1. |
 | R72 | Perapian 31 Okt 2026: Prettier, service layer 5 modul, dan pemecahan komponen admin — lihat 15.2. |
 | R73 | Pemeliharaan sistem 1 Nov 2026: Pemeriksaan kesehatan 7/7, script quality gate, dan optimasi aksesibilitas — lihat 15.3. |
+| R74 | Peningkatan tooling 2 Nov 2026: Quality gate `check:full`, standardisasi JSDoc rute/layanan, dan penguatan pembaca PDF — lihat 15.4. |
 
 ### 15.1 Yang sudah tidak ada lagi (R71, 30 Oktober 2026)
 
@@ -1218,6 +1220,15 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `auth_service.js:350`.
+
+### 15.4 Peningkatan R74 (2 November 2026)
+
+| Perubahan | Rincian |
+|---|---|
+| Quality Gate Penuh | Menambahkan script `npm run check:full` yang menggabungkan validasi format Prettier, uji kesehatan sistem, dan verifikasi kompilasi Vite. |
+| Standardisasi JSDoc | Dokumentasi teknis JSDoc lengkap pada seluruh route server (`books`, `events`, `payments`, `users`, `carousel`) dan service layer (`events_service`, `payment_service`). |
+| Runner & Utilitas | Dokumentasi arsitektur terintegrasi pada `scripts/dev.js`, helper pemformatan mata uang di `formatUtils.js`, dan header PWA service worker. |
+| Aksesibilitas Reader | Penyematan atribut semantik ARIA (`role="region"`, `aria-label="Area pembaca PDF digital"`) pada komponen `ContinuousPdfViewer.jsx`. |
 
 ### 15.3 Pemeliharaan R73 (1 November 2026)
 

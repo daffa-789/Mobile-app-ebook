@@ -11,6 +11,7 @@ import { ScrollRestoration } from '@ui/ScrollRestoration';
 import { PwaInstallBanner } from './components/PwaInstallBanner';
 import { layout } from '@lib/styles';
 
+import { AuthScreen } from '@features/auth/AuthScreen';
 import { LoginScreen } from '@features/auth/LoginScreen';
 import { RegisterScreen } from '@features/auth/RegisterScreen';
 import { HomeScreen } from '@features/home/HomeScreen';
@@ -143,6 +144,7 @@ function App() {
           <Route path="/help-center" element={helpCenterPage} />
           <Route path="/about" element={shellPage(<AboutScreen />)} />
 
+          <Route path="/auth" element={authPage(<AuthScreen />)} />
           <Route path="/login" element={authPage(<LoginScreen />)} />
           <Route path="/register" element={authPage(<RegisterScreen />)} />
           <Route

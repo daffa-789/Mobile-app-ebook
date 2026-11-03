@@ -1161,7 +1161,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 │   ├── data/mockData.js    # PAYMENT_METHODS & FAQ_ITEMS (masih dipakai)
 │   ├── features/
 │   │   ├── about/, help/, home/, subscription/
-│   │   ├── auth/           # LoginScreen, RegisterScreen, VerifyEmailScreen, PasswordResetSuccess, OtpDevNotice, OtpResendAction
+│   │   ├── auth/           # AuthScreen, AuthSegmentedTabs, LoginForm, RegisterForm, GoogleAuthButton, AuthBrandHeader, LoginScreen, RegisterScreen, VerifyEmailScreen, PasswordResetSuccess, OtpDevNotice, OtpResendAction
 │   │   ├── calendar/       # CalendarScreen, CalendarMonthGrid, CalendarSelectedDatePanel, CalendarAllEventsList
 │   │   ├── payment/        # PaymentConfirmScreen, PaymentPlanSummary, QrisPaymentCard, ManualPaymentForm, ...
 │   │   ├── profile/        # EditProfileScreen, ProfileAccountForm, ProfileSubscriptionCard, ProfileNavigationLinks, ProfileSessionSettings
@@ -1239,6 +1239,18 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `server/services/auth/password_reset_service.js:103`.
+
+### 15.12 Pemeliharaan R82 (3 November 2026)
+
+Penyatuan dan modularisasi alur autentikasi ke Unified Auth Screen (`AuthScreen`), menggabungkan alur "Masuk" dan "Daftar" dalam satu kartu antarmuka kohesif dengan smart prefill email bersama, transisi tab segmented aksesibel, dan integrasi Google OAuth terpusat.
+
+| Perubahan | Rincian |
+|---|---|
+| Layar Autentikasi Terpadu | `src/features/auth/AuthScreen.jsx` mengorkestrasi alur login dan pendaftaran dalam satu kartu tanpa berpindah halaman, menurunkan beban kognitif pengguna dan mencegah drop-off. |
+| Subkomponen Modular | Dekomposisi layar ke `AuthSegmentedTabs.jsx` (kontrol tab berstatus ARIA), `LoginForm.jsx` (form masuk + link lupa password), `RegisterForm.jsx` (form pendaftaran lengkap + WhatsApp `PhoneInput`), `GoogleAuthButton.jsx` (Google OAuth dengan proteksi bfcache), dan `AuthBrandHeader.jsx` (header judul & deskripsi petunjuk dinamis). |
+| Smart Email Prefill | Email yang diketikkan di tab Masuk otomatis dipertahankan dan terisi saat pengguna berpindah ke tab Daftar (dan sebaliknya), menghindari pengulangan ketik. |
+| Sinkronisasi Rute & Deep Link | Mendukung rute `/login`, `/register`, dan alias baru `/auth`. Transisi tab memperbarui URL browser (`replaceState`) tanpa meremount komponen atau flicker visual. Komponen `LoginScreen.jsx` dan `RegisterScreen.jsx` tetap dipertahankan sebagai wrapper tipis untuk kompatibilitas penuh. |
+| Bump PWA Service Worker | Bump `CACHE_NAME` ke `wahidiyah-app-shell-v22` di `public/sw.js` (§R5.6) untuk membuang app shell lama dan menjamin aset autentikasi baru aktif di seluruh browser klien. |
 
 ### 15.11 Pemeliharaan R81 (3 November 2026)
 

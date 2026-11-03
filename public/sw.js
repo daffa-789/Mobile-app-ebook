@@ -28,7 +28,9 @@
 //      dibuang supaya navigasi tidak jatuh ke shell versi sebelumnya.
 // v21: layar autentikasi dibuat datar (bayangan kartu & cahaya tombol dihapus dari
 //      index.css). Berkas CSS hasil build berganti hash, jadi app shell lama dibuang.
-const CACHE_NAME = 'wahidiyah-app-shell-v21';
+// v22: layar autentikasi disatukan ke Unified AuthScreen (tab Masuk & Daftar, smart prefill email,
+//      Google Auth, subkomponen terpisah). App shell diperbarui.
+const CACHE_NAME = 'wahidiyah-app-shell-v22';
 const PRECACHE_URLS = [
   '/',
   '/index.html',

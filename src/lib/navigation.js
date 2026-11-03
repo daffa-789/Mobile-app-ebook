@@ -37,6 +37,7 @@ export const SCREEN_TO_PATH = {
   about: '/about',
   'auth-success': '/auth/success',
   reader: '/reader',
+  auth: '/auth',
   login: '/login',
   register: '/register',
 
@@ -72,6 +73,7 @@ export const PATH_TO_SCREEN = {
   '/help': 'help-center',
   '/help-center': 'help-center',
   '/about': 'about',
+  '/auth': 'login',
   '/login': 'login',
   '/register': 'register',
 
@@ -140,6 +142,7 @@ export const ADMIN_TAB_SLUGS = new Set(
 
 /** Himpunan layar yang hanya relevan untuk alur autentikasi tanpa navbar utama. */
 export const AUTH_ONLY_SCREENS = new Set([
+  'auth',
   'login',
   'register',
   'verify-email',

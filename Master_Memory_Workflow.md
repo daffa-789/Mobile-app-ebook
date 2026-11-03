@@ -1147,13 +1147,15 @@ Wahidiyah Book + Real Midtrans Skripsi/
 ├── src/
 │   ├── components/
 │   │   ├── layout/         # Sidebar, MobileBottomNav, navigationConfig, LogoutConfirmDialog
+│   │   ├── routing/        # RouteGuards (RequireAuth, UserOnly, AdminRoute), RouterBridge
 │   │   └── ui/             # Field, PhoneInput, ThemeToggle, ErrorBoundary, Skeleton, ...
 │   ├── context/
 │   │   ├── AppContext.jsx
 │   │   └── slices/         # useCatalogSlice, useNavigationSlice, usePaymentSlice
 │   ├── data/mockData.js    # PAYMENT_METHODS & FAQ_ITEMS (masih dipakai)
 │   ├── features/
-│   │   ├── about/, auth/, help/, home/, subscription/
+│   │   ├── about/, help/, home/, subscription/
+│   │   ├── auth/           # LoginScreen, RegisterScreen, VerifyEmailScreen, PasswordResetSuccess, OtpDevNotice, OtpResendAction
 │   │   ├── calendar/       # CalendarScreen, CalendarMonthGrid, CalendarSelectedDatePanel, CalendarAllEventsList
 │   │   ├── payment/        # PaymentConfirmScreen, PaymentPlanSummary, QrisPaymentCard, ManualPaymentForm, ...
 │   │   ├── profile/        # EditProfileScreen, ProfileAccountForm, ProfileSubscriptionCard, ProfileNavigationLinks, ProfileSessionSettings
@@ -1161,7 +1163,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 │   │   │   ├── carousel/   # CarouselSlideItem, CarouselFormPanel
 │   │   │   ├── events/     # AllAgendaPanel, EventCalendarPanel, EventFormPanel, ...
 │   │   │   └── hooks/      # useAdminDashboardData, useAdminBookEditor, useAdminEventEditor, useAdminCarouselEditor
-│   │   └── reader/         # PdfReaderScreen, ContinuousPdfViewer, PdfPageSheet, ReaderTopBar, ReaderContentStates, HtmlDocViewer, TextDocViewer
+│   │   └── reader/         # ContinuousPdfViewer, PdfReaderScreen, PdfPageSheet, usePdfPinchGesture, usePdfCanvasRenderer, ...
 │   ├── lib/                # api, phone, date, excelExport, receiptPdf, navigation, normalizers, ...
 │   ├── theme/              # ThemeProvider, themeInjector, themeMode
 │   ├── App.jsx             # Router navigasi utama
@@ -1200,6 +1202,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R73 | Pemeliharaan sistem 1 Nov 2026: Pemeriksaan kesehatan 7/7, script quality gate, dan optimasi aksesibilitas — lihat 15.3. |
 | R74 | Peningkatan tooling 2 Nov 2026: Quality gate `check:full`, standardisasi JSDoc rute/layanan, dan penguatan pembaca PDF — lihat 15.4. |
 | R75 | Dokumentasi arsitektur terpadu 3 Nov 2026: Standardisasi JSDoc menyeluruh pada modul client, lib server, service layer, dan runner — lihat 15.5. |
+| R78 | Dekomposisi ContinuousPdfViewer, App.jsx, dan VerifyEmailScreen 3 Nov 2026: Ekstraksi custom hook canvas/pinch, routing guards, dan subkomponen OTP — lihat 15.8. |
 | R77 | Dekomposisi modular layar utama 3 Nov 2026: Pemecahan PdfReaderScreen, CalendarScreen, dan EditProfileScreen ke subkomponen terdedikasi — lihat 15.7. |
 | R76 | Dekomposisi modular & pembersihan kode 3 Nov 2026: Pemecahan CarouselTab, PaymentConfirmScreen, ContinuousPdfViewer, dan eliminasi dead import — lihat 15.6. |
 
@@ -1227,6 +1230,15 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `auth_service.js:350`.
+
+### 15.8 Pemeliharaan R78 (3 November 2026)
+
+| Perubahan | Rincian |
+|---|---|
+| Hook Pinch & Render PDF | Ekstraksi `usePdfPinchGesture.js` (touch multi-touch GPU) dan `usePdfCanvasRenderer.js` (antrean render PDF.js & lazy observer) dari `ContinuousPdfViewer.jsx`. |
+| Modularisasi Rute App | Pemecahan `App.jsx` ke `src/components/routing/RouteGuards.jsx` dan `src/components/routing/RouterBridge.jsx`, menyisakan tabel rute deklaratif bersih. |
+| Subkomponen Autentikasi OTP | Pemecahan `VerifyEmailScreen.jsx` ke `PasswordResetSuccess.jsx`, `OtpDevNotice.jsx`, dan `OtpResendAction.jsx`. |
+| Desain Sistem & Token | Penegasan arsitektur token desain terpusat pada `component.json` yang disuntikkan via `themeInjector.js` ke seluruh variabel CSS, sizing, palette, dan radius komponen. |
 
 ### 15.7 Pemeliharaan R77 (3 November 2026)
 

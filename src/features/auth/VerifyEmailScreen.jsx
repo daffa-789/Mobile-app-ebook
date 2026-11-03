@@ -1,10 +1,26 @@
+/**
+ * Layar Verifikasi Kode OTP (Email & WhatsApp).
+ * Menangani verifikasi kode numerik 6 digit untuk registrasi akun baru
+ * dan pembaruan kata sandi (Lupa Password).
+ *
+ * @module src/features/auth/VerifyEmailScreen
+ */
+
 import { useEffect, useRef, useState } from 'react';
-import { AlertCircle, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { useApp } from '@context/AppContext';
 import { apiJson } from '@lib/api';
 import { layout, typography, controls } from '@lib/styles';
 import { displayPhone } from '@lib/phone';
+import { PasswordResetSuccess } from './PasswordResetSuccess';
+import { OtpDevNotice } from './OtpDevNotice';
+import { OtpResendAction } from './OtpResendAction';
 
+/**
+ * Komponen utama layar verifikasi kode OTP.
+ *
+ * @returns {import('react').JSX.Element}
+ */
 export const VerifyEmailScreen = () => {
   const { verification, clearVerification, login, navigateTo } = useApp();
   const [code, setCode] = useState('');
@@ -33,9 +49,6 @@ export const VerifyEmailScreen = () => {
   const phone = verification?.phone || '';
   const purpose = verification?.purpose === 'reset' ? 'reset' : 'register';
   const isReset = purpose === 'reset';
-  /* 'demo' berarti server gagal menyerahkan kode ke WhatsApp/email dan jatuh ke
-   * mode pengembangan. Layar tidak boleh mengaku sudah mengirim.
-   */
   const deliveryFailed = deliveredBy === 'demo';
 
   const startedRef = useRef(false);
@@ -146,27 +159,10 @@ export const VerifyEmailScreen = () => {
 
   if (done) {
     return (
-      <main className={layout.authShell}>
-        <section className={layout.authCard}>
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
-            <CheckCircle2 className="h-6 w-6" />
-          </div>
-          <h1 className="mt-5 font-display text-2xl font-bold tracking-tight text-ink-900">
-            Password diperbarui
-          </h1>
-          <p className={typography.helperRelaxed}>
-            Password akun <strong className="text-ink-700">{completedTarget || target}</strong>{' '}
-            sudah diganti. Silakan masuk dengan password baru Anda.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigateTo('login', { replace: true })}
-            className="auth-primary-button mt-7"
-          >
-            Masuk sekarang
-          </button>
-        </section>
-      </main>
+      <PasswordResetSuccess
+        targetAccount={completedTarget || target}
+        onGoToLogin={() => navigateTo('login', { replace: true })}
+      />
     );
   }
 
@@ -215,18 +211,7 @@ export const VerifyEmailScreen = () => {
           Kode berlaku 10 menit.
         </p>
 
-        {devOtp && (
-          <div className="mt-4 rounded-2xl border border-semantic-warning/30 bg-semantic-warningLight px-4 py-3">
-            <p className="text-caption font-bold uppercase tracking-wide text-semantic-warning">
-              Mode pengembangan — pengiriman {isWhatsApp ? 'WhatsApp' : 'email'} belum aktif
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-semantic-warning/85">
-              {isWhatsApp ? 'Gateway WhatsApp (Fonnte)' : 'Pengiriman email'} belum dikonfigurasi,
-              jadi kode ditampilkan di sini. Kode Anda:{' '}
-              <strong className="font-mono text-base tracking-[0.2em]">{devOtp}</strong>
-            </p>
-          </div>
-        )}
+        <OtpDevNotice devOtp={devOtp} isWhatsApp={isWhatsApp} />
 
         <form onSubmit={submit} className="mt-6 space-y-4" noValidate>
           <label className="block">
@@ -309,32 +294,17 @@ export const VerifyEmailScreen = () => {
           </button>
         </form>
 
-        <div className="mt-5 text-center">
-          <button
-            type="button"
-            onClick={resend}
-            disabled={isResending || resendCooldown > 0}
-            className="auth-link text-xs font-bold disabled:opacity-50"
-          >
-            {resendCooldown > 0 ? `Kirim ulang kode (${resendCooldown} dtk)` : 'Kirim ulang kode'}
-          </button>
-        </div>
-
-        {!isReset && (
-          <p className="mt-4 text-center text-caption leading-relaxed text-ink-400">
-            Salah menulis {isWhatsApp ? 'nomor telepon' : 'alamat email'}?{' '}
-            <button
-              type="button"
-              onClick={() => {
-                clearVerification();
-                navigateTo('register', { replace: true });
-              }}
-              className="auth-link"
-            >
-              Daftar ulang
-            </button>
-          </p>
-        )}
+        <OtpResendAction
+          isResending={isResending}
+          resendCooldown={resendCooldown}
+          onResend={resend}
+          isReset={isReset}
+          isWhatsApp={isWhatsApp}
+          onReRegister={() => {
+            clearVerification();
+            navigateTo('register', { replace: true });
+          }}
+        />
       </section>
     </main>
   );

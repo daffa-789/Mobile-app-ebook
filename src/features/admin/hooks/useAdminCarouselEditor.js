@@ -9,14 +9,14 @@ import { toast } from 'sonner';
 import { apiJson, apiJsonSend, authHeaders } from '@lib/api';
 import { withToast } from '@lib/withToast';
 
-export const EMPTY_SLIDE_FORM = {
+const EMPTY_SLIDE_FORM = {
   title: '',
   description: '',
   sort_order: 0,
   is_active: true,
 };
 
-export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 /**
  * Hook pengelola formulir dan aksi carousel dashboard admin.

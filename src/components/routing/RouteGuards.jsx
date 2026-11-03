@@ -38,7 +38,7 @@ export const ScreenLoading = () => (
  *
  * @returns {import('react').JSX.Element}
  */
-export const AuthBoot = () => (
+const AuthBoot = () => (
   <div className="min-h-screen bg-cream-100 flex items-center justify-center px-6">
     <div
       role="status"

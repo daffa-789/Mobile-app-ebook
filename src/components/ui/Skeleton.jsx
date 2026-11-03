@@ -14,7 +14,7 @@ export const Skeleton = ({ className = '', ...props }) => (
   />
 );
 
-export const BookCardSkeleton = () => (
+const BookCardSkeleton = () => (
   <div className="bg-cream-50 rounded-3xl border border-cream-300/80 p-3.5 sm:p-4 flex flex-col justify-between shadow-sm overflow-hidden ring-1 ring-ink-800/5">
     <div className="w-full aspect-[3/4.2] rounded-2xl bg-cream-200/80 dark:bg-cream-300/40 mb-3 animate-pulse" />
     <div className="space-y-2 flex-1 flex flex-col justify-between">

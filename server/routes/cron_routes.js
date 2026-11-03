@@ -6,7 +6,7 @@ import { logger } from '../logger.js';
 
 export const cronRouter = Router();
 
-export const isAuthorizedCronRequest = (authorization, secret = process.env.CRON_SECRET) => {
+const isAuthorizedCronRequest = (authorization, secret = process.env.CRON_SECRET) => {
   if (typeof secret !== 'string' || secret.length < 16) return false;
   if (typeof authorization !== 'string' || !authorization.startsWith('Bearer ')) return false;
 
@@ -15,7 +15,7 @@ export const isAuthorizedCronRequest = (authorization, secret = process.env.CRON
   return supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
 };
 
-export const handleDailyMaintenance = async (req, res) => {
+const handleDailyMaintenance = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
 
   if (!process.env.CRON_SECRET || process.env.CRON_SECRET.length < 16) {

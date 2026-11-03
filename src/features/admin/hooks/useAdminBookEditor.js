@@ -4,7 +4,7 @@ import { apiJson, apiJsonSend } from '@lib/api';
 import { supabase } from '@lib/supabase';
 import { withToast } from '@lib/withToast';
 
-export const EMPTY_BOOK_FORM = {
+const EMPTY_BOOK_FORM = {
   title: '',
   pages: '',
   is_locked: false,

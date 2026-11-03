@@ -191,7 +191,7 @@ export const isTransactionSettled = (transactionStatus, fraudStatus = '') => {
 
 const QR_IMAGE_TIMEOUT_MS = 10_000;
 
-export const isAllowedQrUrl = (rawUrl) => {
+const isAllowedQrUrl = (rawUrl) => {
   try {
     const parsed = new URL(String(rawUrl));
     if (parsed.protocol !== 'https:') return false;

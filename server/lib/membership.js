@@ -201,7 +201,7 @@ export function startMembershipSweeper(intervalMs = MEMBERSHIP_SWEEP_INTERVAL_MS
  * ditolak, bukan jatuh ke paket default seperti findPlan (yang dipakai jalur
  * QRIS karena order id sudah dipilihkan aplikasi).
  */
-export const matchCatalogPlan = ({ planId, planName } = {}) => {
+const matchCatalogPlan = ({ planId, planName } = {}) => {
   const id = String(planId ?? '').trim();
   if (id) return SUBSCRIPTION_PLANS.find((plan) => plan.id === id) || null;
   const name = String(planName ?? '')

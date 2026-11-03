@@ -19,7 +19,7 @@ const SAFE_PROTOCOLS = new Set(['http', 'https']);
  * @example
  * normalizeOrigin('https://wahidiyahbook.com/path?query=1') // => 'https://wahidiyahbook.com'
  */
-export const normalizeOrigin = (value) => {
+const normalizeOrigin = (value) => {
   const raw = String(value ?? '').trim();
   if (!raw) return null;
   try {
@@ -37,7 +37,7 @@ export const normalizeOrigin = (value) => {
  * @param {string|null|undefined} value - Nilai header x-forwarded-proto
  * @returns {string|null} 'http', 'https', atau null
  */
-export const sanitizeForwardedProto = (value) => {
+const sanitizeForwardedProto = (value) => {
   const first = String(value ?? '')
     .split(',')[0]
     .trim()

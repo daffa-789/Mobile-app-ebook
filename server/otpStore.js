@@ -79,7 +79,7 @@ export const initOtpStore = async () => {
   return initPromise;
 };
 
-export const ensureOtpStore = async () => {
+const ensureOtpStore = async () => {
   if (mode !== 'unknown') return mode;
   return await initOtpStore();
 };

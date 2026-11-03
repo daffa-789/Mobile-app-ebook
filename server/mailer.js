@@ -76,7 +76,7 @@ const rfc2822Date = (d = new Date()) => {
  * Susun pesan MIME. Bila `inlineImages` diisi, struktur menjadi
  * multipart/related agar logo bisa dirujuk lewat `cid:` di HTML.
  */
-export const buildMimeMessage = ({ to, subject, text, html, inlineImages = [] }) => {
+const buildMimeMessage = ({ to, subject, text, html, inlineImages = [] }) => {
   const altBoundary = `bw_alt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
   const relBoundary = `bw_rel_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
   const from = SENDER_NAME ? `${SENDER_NAME} <${SENDER}>` : SENDER;

@@ -1,5 +1,5 @@
-export const MIN_READER_ZOOM = 40;
-export const MAX_READER_ZOOM = 300;
+const MIN_READER_ZOOM = 40;
+const MAX_READER_ZOOM = 300;
 
 const PINCH_RESPONSE = 0.75;
 

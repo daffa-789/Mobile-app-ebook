@@ -15,7 +15,7 @@ import {
   GalleryHorizontalEnd,
 } from 'lucide-react';
 
-export const SIDEBAR_SECTIONS = [
+const SIDEBAR_SECTIONS = [
   {
     id: 'utama',
     title: 'Utama',
@@ -24,7 +24,7 @@ export const SIDEBAR_SECTIONS = [
   { id: 'akun', title: 'Akun', keys: ['profile', 'logout'] },
 ];
 
-export const ADMIN_SECTION_KEYS = [
+const ADMIN_SECTION_KEYS = [
   'admin-overview',
   'admin-books',
   'admin-users',
@@ -33,13 +33,13 @@ export const ADMIN_SECTION_KEYS = [
   'admin-logs',
 ];
 
-export const ADMIN_SECTION = {
+const ADMIN_SECTION = {
   id: 'administrasi',
   title: 'Administrasi',
   keys: [...ADMIN_SECTION_KEYS, 'logout'],
 };
 
-export const SIDEBAR_ITEM_DEFS = {
+const SIDEBAR_ITEM_DEFS = {
   home: { label: 'Beranda', icon: Home, target: 'home' },
   calendar: { label: 'Kalender', icon: Calendar, target: 'calendar' },
   'subscription-history': {

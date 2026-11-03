@@ -4,7 +4,7 @@ import { apiJson, apiJsonSend } from '@lib/api';
 import { getTodayStr } from '@lib/date';
 import { withToast } from '@lib/withToast';
 
-export const EMPTY_EVENT_FORM = {
+const EMPTY_EVENT_FORM = {
   title: '',
   event_date: '',
   time_start: '19:30',

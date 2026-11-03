@@ -18,7 +18,7 @@ const bucket = () => supabaseServer.storage.from(CONTENT_BUCKET);
 
 export const contentRef = (path) => `${REF_PREFIX}${path}`;
 
-export const isContentRef = (value) => typeof value === 'string' && value.startsWith(REF_PREFIX);
+const isContentRef = (value) => typeof value === 'string' && value.startsWith(REF_PREFIX);
 
 const pathOfRef = (value) => value.slice(REF_PREFIX.length);
 

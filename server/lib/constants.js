@@ -43,7 +43,7 @@ export const SUBSCRIPTION_PLANS = [
   { id: 'monthly', name: 'Paket Bulanan', price: 25000, period: '/bulan' },
 ];
 
-export const DEFAULT_PLAN_ID = 'monthly';
+const DEFAULT_PLAN_ID = 'monthly';
 
 export const findPlan = (planId) =>
   SUBSCRIPTION_PLANS.find((plan) => plan.id === String(planId || '').trim()) ||

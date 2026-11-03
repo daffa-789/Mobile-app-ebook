@@ -5,7 +5,7 @@ import { supabaseServer } from './db.js';
 
 const JWT_SECRET = process.env.JWT_SECRET || '';
 
-export const resolveJwtSecret = (env = process.env) => {
+const resolveJwtSecret = (env = process.env) => {
   const configured = String(env.JWT_SECRET ?? '').trim();
   if (configured) return configured;
   if (env.NODE_ENV === 'production') {
@@ -63,7 +63,7 @@ export const verifyPassword = async (plainPassword, storedHash) => {
   }
 };
 
-export const effectiveIsPro = (user) => {
+const effectiveIsPro = (user) => {
   return Boolean(
     user?.is_pro === true ||
     user?.is_pro === 1 ||

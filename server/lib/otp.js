@@ -19,7 +19,7 @@ const hashOtp = (identifier, purpose, code) =>
 
 const IPV4_MAPPED_PREFIX = '::ffff:';
 
-export const isLoopbackAddress = (ip) => {
+const isLoopbackAddress = (ip) => {
   const value = String(ip ?? '')
     .trim()
     .toLowerCase();

@@ -12,7 +12,7 @@ dotenv.config({ override: true });
 
 const SUPABASE_PROJECT_URL = 'https://pdimjmbjutlzjdfjaqgt.supabase.co';
 
-export const resolveSupabaseCredentials = (env = process.env) => {
+const resolveSupabaseCredentials = (env = process.env) => {
   const url = env.VITE_SUPABASE_URL || env.SUPABASE_URL || SUPABASE_PROJECT_URL;
   const secretKey = String(env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
   const anonKey = String(env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY || '').trim();

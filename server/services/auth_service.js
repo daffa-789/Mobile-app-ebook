@@ -61,6 +61,12 @@ const firstIssueMessage = (parsed) => parsed.error.issues[0]?.message || 'Input 
  * Login email/password. Pesan galat dibedakan antara kredensial salah dan
  * akun yang sebenarnya terdaftar lewat Google (tanpa password) supaya
  * pengguna diarahkan ke tombol yang tepat.
+ *
+ * @param {object} params - Kredensial pengguna
+ * @param {string} [params.email] - Alamat email pengguna
+ * @param {string} [params.identifier] - Alias email masukan alternatif
+ * @param {string} params.password - Kata sandi plaintext
+ * @returns {Promise<{ ok: boolean, status?: number, message?: string, token?: string, user?: object }>} Hasil otentikasi
  */
 export async function authenticateWithPassword({ email, identifier, password }) {
   const userEmail = normalizeEmail(email || identifier);
@@ -100,6 +106,14 @@ export async function authenticateWithPassword({ email, identifier, password }) 
  * OTP. Pendaftaran selalu diprioritaskan melalui Email untuk efisiensi biaya
  * & proteksi anti-spam. Pengirim `demo` berarti pengiriman gagal — kode tetap
  * dibuat dan boleh diekspos ke developer (gerbang canExposeDevOtp).
+ *
+ * @param {object} params - Data formulir registrasi
+ * @param {string} params.name - Nama lengkap calon pengguna
+ * @param {string} params.email - Alamat email
+ * @param {string} params.phone - Nomor telepon seluler
+ * @param {string} params.password - Kata sandi yang dipilih
+ * @param {string} [params.clientIp] - Alamat IP klien untuk cooldown
+ * @returns {Promise<{ ok: boolean, status?: number, message?: string, method?: string, devOtp?: string }>} Hasil inisiasi registrasi
  */
 export async function beginRegistration({ name, email, phone, password, clientIp }) {
   const normalizedEmail = normalizeEmail(email);

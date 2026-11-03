@@ -29,14 +29,14 @@ export const vapidConfig = () => ({
 const MISSING_SCHEMA_CODES = new Set(['42P01', '42703']);
 
 /** Galat "tabel/kolom belum ada" (kode PostgreSQL) atau pesan turunannya. */
-export const isMissingSchema = (error) =>
+const isMissingSchema = (error) =>
   MISSING_SCHEMA_CODES.has(error?.code) ||
   /does not exist|schema cache/i.test(String(error?.message || ''));
 
 let schemaWarningLogged = false;
 
 /** Peringatkan sekali per proses bahwa skema push belum lengkap. */
-export const warnSchemaOnce = (error, scope) => {
+const warnSchemaOnce = (error, scope) => {
   if (schemaWarningLogged) return;
   schemaWarningLogged = true;
   logger.warn(scope, 'Tabel/kolom Web Push belum ada — fitur notifikasi dilewati', {
@@ -44,4 +44,22 @@ export const warnSchemaOnce = (error, scope) => {
     solusi:
       'jalankan blok "PATCH Web Push" pada supabase_database/full_setup.sql di SQL Editor Supabase, lalu restart',
   });
+};
+
+/**
+ * Gerbang tunggal pola "skema belum ada → peringatkan sekali, lalu lewati".
+ *
+ * Bentuk `isMissingSchema(e)` dipasangi `warnSchemaOnce(e, 'PUSH')` sebelumnya
+ * ditulis ulang di enam tempat (empat di `eventReminder.js`, dua di
+ * `pushSubscriptionStore.js`); pemanggil tinggal memeriksa hasil fungsi ini
+ * dan memutuskan apa yang dikembalikan.
+ *
+ * @param {object|undefined} error - Galat dari kueri Supabase
+ * @param {string} [scope] - Label log
+ * @returns {boolean} `true` bila galatnya karena skema belum lengkap
+ */
+export const noteSchemaMissing = (error, scope = 'PUSH') => {
+  if (!isMissingSchema(error)) return false;
+  warnSchemaOnce(error, scope);
+  return true;
 };

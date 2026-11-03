@@ -19,7 +19,7 @@ import { logger } from '../logger.js';
 import { PUSH_REMINDER_HOUR } from '../config.js';
 import { todayWib } from './time.js';
 import { sendWebPush } from './webpush.js';
-import { isPushConfigured, vapidConfig, isMissingSchema, warnSchemaOnce } from './pushGuards.js';
+import { isPushConfigured, vapidConfig, noteSchemaMissing } from './pushGuards.js';
 import { deactivateSubscription } from './pushSubscriptionStore.js';
 
 const addDaysYmd = (ymd, days) => {
@@ -99,10 +99,8 @@ const broadcastPush = async ({ payload, ttl = 24 * 60 * 60, urgency = 'normal' }
     .eq('is_active', true);
 
   if (error) {
-    if (isMissingSchema(error)) {
-      warnSchemaOnce(error, 'PUSH');
+    if (noteSchemaMissing(error))
       return { sent: 0, failed: 0, skipped: true, reason: 'schema-missing' };
-    }
     throw error;
   }
 
@@ -164,10 +162,7 @@ const loadEventRow = async (eventId, columns = EVENT_PUSH_COLUMNS) => {
     .maybeSingle();
 
   if (error) {
-    if (isMissingSchema(error)) {
-      warnSchemaOnce(error, 'PUSH');
-      return { event: null, schemaMissing: true };
-    }
+    if (noteSchemaMissing(error)) return { event: null, schemaMissing: true };
     throw error;
   }
   return { event, schemaMissing: false };
@@ -229,7 +224,7 @@ export const sendEventReminderNow = async (eventId, { force = false, type = 'aut
       .eq('id', eventId);
     /* Kolom penanda belum ada → notifikasi tetap terkirim, hanya tidak tercatat.
        Agendanya bisa terkirim ulang oleh penyapu berikutnya, jadi peringatkan. */
-    if (markError && isMissingSchema(markError)) warnSchemaOnce(markError, 'PUSH');
+    if (markError) noteSchemaMissing(markError);
   }
 
   return result;
@@ -251,10 +246,8 @@ export const sweepDueReminders = async () => {
     .is('reminder_sent_at', null);
 
   if (error) {
-    if (isMissingSchema(error)) {
-      warnSchemaOnce(error, 'PUSH');
+    if (noteSchemaMissing(error))
       return { checked: 0, sent: 0, skipped: true, reason: 'schema-missing' };
-    }
     throw error;
   }
 

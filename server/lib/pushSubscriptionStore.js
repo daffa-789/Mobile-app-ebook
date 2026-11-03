@@ -7,7 +7,7 @@
 
 import { supabaseServer } from '../db.js';
 import { generateId } from '../auth.js';
-import { isMissingSchema, warnSchemaOnce } from './pushGuards.js';
+import { noteSchemaMissing } from './pushGuards.js';
 
 /** Simpan atau segarkan satu perangkat berlangganan, kunci sebagai `is_active`. */
 export const saveSubscription = async ({ endpoint, keys, userAgent }) => {
@@ -18,8 +18,7 @@ export const saveSubscription = async ({ endpoint, keys, userAgent }) => {
     .maybeSingle();
 
   if (existing.error) {
-    if (isMissingSchema(existing.error)) {
-      warnSchemaOnce(existing.error, 'PUSH');
+    if (noteSchemaMissing(existing.error)) {
       const error = new Error('Tabel push_subscriptions belum dibuat di basis data.');
       error.schemaMissing = true;
       throw error;
@@ -78,10 +77,7 @@ export const countActiveSubscriptions = async () => {
     .eq('is_active', true);
 
   if (error) {
-    if (isMissingSchema(error)) {
-      warnSchemaOnce(error, 'PUSH');
-      return 0;
-    }
+    if (noteSchemaMissing(error)) return 0;
     throw error;
   }
   return count || 0;

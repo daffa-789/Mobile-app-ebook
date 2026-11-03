@@ -1,7 +1,7 @@
 /**
  * Service Layer — Pembayaran: status order dari sisi pembeli & pembatalan lokal.
  *
- * Aturan §4.1 panduan arsitektur: logika bisnis MURNI — tidak menerima objek
+ * Aturan §3.1 panduan arsitektur: logika bisnis MURNI — tidak menerima objek
  * `req`/`res` Express; masukan dan keluaran berupa data polos, kegagalan
  * dibuang sebagai Error bertipe `statusCode`.
  *

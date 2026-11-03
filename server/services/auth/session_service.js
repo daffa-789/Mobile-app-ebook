@@ -1,7 +1,7 @@
 /**
  * Service Layer — Sesi Otentikasi (login kredensial, token sesi, identitas terkini).
  *
- * Aturan §4.1 panduan arsitektur: logika bisnis MURNI — tidak menerima objek
+ * Aturan §3.1 panduan arsitektur: logika bisnis MURNI — tidak menerima objek
  * `req`/`res` Express. Keluaran berupa objek hasil (`outcome`) atau Error
  * bertipe `statusCode`; pemetaan ke HTTP adalah tanggung jawab controller.
  */

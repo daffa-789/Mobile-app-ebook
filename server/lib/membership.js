@@ -127,7 +127,8 @@ export async function restorePendingTransaction(transactionId) {
   }
 }
 
-export const activeSubscriptionConflict = (user) => {
+/** Alasan penolakan bila pengguna masih berstatus Pro; `null` bila ia boleh membayar. */
+const activeSubscriptionConflict = (user) => {
   if (!hasActivePro(user)) return null;
   return {
     success: false,

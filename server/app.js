@@ -5,7 +5,7 @@
  *
  * Sebelumnya urutan middleware ditulis ulang di kedua berkas itu, sehingga
  * satu perbaikan keamanan bisa mendarat di satu sisi saja — dev hijau,
- * produksi diam-diam behave beda. Satu fungsi ini yang menentukan urutannya.
+ * produksi diam-diam berperilaku beda. Satu fungsi ini yang menentukan urutannya.
  *
  * `errorHandler` sengaja TIDAK dipasang di sini: server.js masih perlu
  * menempelkan penyajian berkas statis dan middleware Vite sebelum error

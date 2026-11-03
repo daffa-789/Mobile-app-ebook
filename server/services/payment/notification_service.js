@@ -1,7 +1,7 @@
 /**
  * Service Layer — Pembayaran: penerima notifikasi (webhook) Midtrans.
  *
- * Aturan §4.1 panduan arsitektur: logika bisnis MURNI — tidak menerima objek
+ * Aturan §3.1 panduan arsitektur: logika bisnis MURNI — tidak menerima objek
  * `req`/`res` Express; masukan berupa payload JSON polos, keluaran berpola
  * `outcome` yang dipetakan controller ke kode HTTP.
  *

@@ -1,8 +1,8 @@
 /**
  * Controller Layer — Modul Pembayaran (Fase 2 roadmap arsitektur).
  *
- * Tanggung jawab TUNGGAL berkas ini (§2.1 panduan): mengekstrak DTO dari
- * `req`, memanggil `payment_service`, dan memformat respons HTTP. Tidak ada
+ * Tanggung jawab TUNGGAL berkas ini (§3.1 panduan): mengekstrak DTO dari
+ * `req`, memanggil service di `server/services/payment/`, dan memformat respons HTTP. Tidak ada
  * query database ataupun panggilan gateway di sini — semua logika bisnis ada
  * di paket `server/services/payment/`.
  *

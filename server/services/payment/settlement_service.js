@@ -1,14 +1,14 @@
 /**
  * Service Layer — Pembayaran: mesin status transaksi (settle & reject).
  *
- * Aturan §4.1 panduan arsitektur: logika bisnis MURNI — tidak menerima objek
+ * Aturan §3.1 panduan arsitektur: logika bisnis MURNI — tidak menerima objek
  * `req`/`res` Express; masukan dan keluaran berupa data polos, kegagalan
  * dibuang sebagai Error bertipe `statusCode`.
  *
  * Ini satu-satunya tempat status transaksi berpindah. Polling (`status_service`),
  * webhook (`notification_service`), dan kegagalan pembuatan order
  * (`order_service`) semuanya bermuara ke sini supaya klaim bersyarat idempoten
- * (§4.3 panduan) tidak pernah digandakan di tiga tempat.
+ * (§6.2 panduan) tidak pernah digandakan di tiga tempat.
  */
 
 import { supabaseServer } from '../../db.js';
@@ -23,7 +23,7 @@ import { logger } from '../../logger.js';
 /**
  * Menuntaskan transaksi menjadi lunas + mengaktifkan langganan Pro.
  *
- * IDEMPOTEN (§4.3 panduan): klaim baris dilakukan dengan UPDATE bersyarat
+ * IDEMPOTEN (§6.2 panduan): klaim baris dilakukan dengan UPDATE bersyarat
  * `.eq('status', 'pending')` — atomik di PostgreSQL, jadi webhook ulang maupun
  * polling yang balapan dengan webhook hanya sekali memenangkan klaim dan masa
  * aktif Pro tidak pernah ditambah dua kali. Bila aktivasi gagal setelah klaim,

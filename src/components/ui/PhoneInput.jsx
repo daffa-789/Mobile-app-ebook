@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Phone } from 'lucide-react';
 import { cn } from '@lib/utils';
 import { displayPhone, normalizePhone } from '@lib/phone';
 
@@ -49,12 +50,8 @@ export const PhoneInput = ({
   };
 
   return (
-    <div
-      className={cn(
-        'auth-input-wrap flex items-center transition focus-within:ring-2 focus-within:ring-brand-500/20',
-        className,
-      )}
-    >
+    <div className={cn('auth-input-wrap', className)}>
+      <Phone className="auth-input-icon" />
       <input
         id={id}
         name={name}
@@ -67,7 +64,6 @@ export const PhoneInput = ({
         required={required}
         placeholder={placeholder}
         aria-describedby={`${id}-hint`}
-        className="w-full min-w-0 border-0 bg-transparent px-3.5 py-2.5 text-sm font-medium tracking-wide text-ink-900 placeholder:text-ink-400 focus:outline-none disabled:opacity-60"
       />
       <span id={`${id}-hint`} className="sr-only">
         Isi nomor WhatsApp aktif, contoh {placeholder}

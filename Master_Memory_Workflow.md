@@ -1153,11 +1153,15 @@ Wahidiyah Book + Real Midtrans Skripsi/
 │   │   └── slices/         # useCatalogSlice, useNavigationSlice, usePaymentSlice
 │   ├── data/mockData.js    # PAYMENT_METHODS & FAQ_ITEMS (masih dipakai)
 │   ├── features/
-│   │   ├── about/, auth/, calendar/, help/, home/, payment/, profile/, subscription/
+│   │   ├── about/, auth/, help/, home/, subscription/
+│   │   ├── calendar/       # CalendarScreen, CalendarMonthGrid, CalendarSelectedDatePanel, CalendarAllEventsList
+│   │   ├── payment/        # PaymentConfirmScreen, PaymentPlanSummary, QrisPaymentCard, ManualPaymentForm, ...
+│   │   ├── profile/        # EditProfileScreen, ProfileAccountForm, ProfileSubscriptionCard, ProfileNavigationLinks, ProfileSessionSettings
 │   │   ├── admin/          # AdminDashboard + tab Overview, Books, Users, Events, Carousel, Logs
+│   │   │   ├── carousel/   # CarouselSlideItem, CarouselFormPanel
 │   │   │   ├── events/     # AllAgendaPanel, EventCalendarPanel, EventFormPanel, ...
-│   │   │   └── hooks/      # useAdminDashboardData, useAdminBookEditor, useAdminEventEditor
-│   │   └── reader/         # PdfReaderScreen, ContinuousPdfViewer, pinch zoom, pdfWorkerSetup
+│   │   │   └── hooks/      # useAdminDashboardData, useAdminBookEditor, useAdminEventEditor, useAdminCarouselEditor
+│   │   └── reader/         # PdfReaderScreen, ContinuousPdfViewer, PdfPageSheet, ReaderTopBar, ReaderContentStates, HtmlDocViewer, TextDocViewer
 │   ├── lib/                # api, phone, date, excelExport, receiptPdf, navigation, normalizers, ...
 │   ├── theme/              # ThemeProvider, themeInjector, themeMode
 │   ├── App.jsx             # Router navigasi utama
@@ -1196,6 +1200,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R73 | Pemeliharaan sistem 1 Nov 2026: Pemeriksaan kesehatan 7/7, script quality gate, dan optimasi aksesibilitas — lihat 15.3. |
 | R74 | Peningkatan tooling 2 Nov 2026: Quality gate `check:full`, standardisasi JSDoc rute/layanan, dan penguatan pembaca PDF — lihat 15.4. |
 | R75 | Dokumentasi arsitektur terpadu 3 Nov 2026: Standardisasi JSDoc menyeluruh pada modul client, lib server, service layer, dan runner — lihat 15.5. |
+| R77 | Dekomposisi modular layar utama 3 Nov 2026: Pemecahan PdfReaderScreen, CalendarScreen, dan EditProfileScreen ke subkomponen terdedikasi — lihat 15.7. |
 | R76 | Dekomposisi modular & pembersihan kode 3 Nov 2026: Pemecahan CarouselTab, PaymentConfirmScreen, ContinuousPdfViewer, dan eliminasi dead import — lihat 15.6. |
 
 ### 15.1 Yang sudah tidak ada lagi (R71, 30 Oktober 2026)
@@ -1222,6 +1227,15 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `auth_service.js:350`.
+
+### 15.7 Pemeliharaan R77 (3 November 2026)
+
+| Perubahan | Rincian |
+|---|---|
+| Layar Pembaca PDF | Pemecahan PdfReaderScreen.jsx ke subkomponen terdedikasi ReaderTopBar.jsx, ReaderContentStates.jsx, HtmlDocViewer.jsx, dan TextDocViewer.jsx. |
+| Layar Kalender & Agenda | Modularisasi CalendarScreen.jsx ke CalendarMonthGrid.jsx, CalendarSelectedDatePanel.jsx, dan CalendarAllEventsList.jsx. |
+| Layar Profil Pengguna | Dekomposisi EditProfileScreen.jsx ke ProfileAccountForm.jsx, ProfileSubscriptionCard.jsx, ProfileNavigationLinks.jsx, dan ProfileSessionSettings.jsx. |
+| Standardisasi & Clean Code | Penambahan dokumentasi JSDoc komprehensif pada seluruh subkomponen baru, verifikasi Prettier, lolos uji build Vite 100% dan health check 7/7. |
 
 ### 15.6 Pemeliharaan R76 (3 November 2026)
 

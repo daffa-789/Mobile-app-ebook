@@ -2,6 +2,16 @@ export const SidebarNavButton = ({ item, isCollapsed, onNavClick }) => {
   const Icon = item.icon;
   const isDanger = Boolean(item.danger);
 
+  /* Cincin fokus & warna aktif dipakai kedua varian tombol (ikon saja dan
+     penuh). Dulu kedua potongan class ditulis ulang, jadi perubahan token tema
+     harus disentuh di dua tempat. */
+  const focusRing = isDanger
+    ? 'focus-visible:ring-semantic-dangerOnDark'
+    : 'focus-visible:ring-brand-500';
+  const activeState = item.isActive
+    ? 'bg-brand-700 text-cream-50 shadow-sm'
+    : 'text-semantic-mutedOnDark hover:text-cream-50 hover:bg-cream-50/5';
+
   if (isCollapsed) {
     return (
       <button
@@ -10,13 +20,7 @@ export const SidebarNavButton = ({ item, isCollapsed, onNavClick }) => {
         title={item.label}
         aria-label={item.label}
         aria-current={item.isActive ? 'page' : undefined}
-        className={`relative h-11 w-11 rounded-md flex items-center justify-center transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 ${
-          isDanger ? 'focus-visible:ring-semantic-dangerOnDark' : 'focus-visible:ring-brand-500'
-        } ${
-          item.isActive
-            ? 'bg-brand-700 text-cream-50 shadow-sm'
-            : 'text-semantic-mutedOnDark hover:text-cream-50 hover:bg-cream-50/5'
-        }`}
+        className={`relative h-11 w-11 rounded-md flex items-center justify-center transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 ${focusRing} ${activeState}`}
       >
         <Icon className="w-[18px] h-[18px]" strokeWidth={1.9} />
       </button>
@@ -28,13 +32,7 @@ export const SidebarNavButton = ({ item, isCollapsed, onNavClick }) => {
       type="button"
       onClick={() => onNavClick(item.target)}
       aria-current={item.isActive ? 'page' : undefined}
-      className={`group relative w-full h-11 flex items-center gap-3 pl-3 pr-3 rounded-md transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 ${
-        isDanger ? 'focus-visible:ring-semantic-dangerOnDark' : 'focus-visible:ring-brand-500'
-      } ${
-        item.isActive
-          ? 'bg-brand-700 text-cream-50 shadow-sm'
-          : 'text-semantic-mutedOnDark hover:text-cream-50 hover:bg-cream-50/5'
-      }`}
+      className={`group relative w-full h-11 flex items-center gap-3 pl-3 pr-3 rounded-md transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 ${focusRing} ${activeState}`}
     >
       <span
         aria-hidden="true"

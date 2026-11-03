@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { apiJson } from '@lib/api';
+import { apiJson, apiJsonSend } from '@lib/api';
 import { supabase } from '@lib/supabase';
 import { withToast } from '@lib/withToast';
 
@@ -59,11 +59,11 @@ export const useAdminBookEditor = ({ headers, loadDashboard }) => {
         if (bookForm.content instanceof File) {
           const berkas = bookForm.content;
           if (!supabase) throw new Error('Supabase Storage belum terkonfigurasi.');
-          const tiket = await apiJson('/api/books/upload-intent', {
-            method: 'POST',
-            headers: { ...headers, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ filename: berkas.name }),
-          });
+          const tiket = await apiJsonSend(
+            '/api/books/upload-intent',
+            { filename: berkas.name },
+            { headers },
+          );
           /* Byte naskah dikirim peramban langsung ke Supabase Storage. Melalui
            * /api/books/upload ia akan ditolak Vercel di atas 4,5 MB.
            */

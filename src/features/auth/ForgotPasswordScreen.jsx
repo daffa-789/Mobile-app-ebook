@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AlertCircle, ArrowLeft, KeyRound, Mail, Phone } from 'lucide-react';
 import { useApp } from '@context/AppContext';
-import { apiJson } from '@lib/api';
+import { apiJsonSend } from '@lib/api';
 import { layout, typography, controls } from '@lib/styles';
 import { useSubmit } from '@lib/useSubmit';
 import { PhoneInput } from '@ui/PhoneInput';
@@ -28,10 +28,9 @@ export const ForgotPasswordScreen = () => {
       }
 
       return runSubmit(async () => {
-        const result = await apiJson('/api/auth/request-password-reset', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ method: 'whatsapp', phone: standardPhone }),
+        const result = await apiJsonSend('/api/auth/request-password-reset', {
+          method: 'whatsapp',
+          phone: standardPhone,
         });
         setVerification({
           phone: standardPhone,
@@ -51,10 +50,9 @@ export const ForgotPasswordScreen = () => {
     }
 
     return runSubmit(async () => {
-      const result = await apiJson('/api/auth/request-password-reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ method: 'email', email: target }),
+      const result = await apiJsonSend('/api/auth/request-password-reset', {
+        method: 'email',
+        email: target,
       });
       setVerification({
         email: target,

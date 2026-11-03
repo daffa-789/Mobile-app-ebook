@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AlertCircle, Eye, EyeOff, Lock, Mail, UserRound } from 'lucide-react';
 import { useApp } from '@context/AppContext';
-import { apiJson } from '@lib/api';
+import { apiJsonSend } from '@lib/api';
 import { ServerStatusBanner } from '@ui/ServerStatusBanner';
 import { PhoneInput } from '@ui/PhoneInput';
 import { AuthBrandHeader } from './AuthBrandHeader';
@@ -41,16 +41,12 @@ export const RegisterScreen = () => {
 
     return runSubmit(async () => {
       const targetEmail = email.trim().toLowerCase();
-      const result = await apiJson('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: name.trim(),
-          email: targetEmail,
-          phone: standardPhone,
-          password,
-          deliveryMethod,
-        }),
+      const result = await apiJsonSend('/api/auth/register', {
+        name: name.trim(),
+        email: targetEmail,
+        phone: standardPhone,
+        password,
+        deliveryMethod,
       });
 
       setVerification({

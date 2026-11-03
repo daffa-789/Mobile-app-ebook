@@ -6,7 +6,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { apiJson, authHeaders } from '@lib/api';
+import { apiJson, apiJsonSend, authHeaders } from '@lib/api';
 import { withToast } from '@lib/withToast';
 
 export const EMPTY_SLIDE_FORM = {
@@ -91,18 +91,13 @@ export const useAdminCarouselEditor = ({ sessionToken, refreshCarousel }) => {
       };
 
       if (editingId) {
-        await apiJson(`/api/carousel/${encodeURIComponent(editingId)}`, {
+        await apiJsonSend(`/api/carousel/${encodeURIComponent(editingId)}`, payload, {
           method: 'PUT',
-          headers: { ...headers, 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          headers,
         });
         toast.success('Banner berhasil diperbarui.');
       } else {
-        const created = await apiJson('/api/carousel', {
-          method: 'POST',
-          headers: { ...headers, 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+        const created = await apiJsonSend('/api/carousel', payload, { headers });
         toast.success('Banner berhasil ditambahkan.');
         const file = imageInputRef.current?.files?.[0];
         if (file && created.slideId) {

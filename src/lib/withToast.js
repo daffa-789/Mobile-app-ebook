@@ -30,15 +30,28 @@ import { toast } from 'sonner';
 const resolveSuccess = (successMessage, value) =>
   typeof successMessage === 'function' ? successMessage(value) : successMessage;
 
+/* Dua penutup di bawah ini dulunya tersalin tiga kali di dalam modul ini
+   sendiri — sekali di `withToast`, dua kali di `withToastSync`. Bentuk hasilnya
+   wajib identik karena pemanggil memeriksa `ok`. */
+
+/** Tampilkan toast sukses (bila teksnya ada) dan kembalikan bentuk hasil. */
+const succeed = (value, successMessage) => {
+  const text = resolveSuccess(successMessage, value);
+  if (text) toast.success(text);
+  return { ok: true, value, error: null };
+};
+
+/** Tampilkan toast galat dan kembalikan bentuk hasil yang sama. */
+const rejectWith = (error, fallbackMessage) => {
+  toast.error(error?.message || fallbackMessage);
+  return { ok: false, value: undefined, error };
+};
+
 export const withToast = async (action, fallbackMessage, successMessage) => {
   try {
-    const value = await action();
-    const text = resolveSuccess(successMessage, value);
-    if (text) toast.success(text);
-    return { ok: true, value, error: null };
+    return succeed(await action(), successMessage);
   } catch (error) {
-    toast.error(error?.message || fallbackMessage);
-    return { ok: false, value: undefined, error };
+    return rejectWith(error, fallbackMessage);
   }
 };
 
@@ -55,22 +68,12 @@ export const withToastSync = (action, fallbackMessage, successMessage) => {
     const value = action();
     if (value && typeof value.then === 'function') {
       return value.then(
-        (resolved) => {
-          const text = resolveSuccess(successMessage, resolved);
-          if (text) toast.success(text);
-          return { ok: true, value: resolved, error: null };
-        },
-        (error) => {
-          toast.error(error?.message || fallbackMessage);
-          return { ok: false, value: undefined, error };
-        },
+        (resolved) => succeed(resolved, successMessage),
+        (error) => rejectWith(error, fallbackMessage),
       );
     }
-    const text = resolveSuccess(successMessage, value);
-    if (text) toast.success(text);
-    return { ok: true, value, error: null };
+    return succeed(value, successMessage);
   } catch (error) {
-    toast.error(error?.message || fallbackMessage);
-    return { ok: false, value: undefined, error };
+    return rejectWith(error, fallbackMessage);
   }
 };

@@ -165,6 +165,26 @@ export const apiJson = async (path, options = {}) => {
   return payload;
 };
 
+/**
+ * `apiJson` dengan badan JSON — satu tempat untuk kontrak `Content-Type` +
+ * `JSON.stringify`. Bentuk tiga baris (`method`, `headers`, `body`) sebelumnya
+ * ditulis ulang di 20 titik pada 13 berkas, sehingga perubahan kontrak (mis.
+ * menambah `Accept`) harus dicari di seluruh aplikasi.
+ *
+ * @param {string} path - URL relatif `/api/...`
+ * @param {object} body - Nilai yang diserialisasi menjadi JSON
+ * @param {object} [options] - `method` (bawaan POST), `headers` tambahan
+ *   (mis. otorisasi dari `authHeaders`), dan opsi `fetch` lain seperti `timeoutMs`
+ * @returns {Promise<object>} Payload JSON respons
+ */
+export const apiJsonSend = (path, body, { method = 'POST', headers, ...rest } = {}) =>
+  apiJson(path, {
+    ...rest,
+    method,
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
 export const readableError = (error) => {
   if (error?.timeout) return 'Server tidak membalas tepat waktu. Coba lagi.';
   if (error?.network) return 'Server tidak dapat dihubungi.';

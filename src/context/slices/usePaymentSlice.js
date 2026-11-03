@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { PAYMENT_METHODS } from '@data/mockData';
 import {
   apiJson,
+  apiJsonSend,
   authHeaders,
   getStoredSession,
   getStoredLastPayment,
@@ -135,20 +136,17 @@ export const usePaymentSlice = ({ patchUser }) => {
       const stored = getStoredSession();
       if (stored?.token) {
         try {
-          const payload = await apiJson('/api/transactions', {
-            method: 'POST',
-            headers: {
-              ...authHeaders(stored.token),
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
+          const payload = await apiJsonSend(
+            '/api/transactions',
+            {
               plan_id: selectedPlan.id,
               plan_name: selectedPlan.title,
               amount: selectedPlan.price,
               payment_method: selectedPaymentMethod?.name || 'Bank Transfer',
               period: periodStr,
-            }),
-          });
+            },
+            { headers: authHeaders(stored.token) },
+          );
 
           const settledExpiry = payload.user?.subscription_expires_at || expiry.toISOString();
           const settledPeriod =

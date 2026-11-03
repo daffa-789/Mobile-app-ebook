@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@lib/supabase';
 import { useApp } from '@context/AppContext';
-import { apiJson } from '@lib/api';
+import { apiJsonSend } from '@lib/api';
 import { AuthStatus } from '@ui/AuthStatus';
 
 export const AuthCallbackScreen = () => {
@@ -27,21 +27,17 @@ export const AuthCallbackScreen = () => {
           throw new Error('Sesi Google tidak ditemukan. Silakan coba lagi.');
         }
 
-        const result = await apiJson('/api/auth/google-supabase', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            access_token: session.access_token,
-            user: {
-              id: session.user.id,
-              email: session.user.email,
-              name:
-                session.user.user_metadata?.full_name ||
-                session.user.user_metadata?.name ||
-                session.user.email?.split('@')[0] ||
-                'Pengguna',
-            },
-          }),
+        const result = await apiJsonSend('/api/auth/google-supabase', {
+          access_token: session.access_token,
+          user: {
+            id: session.user.id,
+            email: session.user.email,
+            name:
+              session.user.user_metadata?.full_name ||
+              session.user.user_metadata?.name ||
+              session.user.email?.split('@')[0] ||
+              'Pengguna',
+          },
         });
 
         if (!cancelled && result.token && result.user) {

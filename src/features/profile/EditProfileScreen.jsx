@@ -10,7 +10,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useApp } from '@context/AppContext';
 import { useTheme } from '@theme/ThemeProvider';
-import { apiJson, authHeaders } from '@lib/api';
+import { apiJsonSend, authHeaders } from '@lib/api';
 import { LogoutConfirmDialog } from '../../components/layout/LogoutConfirmDialog';
 import { ProfileAccountForm } from './ProfileAccountForm';
 import { ProfileSubscriptionCard } from './ProfileSubscriptionCard';
@@ -57,16 +57,11 @@ export const EditProfileScreen = () => {
     setIsSubmitting(true);
     setErrorMessage('');
     try {
-      const payload = await apiJson('/api/users/profile', {
-        method: 'PUT',
-        headers: {
-          ...authHeaders(sessionToken),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-        }),
-      });
+      const payload = await apiJsonSend(
+        '/api/users/profile',
+        { name: name.trim() },
+        { method: 'PUT', headers: authHeaders(sessionToken) },
+      );
 
       if (payload.user) {
         patchUser(payload.user);

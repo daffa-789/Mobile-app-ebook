@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AlertCircle, Eye, EyeOff, Info, Lock, LogIn, Mail } from 'lucide-react';
 import { useApp } from '@context/AppContext';
-import { apiJson } from '@lib/api';
+import { apiJsonSend } from '@lib/api';
 import { ServerStatusBanner } from '@ui/ServerStatusBanner';
 import { AuthBrandHeader } from './AuthBrandHeader';
 import { layout, controls } from '@lib/styles';
@@ -71,11 +71,7 @@ export const LoginScreen = () => {
 
     setNotice('');
     return runSubmit(async () => {
-      const result = await apiJson('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier: email.trim(), password }),
-      });
+      const result = await apiJsonSend('/api/auth/login', { identifier: email.trim(), password });
       login(result.user, result.token);
     });
   };

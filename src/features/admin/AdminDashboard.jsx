@@ -1,6 +1,6 @@
 import { Navigate, useParams } from 'react-router-dom';
 import { useApp } from '@context/AppContext';
-import { apiJson } from '@lib/api';
+import { apiJsonSend } from '@lib/api';
 
 import { ADMIN_DEFAULT_TAB, ADMIN_TAB_SLUGS, tabIdFromPath } from '@lib/navigation';
 import { withToast, withToastSync } from '@lib/withToast';
@@ -53,11 +53,11 @@ export const AdminDashboard = () => {
   const updateUser = (id, body, successMessage) =>
     withToast(
       async () => {
-        await apiJson(`/api/users/${encodeURIComponent(id)}${body.role ? '/role' : '/pro'}`, {
-          method: 'PUT',
-          headers: { ...headers, 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
+        await apiJsonSend(
+          `/api/users/${encodeURIComponent(id)}${body.role ? '/role' : '/pro'}`,
+          body,
+          { method: 'PUT', headers },
+        );
 
         if (body.role) {
           const isSelfRoleChange = user?.id === id;

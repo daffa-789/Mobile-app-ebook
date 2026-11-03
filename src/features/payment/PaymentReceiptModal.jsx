@@ -2,21 +2,15 @@ import { useState } from 'react';
 import { X, Download, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatRupiah } from '@lib/formatUtils';
+import { resolveReceiptFields } from '@lib/receiptFields';
 
 export const PaymentReceiptModal = ({ isOpen, onClose, details, user }) => {
   const [isPreparingPdf, setIsPreparingPdf] = useState(false);
 
   if (!isOpen) return null;
 
-  const refNo = details?.refNo || details?.ref || `WB-${Date.now().toString(36).toUpperCase()}`;
-  const dateStr = details?.dateStr || details?.createdAt || new Date().toLocaleString('id-ID');
-  const planName = details?.planName || 'Paket Bulanan Pro';
-  const amount = Number(details?.amount || 25000);
-  const adminFee = Number(details?.adminFee || 0);
-  const totalPaid = Number(details?.totalPaid || amount + adminFee);
-  const userName = user?.name || user?.fullName || 'Pengguna Wahidiyah';
-  const userEmail = user?.email || '-';
-  const userPhone = user?.phone || details?.phone || '';
+  const { refNo, dateStr, planName, amount, adminFee, totalPaid, userName, userEmail, userPhone } =
+    resolveReceiptFields(details, user);
 
   const handleDownloadPdf = async () => {
     if (isPreparingPdf) return;

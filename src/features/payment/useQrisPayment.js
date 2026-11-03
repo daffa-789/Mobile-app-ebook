@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { apiJson, authHeaders } from '@lib/api';
+import { apiJson, apiJsonSend, authHeaders } from '@lib/api';
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -36,14 +36,11 @@ export const useQrisPayment = ({
     setQrNotice('');
 
     try {
-      const data = await apiJson('/api/payments/qris/charge', {
-        method: 'POST',
-        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          planId: selectedPlan?.id || 'monthly',
-          phone,
-        }),
-      });
+      const data = await apiJsonSend(
+        '/api/payments/qris/charge',
+        { planId: selectedPlan?.id || 'monthly', phone },
+        { headers: authHeaders() },
+      );
 
       if (data.alreadyPro) {
         setQrError(data.message || 'Langganan Pro Anda masih aktif.');

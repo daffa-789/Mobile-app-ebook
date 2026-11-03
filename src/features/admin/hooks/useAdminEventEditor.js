@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { apiJson } from '@lib/api';
+import { apiJson, apiJsonSend } from '@lib/api';
 import { getTodayStr } from '@lib/date';
 import { withToast } from '@lib/withToast';
 
@@ -64,37 +64,27 @@ export const useAdminEventEditor = ({ headers, loadDashboard }) => {
     event.preventDefault();
     setIsSavingEvent(true);
     return withToast(async () => {
+      /* Lokasi dan tautan Maps digabung menjadi satu kolom teks. Jalur buat dan
+         jalur ubah memakai aturan penggabungan yang sama, jadi tidak ditulis dua kali. */
+      const locationCombined = eventForm.maps_url?.trim()
+        ? eventForm.location_name?.trim()
+          ? `${eventForm.location_name.trim()} | ${eventForm.maps_url.trim()}`
+          : eventForm.maps_url.trim()
+        : eventForm.location_name?.trim() || eventForm.location || '';
+      const eventPayload = { ...eventForm, location: locationCombined };
+
       if (editingEventId) {
-        const locationCombined = eventForm.maps_url?.trim()
-          ? eventForm.location_name?.trim()
-            ? `${eventForm.location_name.trim()} | ${eventForm.maps_url.trim()}`
-            : eventForm.maps_url.trim()
-          : eventForm.location_name?.trim() || eventForm.location || '';
-        const eventPayload = {
-          ...eventForm,
-          location: locationCombined,
-        };
-        const res = await apiJson(`/api/events/${encodeURIComponent(editingEventId)}`, {
-          method: 'PUT',
-          headers: { ...headers, 'Content-Type': 'application/json' },
-          body: JSON.stringify(eventPayload),
-        });
+        const res = await apiJsonSend(
+          `/api/events/${encodeURIComponent(editingEventId)}`,
+          eventPayload,
+          {
+            method: 'PUT',
+            headers,
+          },
+        );
         toast.success(res?.message || 'Agenda berhasil diperbarui.');
       } else {
-        const locationCombined = eventForm.maps_url?.trim()
-          ? eventForm.location_name?.trim()
-            ? `${eventForm.location_name.trim()} | ${eventForm.maps_url.trim()}`
-            : eventForm.maps_url.trim()
-          : eventForm.location_name?.trim() || eventForm.location || '';
-        const eventPayload = {
-          ...eventForm,
-          location: locationCombined,
-        };
-        const res = await apiJson('/api/events', {
-          method: 'POST',
-          headers: { ...headers, 'Content-Type': 'application/json' },
-          body: JSON.stringify(eventPayload),
-        });
+        const res = await apiJsonSend('/api/events', eventPayload, { headers });
         if (res?.announcementSent > 0) {
           toast.success(`Agenda ditambahkan & disiarkan ke ${res.announcementSent} perangkat!`);
         } else {
@@ -132,14 +122,11 @@ export const useAdminEventEditor = ({ headers, loadDashboard }) => {
   const toggleEventCarousel = (event) =>
     withToast(
       async () => {
-        await apiJson(`/api/events/${encodeURIComponent(event.id)}`, {
-          method: 'PUT',
-          headers: { ...headers, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...toEventForm(event),
-            show_in_carousel: !event.showInCarousel,
-          }),
-        });
+        await apiJsonSend(
+          `/api/events/${encodeURIComponent(event.id)}`,
+          { ...toEventForm(event), show_in_carousel: !event.showInCarousel },
+          { method: 'PUT', headers },
+        );
         await loadDashboard();
       },
       'Status carousel agenda gagal diubah.',

@@ -9,7 +9,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { useApp } from '@context/AppContext';
-import { apiJson } from '@lib/api';
+import { apiJsonSend } from '@lib/api';
 import { layout, typography, controls } from '@lib/styles';
 import { displayPhone } from '@lib/phone';
 import { PasswordResetSuccess } from './PasswordResetSuccess';
@@ -88,32 +88,24 @@ export const VerifyEmailScreen = () => {
     setError('');
     try {
       if (isReset) {
-        await apiJson('/api/auth/reset-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            method,
-            identifier: target,
-            email,
-            phone,
-            code: trimmed,
-            password,
-          }),
+        await apiJsonSend('/api/auth/reset-password', {
+          method,
+          identifier: target,
+          email,
+          phone,
+          code: trimmed,
+          password,
         });
         clearVerification();
         setCompletedTarget(target);
         setDone(true);
       } else {
-        const result = await apiJson('/api/auth/verify-registration', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            method,
-            identifier: target,
-            email,
-            phone,
-            code: trimmed,
-          }),
+        const result = await apiJsonSend('/api/auth/verify-registration', {
+          method,
+          identifier: target,
+          email,
+          phone,
+          code: trimmed,
         });
         clearVerification();
         login(result.user, result.token);
@@ -133,16 +125,12 @@ export const VerifyEmailScreen = () => {
     setError('');
     setResendNotice('');
     try {
-      const result = await apiJson('/api/auth/resend-verification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          method,
-          identifier: target,
-          email,
-          phone,
-          purpose,
-        }),
+      const result = await apiJsonSend('/api/auth/resend-verification', {
+        method,
+        identifier: target,
+        email,
+        phone,
+        purpose,
       });
       setResendNotice(result.message || 'Kode baru telah dikirim.');
       if (result.deliveredBy) setDeliveredBy(result.deliveredBy);

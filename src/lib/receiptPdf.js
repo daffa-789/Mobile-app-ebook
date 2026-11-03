@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { formatRupiah } from './formatUtils.js';
+import { resolveReceiptFields } from './receiptFields.js';
 
 /**
  * Generator Kwitansi / Invoice Resmi Wahidiyah Book berstandar A4
@@ -9,15 +10,8 @@ import { formatRupiah } from './formatUtils.js';
  * @param {Object} user Rincian pengguna (name, email, phone)
  */
 export const downloadReceiptPdf = (details, user) => {
-  const refNo = details?.refNo || details?.ref || `WB-${Date.now().toString(36).toUpperCase()}`;
-  const dateStr = details?.dateStr || details?.createdAt || new Date().toLocaleString('id-ID');
-  const planName = details?.planName || 'Paket Bulanan Pro';
-  const amount = Number(details?.amount || 25000);
-  const adminFee = Number(details?.adminFee || 0);
-  const totalPaid = Number(details?.totalPaid || amount + adminFee);
-  const userName = user?.name || user?.fullName || 'Pengguna Wahidiyah';
-  const userEmail = user?.email || '-';
-  const userPhone = user?.phone || details?.phone || '';
+  const { refNo, dateStr, planName, amount, adminFee, totalPaid, userName, userEmail, userPhone } =
+    resolveReceiptFields(details, user);
 
   // Standar Format A4 Portrait (210 x 297 mm) untuk arsip resmi dan bukti transaksi
   const doc = new jsPDF({

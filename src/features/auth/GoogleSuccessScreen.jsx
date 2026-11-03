@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '@context/AppContext';
-import { apiJson } from '@lib/api';
+import { apiJsonSend } from '@lib/api';
 import { AuthStatus } from '@ui/AuthStatus';
 
 export const GoogleSuccessScreen = () => {
@@ -36,11 +36,7 @@ export const GoogleSuccessScreen = () => {
 
     (async () => {
       try {
-        const payload = await apiJson('/api/auth/exchange', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code }),
-        });
+        const payload = await apiJsonSend('/api/auth/exchange', { code });
         login(payload.user, payload.token);
       } catch (exchangeError) {
         setError(exchangeError?.message || 'Gagal menukar kode sesi Google.');

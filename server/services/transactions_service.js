@@ -10,16 +10,14 @@ import { supabaseServer } from '../db.js';
 import {
   decideTransactionVerification,
   generateId,
-  loadMembershipUser,
-  settleExpiredMembership,
   toPublicUser,
   TRANSACTION_PENDING_STATUS,
 } from '../auth.js';
 import {
   activatePaidMembership,
-  activeSubscriptionConflict,
   insertTransaction,
   resolveManualTransferPricing,
+  resolvePurchaseGate,
   restorePendingTransaction,
   toRefCode,
 } from '../lib/membership.js';
@@ -154,17 +152,8 @@ export async function createManualTransaction({ user, body = {} }) {
     throw createServiceError(pricing.message, { statusCode: 400 });
   }
 
-  await settleExpiredMembership(user.id);
-  const membership = (await loadMembershipUser(user.id)) || user;
-
-  const conflict = activeSubscriptionConflict(membership);
-  if (conflict) {
-    return {
-      outcome: 'already-pro',
-      message: conflict.message,
-      user: toPublicUser(membership),
-    };
-  }
+  const { membership, conflict } = await resolvePurchaseGate(user.id, user);
+  if (conflict) return conflict;
 
   const txId = generateId('tx');
   const method = body.payment_method || 'Bank Transfer';

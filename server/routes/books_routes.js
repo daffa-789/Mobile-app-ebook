@@ -29,6 +29,23 @@ export const booksRouter = Router();
 
 const viewerOf = (req) => ({ user: req.user, authUser: req.authUser });
 
+/**
+ * Kolom buku dari form unggah multipart. Handler buat dan handler ubah dulu
+ * memetakan nama field yang sama persis di dua tempat — satu fungsi supaya
+ * penambahan kolom tidak mendarat di satu rute saja.
+ */
+const bookUploadFields = (req) => {
+  const { title, pages, is_locked, content_path, content_name } = req.body;
+  return {
+    title,
+    pages,
+    isLocked: is_locked,
+    contentPath: content_path,
+    contentName: content_name,
+    thumbnailBuffer: req.files?.thumbnail?.[0]?.buffer,
+  };
+};
+
 // GET /api/books — Daftar buku publik dengan pencarian judul dan pengurutan
 booksRouter.get(
   '/books',
@@ -82,15 +99,7 @@ booksRouter.post(
   requireAdmin,
   uploadBookFiles,
   wrap(async (req, res) => {
-    const { title, pages, is_locked, content_path, content_name } = req.body;
-    const bookId = await createBookWithContent({
-      title,
-      pages,
-      isLocked: is_locked,
-      contentPath: content_path,
-      contentName: content_name,
-      thumbnailBuffer: req.files?.thumbnail?.[0]?.buffer,
-    });
+    const bookId = await createBookWithContent(bookUploadFields(req));
     res.status(201).json({ success: true, message: 'Buku berhasil diunggah', bookId });
   }),
 );
@@ -159,16 +168,7 @@ booksRouter.put(
   requireAdmin,
   uploadBookFiles,
   wrap(async (req, res) => {
-    const { title, pages, is_locked, content_path, content_name } = req.body;
-    await updateBook({
-      id: req.params.id,
-      title,
-      pages,
-      isLocked: is_locked,
-      contentPath: content_path,
-      contentName: content_name,
-      thumbnailBuffer: req.files?.thumbnail?.[0]?.buffer,
-    });
+    await updateBook({ id: req.params.id, ...bookUploadFields(req) });
     res.json({ success: true, message: 'Buku berhasil diperbarui' });
   }),
 );

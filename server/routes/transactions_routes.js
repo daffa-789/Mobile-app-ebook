@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { requireAdmin, requireAuth } from '../auth.js';
-import { badRequest, fail, internalErrorDetail, wrap } from '../lib/http.js';
+import { badRequest, fail, internalErrorDetail, replyAlreadyPro, wrap } from '../lib/http.js';
 import { isOneOf } from '../lib/validate.js';
 import { paymentRateLimiter } from '../middleware/security.js';
 import {
@@ -55,14 +55,7 @@ transactionsRouter.post('/transactions', paymentRateLimiter, requireAuth, async 
   try {
     const result = await createManualTransaction({ user: req.user, body: req.body || {} });
 
-    if (result.outcome === 'already-pro') {
-      return res.json({
-        success: true,
-        alreadyPro: true,
-        message: result.message,
-        user: result.user,
-      });
-    }
+    if (result.outcome === 'already-pro') return replyAlreadyPro(res, result);
 
     res.status(202).json({
       success: true,

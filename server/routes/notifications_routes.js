@@ -9,12 +9,12 @@ import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { badRequest, wrap } from '../lib/http.js';
 import { isAllowedPushEndpoint } from '../lib/pushEndpoint.js';
+import { isPushConfigured } from '../lib/pushGuards.js';
 import {
-  isPushConfigured,
   saveSubscription,
   removeSubscription,
   countActiveSubscriptions,
-} from '../lib/eventReminder.js';
+} from '../lib/pushSubscriptionStore.js';
 import { VAPID_PUBLIC_KEY } from '../config.js';
 import { clippedText } from '../lib/validate.js';
 

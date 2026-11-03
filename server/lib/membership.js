@@ -3,7 +3,9 @@ import { supabaseServer } from '../db.js';
 import {
   generateId,
   hasActivePro,
+  loadMembershipUser,
   settleExpiredMembership,
+  toPublicUser,
   TRANSACTION_PENDING_STATUS,
 } from '../auth.js';
 import { logger } from '../logger.js';
@@ -130,6 +132,33 @@ export const activeSubscriptionConflict = (user) => {
   return {
     success: false,
     message: 'Langganan Pro Anda saat ini masih aktif. Anda sudah menikmati seluruh fitur Pro.',
+  };
+};
+
+/**
+ * Gerbang pembelian yang SAMA untuk semua jalur bayar — QRIS Midtrans
+ * (`services/payment/order_service.js`) dan transfer manual
+ * (`services/transactions_service.js`): sapu kedaluwarsa langganan lebih dulu,
+ * muat baris pengguna terkini, lalu tolak bila Pro masih aktif.
+ *
+ * Kedua jalur dulu menulis tiga langkah ini masing-masing, jadi perubahan aturan
+ * "kapan tidak perlu bayar lagi" harus disinkronkan di dua tempat.
+ *
+ * @param {string} userId - Akun yang akan membayar
+ * @param {object} fallbackUser - Data pengguna cadangan dari sesi
+ * @returns {Promise<{ membership: object, conflict: object|null }>} `conflict`
+ *   sudah berpola hasil bisnis `outcome: 'already-pro'`, siap dikembalikan pemanggil.
+ */
+export const resolvePurchaseGate = async (userId, fallbackUser) => {
+  await settleExpiredMembership(userId);
+  const membership = (await loadMembershipUser(userId)) || fallbackUser;
+
+  const clash = activeSubscriptionConflict(membership);
+  if (!clash) return { membership, conflict: null };
+
+  return {
+    membership,
+    conflict: { outcome: 'already-pro', message: clash.message, user: toPublicUser(membership) },
   };
 };
 

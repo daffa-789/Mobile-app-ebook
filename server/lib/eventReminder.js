@@ -1,136 +1,33 @@
-/* Pengirim pengingat agenda H-1 via Web Push.
- *
- * Dijalankan DUA cara:
- *   1. Saat admin membuat/mengubah agenda yang jatuh tempo BESOK → langsung
- *      dikirim (dipanggil dari server/routes/events.routes.js).
- *   2. Penyapu berkala di server.js yang memeriksa agenda H-1 setiap 15 menit,
- *      sebagai jaring pengaman bila server mati saat jadwal kirim tiba.
- *
- * Idempotensi dijaga kolom `events.reminder_sent_at`: satu agenda = satu kali
- * kirim, berapa pun kali penjadwal berjalan.
- */
+/* Pengirim pengingat & pengumuman agenda via Web Push (eksekusi + penjadwal).
+
+   Dijalankan dari empat tempat:
+     1. Admin membuat/mengubah agenda yang jatuh tempo BESOK → langsung
+        dikirim (server/services/events_service.js).
+     2. Aksi siaran pengumuman pada panel agenda → `sendEventAnnouncementNow`.
+     3. Penyapu berkala di server.js yang memeriksa agenda H-1 setiap 15 menit,
+        sebagai jaring pengaman bila server mati saat jadwal kirim tiba.
+     4. Endpoint cron harian (server/routes/cron_routes.js) → `sweepDueReminders`.
+
+   Idempotensi dijaga kolom `events.reminder_sent_at`: satu agenda = satu kali
+   kirim, berapa pun kali penjadwal berjalan.
+
+   Penyimpanan langganan ada di `pushSubscriptionStore.js`; gerbang VAPID dan
+   toleransi skema ada di `pushGuards.js` — keduanya dipakai modul lain juga. */
 
 import { supabaseServer } from '../db.js';
 import { logger } from '../logger.js';
-import {
-  VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY,
-  VAPID_SUBJECT,
-  PUSH_REMINDER_HOUR,
-} from '../config.js';
-import { generateId } from '../auth.js';
+import { PUSH_REMINDER_HOUR } from '../config.js';
 import { todayWib } from './time.js';
-import { sendWebPush, isValidVapidPublicKey, isValidVapidPrivateKey } from './webpush.js';
+import { sendWebPush } from './webpush.js';
+import { isPushConfigured, vapidConfig, isMissingSchema, warnSchemaOnce } from './pushGuards.js';
+import { deactivateSubscription } from './pushSubscriptionStore.js';
 
-export const isPushConfigured = () =>
-  isValidVapidPublicKey(VAPID_PUBLIC_KEY) &&
-  isValidVapidPrivateKey(VAPID_PRIVATE_KEY) &&
-  Boolean(VAPID_SUBJECT);
-
-const vapidConfig = () => ({
-  publicKey: VAPID_PUBLIC_KEY,
-  privateKey: VAPID_PRIVATE_KEY,
-  subject: VAPID_SUBJECT,
-});
-
-/* Kolom/tabel baru mungkin belum dibuat pemilik (blok PATCH di
-   supabase_database/full_setup.sql belum dijalankan). Fitur notifikasi
-   sebaiknya mati dengan tenang, bukan menjatuhkan server. */
-const MISSING_SCHEMA_CODES = new Set(['42P01', '42703']);
-
-const isMissingSchema = (error) =>
-  MISSING_SCHEMA_CODES.has(error?.code) ||
-  /does not exist|schema cache/i.test(String(error?.message || ''));
-
-let schemaWarningLogged = false;
-
-const warnSchemaOnce = (error, scope) => {
-  if (schemaWarningLogged) return;
-  schemaWarningLogged = true;
-  logger.warn(scope, 'Tabel/kolom Web Push belum ada — fitur notifikasi dilewati', {
-    pesan: error?.message,
-    solusi:
-      'jalankan blok "PATCH Web Push" pada supabase_database/full_setup.sql di SQL Editor Supabase, lalu restart',
-  });
+const addDaysYmd = (ymd, days) => {
+  const [y, m, d] = ymd.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
 };
-
-/* ── Langganan ─────────────────────────────────────────────────────────── */
-
-export const saveSubscription = async ({ endpoint, keys, userAgent }) => {
-  const existing = await supabaseServer
-    .from('push_subscriptions')
-    .select('id')
-    .eq('endpoint', endpoint)
-    .maybeSingle();
-
-  if (existing.error) {
-    if (isMissingSchema(existing.error)) {
-      warnSchemaOnce(existing.error, 'PUSH');
-      const error = new Error('Tabel push_subscriptions belum dibuat di basis data.');
-      error.schemaMissing = true;
-      throw error;
-    }
-    throw existing.error;
-  }
-
-  const payload = {
-    p256dh: keys.p256dh,
-    auth: keys.auth,
-    user_agent: String(userAgent || '').slice(0, 255),
-    is_active: true,
-    updated_at: new Date().toISOString(),
-  };
-
-  if (existing.data) {
-    // Perangkat yang sama berlangganan ulang: cukup segarkan kuncinya.
-    const { error } = await supabaseServer
-      .from('push_subscriptions')
-      .update(payload)
-      .eq('id', existing.data.id);
-    if (error) throw error;
-    return { id: existing.data.id, created: false };
-  }
-
-  const id = generateId('sub');
-  const { error } = await supabaseServer
-    .from('push_subscriptions')
-    .insert({ id, endpoint, ...payload });
-  if (error) throw error;
-  return { id, created: true };
-};
-
-export const removeSubscription = async (endpoint) => {
-  const { error } = await supabaseServer
-    .from('push_subscriptions')
-    .delete()
-    .eq('endpoint', endpoint);
-  if (error) throw error;
-};
-
-const deactivateSubscription = async (id) => {
-  await supabaseServer
-    .from('push_subscriptions')
-    .update({ is_active: false, updated_at: new Date().toISOString() })
-    .eq('id', id);
-};
-
-export const countActiveSubscriptions = async () => {
-  const { count, error } = await supabaseServer
-    .from('push_subscriptions')
-    .select('id', { count: 'exact', head: true })
-    .eq('is_active', true);
-
-  if (error) {
-    if (isMissingSchema(error)) {
-      warnSchemaOnce(error, 'PUSH');
-      return 0;
-    }
-    throw error;
-  }
-  return count || 0;
-};
-
-/* ── Pesan ─────────────────────────────────────────────────────────────── */
 
 const EVENT_ICON = '/icon-192.png';
 
@@ -250,11 +147,30 @@ const broadcastPush = async ({ payload, ttl = 24 * 60 * 60, urgency = 'normal' }
 
 /* ── Pengingat agenda ──────────────────────────────────────────────────── */
 
-const addDaysYmd = (ymd, days) => {
-  const [y, m, d] = ymd.split('-').map(Number);
-  const date = new Date(Date.UTC(y, m - 1, d));
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
+/** Kolom minimum yang dibutuhkan sebuah pesan push agenda. */
+const EVENT_PUSH_COLUMNS = 'id, title, event_date, time_start, time_end, location';
+
+/**
+ * Muat satu baris agenda untuk pengiriman push, dengan toleransi skema.
+ * `schemaMissing` sengaja dipisah dari `event: null` agar pemanggil tetap
+ * bisa membedakan "tabel belum ada" (fitur dilewati tenang) dari
+ * "agenda tidak ditemukan" — dua hal yang dilaporkan dengan `reason` berbeda.
+ */
+const loadEventRow = async (eventId, columns = EVENT_PUSH_COLUMNS) => {
+  const { data: event, error } = await supabaseServer
+    .from('events')
+    .select(columns)
+    .eq('id', eventId)
+    .maybeSingle();
+
+  if (error) {
+    if (isMissingSchema(error)) {
+      warnSchemaOnce(error, 'PUSH');
+      return { event: null, schemaMissing: true };
+    }
+    throw error;
+  }
+  return { event, schemaMissing: false };
 };
 
 /** Kirim PENGUMUMAN untuk SATU agenda ke seluruh perangkat jemaah yang aktif. */
@@ -263,19 +179,8 @@ export const sendEventAnnouncementNow = async (eventId) => {
     return { sent: 0, skipped: true, reason: 'vapid-not-configured' };
   }
 
-  const { data: event, error } = await supabaseServer
-    .from('events')
-    .select('id, title, event_date, time_start, time_end, location')
-    .eq('id', eventId)
-    .maybeSingle();
-
-  if (error) {
-    if (isMissingSchema(error)) {
-      warnSchemaOnce(error, 'PUSH');
-      return { sent: 0, skipped: true, reason: 'schema-missing' };
-    }
-    throw error;
-  }
+  const { event, schemaMissing } = await loadEventRow(eventId);
+  if (schemaMissing) return { sent: 0, skipped: true, reason: 'schema-missing' };
   if (!event) return { sent: 0, skipped: true, reason: 'not-found' };
 
   const payload = buildEventPayload(event, { type: 'announcement' });
@@ -296,19 +201,11 @@ export const sendEventReminderNow = async (eventId, { force = false, type = 'aut
     return { sent: 0, skipped: true, reason: 'vapid-not-configured' };
   }
 
-  const { data: event, error } = await supabaseServer
-    .from('events')
-    .select('id, title, event_date, time_start, time_end, location, reminder_sent_at')
-    .eq('id', eventId)
-    .maybeSingle();
-
-  if (error) {
-    if (isMissingSchema(error)) {
-      warnSchemaOnce(error, 'PUSH');
-      return { sent: 0, skipped: true, reason: 'schema-missing' };
-    }
-    throw error;
-  }
+  const { event, schemaMissing } = await loadEventRow(
+    eventId,
+    `${EVENT_PUSH_COLUMNS}, reminder_sent_at`,
+  );
+  if (schemaMissing) return { sent: 0, skipped: true, reason: 'schema-missing' };
   if (!event) return { sent: 0, skipped: true, reason: 'not-found' };
 
   if (!force && event.reminder_sent_at) {

@@ -4,7 +4,7 @@
  * Tanggung jawab TUNGGAL berkas ini (§2.1 panduan): mengekstrak DTO dari
  * `req`, memanggil `auth_service`, dan memformat respons HTTP (JSON maupun
  * redirect OAuth). Tidak ada query database, verifikasi OTP, atau logika
- * pendaftaran di sini — semuanya ada di `server/services/auth_service.js`.
+ * pendaftaran di sini — semuanya ada di paket `server/services/auth/`.
  *
  * Bentuk respons dipertahankan kompatibel dengan klien yang ada.
  */
@@ -15,21 +15,23 @@ import { logger } from '../logger.js';
 import { createSessionToken, toPublicUser } from '../auth.js';
 import { resolveFrontendOrigin } from '../lib/origin.js';
 import { ALLOWED_ORIGINS, FRONTEND_ORIGIN } from '../config.js';
+import { RESET_UNIFORM_RESPONSE, RESET_UNIFORM_WA_RESPONSE } from '../services/auth/messages.js';
 import {
-  RESET_UNIFORM_RESPONSE,
-  RESET_UNIFORM_WA_RESPONSE,
   authenticateWithPassword,
-  beginRegistration,
-  completeRegistration,
   exchangeSessionCode,
   loadCurrentUser,
-  loginWithGoogleSupabase,
+} from '../services/auth/session_service.js';
+import { beginRegistration, completeRegistration } from '../services/auth/registration_service.js';
+import {
   requestPasswordReset as requestPasswordResetService,
   resetPassword as resetPasswordService,
-  resendVerificationOtp,
+} from '../services/auth/password_reset_service.js';
+import { resendVerificationOtp } from '../services/auth/otp_resend_service.js';
+import {
+  loginWithGoogleSupabase,
   verifyGoogleOAuthCode,
   findOrCreateGoogleUser,
-} from '../services/auth_service.js';
+} from '../services/auth/google_oauth_service.js';
 
 /** Pemetaan seragam kegagalan tak terduga (database mati → 503, lainnya 500). */
 const replyAuthFailure = (res, error, { dbMessage = DB_DOWN_MESSAGE } = {}) => {
@@ -53,6 +55,15 @@ const rejectOutcome = (res, result) => {
   return res.status(result.status).json(body);
 };
 
+/**
+ * Respons sukses yang mengakhiri sesi — login password, verifikasi registrasi,
+ * dan login Google. Ketiganya dulu menulis objek `{ success, message, token,
+ * user }` sendiri-sendiri; satu bentuk di sini menjaga klien (`AppContext`)
+ * tetap membaca kunci yang sama di semua jalur masuk.
+ */
+const replySession = (res, result, message, status = 200) =>
+  res.status(status).json({ success: true, message, token: result.token, user: result.user });
+
 /** POST /api/auth/login */
 export async function login(req, res) {
   try {
@@ -64,12 +75,7 @@ export async function login(req, res) {
 
     if (!result.ok) return rejectOutcome(res, result);
 
-    return res.json({
-      success: true,
-      message: 'Login berhasil',
-      token: result.token,
-      user: result.user,
-    });
+    return replySession(res, result, 'Login berhasil');
   } catch (error) {
     return replyAuthFailure(res, error);
   }
@@ -105,12 +111,7 @@ export async function verifyRegistration(req, res) {
 
     if (!result.ok) return rejectOutcome(res, result);
 
-    return res.status(201).json({
-      success: true,
-      message: 'Akun berhasil dibuat.',
-      token: result.token,
-      user: result.user,
-    });
+    return replySession(res, result, 'Akun berhasil dibuat.', 201);
   } catch (error) {
     return replyAuthFailure(res, error, { dbMessage: 'Gagal terhubung ke database.' });
   }
@@ -204,12 +205,7 @@ export async function googleSupabase(req, res) {
 
     if (!result.ok) return rejectOutcome(res, result);
 
-    return res.json({
-      success: true,
-      message: 'Login Google berhasil.',
-      token: result.token,
-      user: result.user,
-    });
+    return replySession(res, result, 'Login Google berhasil.');
   } catch (error) {
     return replyAuthFailure(res, error);
   }

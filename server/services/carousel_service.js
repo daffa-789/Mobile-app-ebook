@@ -34,6 +34,22 @@ const isMissingTable = (error) =>
 const tableMissing = (message = TABLE_MISSING_MESSAGE) =>
   createServiceError(message, { statusCode: 503 });
 
+/**
+ * Penutup bersama untuk SEMUA tulis ke `carousel_slides`: tabel belum dibuat →
+ * 503, tidak ada baris yang kena → 404 "Banner tidak ditemukan". Tiga jalur
+ * tulis (ubah field, hapus, ganti gambar) sebelumnya menyalin blok ini utuh,
+ * sehingga perubahan pesan/status harus dilakukan tiga kali.
+ *
+ * @param {{ data?: Array<object>, error?: object }} hasil - Hasil query Supabase
+ */
+const ensureSlideWritten = ({ data, error }) => {
+  if (error) {
+    if (isMissingTable(error)) throw tableMissing();
+    throw error;
+  }
+  if (!data?.length) throw createServiceError('Banner tidak ditemukan', { statusCode: 404 });
+};
+
 const isWithinPeriod = (slide, today) =>
   (!slide.starts_at || slide.starts_at <= today) && (!slide.ends_at || slide.ends_at >= today);
 
@@ -192,17 +208,9 @@ export async function updateSlide({ id, body = {} }) {
   }
 
   const patch = { ...fields, updated_at: new Date().toISOString() };
-  const { data, error } = await supabaseServer
-    .from('carousel_slides')
-    .update(patch)
-    .eq('id', id)
-    .select('id');
-
-  if (error) {
-    if (isMissingTable(error)) throw tableMissing();
-    throw error;
-  }
-  if (!data?.length) throw createServiceError('Banner tidak ditemukan', { statusCode: 404 });
+  ensureSlideWritten(
+    await supabaseServer.from('carousel_slides').update(patch).eq('id', id).select('id'),
+  );
 }
 
 /**
@@ -212,17 +220,9 @@ export async function updateSlide({ id, body = {} }) {
  * @returns {Promise<void>}
  */
 export async function deleteSlide(id) {
-  const { data, error } = await supabaseServer
-    .from('carousel_slides')
-    .delete()
-    .eq('id', id)
-    .select('id');
-
-  if (error) {
-    if (isMissingTable(error)) throw tableMissing();
-    throw error;
-  }
-  if (!data?.length) throw createServiceError('Banner tidak ditemukan', { statusCode: 404 });
+  ensureSlideWritten(
+    await supabaseServer.from('carousel_slides').delete().eq('id', id).select('id'),
+  );
 }
 
 /**
@@ -251,18 +251,14 @@ export async function updateSlideImage({ id, buffer }) {
     fallbackMime: detectedMime,
   });
 
-  const { data, error } = await supabaseServer
-    .from('carousel_slides')
-    .update({
-      image_url: toDataUrl(result.buffer, result.mime),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .select('id');
-
-  if (error) {
-    if (isMissingTable(error)) throw tableMissing();
-    throw error;
-  }
-  if (!data?.length) throw createServiceError('Banner tidak ditemukan', { statusCode: 404 });
+  ensureSlideWritten(
+    await supabaseServer
+      .from('carousel_slides')
+      .update({
+        image_url: toDataUrl(result.buffer, result.mime),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select('id'),
+  );
 }

@@ -3,7 +3,7 @@
  *
  * Berkas ini sengaja tipis: hanya pemetaan URL → middleware (rate limiter,
  * otentikasi) → method controller. Seluruh logika bisnis ada di
- * `server/services/payment_service.js`; pemformatan HTTP ada di
+ * `server/services/payment/`; pemformatan HTTP ada di
  * `server/controllers/payment_controller.js`.
  */
 

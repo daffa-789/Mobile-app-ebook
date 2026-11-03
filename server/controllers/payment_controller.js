@@ -4,22 +4,24 @@
  * Tanggung jawab TUNGGAL berkas ini (§2.1 panduan): mengekstrak DTO dari
  * `req`, memanggil `payment_service`, dan memformat respons HTTP. Tidak ada
  * query database ataupun panggilan gateway di sini — semua logika bisnis ada
- * di `server/services/payment_service.js`.
+ * di paket `server/services/payment/`.
  *
  * Bentuk respons dipertahankan kompatibel dengan klien yang ada (Fase 3 yang
  * akan menstandarkan amplop `{ success, message, data }` menyeluruh).
  */
 
-import { badRequest, internalErrorDetail, notFound, unauthorized } from '../lib/http.js';
+import {
+  badRequest,
+  internalErrorDetail,
+  notFound,
+  replyAlreadyPro,
+  unauthorized,
+} from '../lib/http.js';
 import { fetchQrImage } from '../lib/midtrans.js';
 import { logger } from '../logger.js';
-import {
-  cancelQrisForUser,
-  createQrisOrder,
-  handleMidtransNotification,
-  loadTransactionForViewer,
-  resolveQrisStatus,
-} from '../services/payment_service.js';
+import { loadTransactionForViewer, createQrisOrder } from '../services/payment/order_service.js';
+import { cancelQrisForUser, resolveQrisStatus } from '../services/payment/status_service.js';
+import { handleMidtransNotification } from '../services/payment/notification_service.js';
 import { TRANSACTION_PENDING_STATUS } from '../auth.js';
 
 const ownTransactionOr404 = async (req, res) => {
@@ -56,14 +58,7 @@ export async function createQrisCharge(req, res) {
       return res.status(503).json({ success: false, message: result.message });
     }
 
-    if (result.outcome === 'already-pro') {
-      return res.json({
-        success: true,
-        alreadyPro: true,
-        message: result.message,
-        user: result.user,
-      });
-    }
+    if (result.outcome === 'already-pro') return replyAlreadyPro(res, result);
 
     const body = { success: true, ...result.order, user: result.user };
     if (result.outcome === 'reused') {

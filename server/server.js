@@ -14,16 +14,8 @@ import {
   LISTEN_PORT,
   USE_VITE_MIDDLEWARE,
 } from './config.js';
-import {
-  corsPolicy,
-  jsonBody,
-  responseCompression,
-  securityHeaders,
-  trustProxy,
-} from './middleware/security.js';
-import { apiNotFound, errorHandler } from './middleware/errors.js';
-import { requestContext } from './middleware/requestLog.js';
-import { mountRoutes } from './routes/index.js';
+import { errorHandler } from './middleware/errors.js';
+import { createApiApp } from './app.js';
 import { NON_SPA_EXTENSIONS } from './lib/constants.js';
 import { initOtpStore } from './otpStore.js';
 import { canExposeDevOtp } from './lib/otp.js';
@@ -44,20 +36,7 @@ const handleFatal = (label, error) => {
 process.on('unhandledRejection', (reason) => handleFatal('Unhandled rejection', reason));
 process.on('uncaughtException', (error) => handleFatal('Uncaught exception', error));
 
-const app = express();
-
-app.use(requestContext);
-
-app.use(securityHeaders);
-app.use(corsPolicy);
-app.use(responseCompression);
-app.use(jsonBody);
-
-trustProxy(app);
-
-mountRoutes(app);
-
-app.use('/api', apiNotFound);
+const app = createApiApp();
 
 function mountStatic(app) {
   if (USE_VITE_MIDDLEWARE) {

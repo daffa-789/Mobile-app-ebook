@@ -115,3 +115,17 @@ export const sendDataUrl = (res, url, { contentType, cacheControl } = {}) => {
   res.send(Buffer.from(matches[2], 'base64'));
   return true;
 };
+
+/**
+ * Respons baku "langganan Pro masih aktif" untuk SEMUA jalur bayar —
+ * QRIS (`controllers/payment_controller.js`) dan transfer manual
+ * (`routes/transactions_routes.js`) sebelumnya menulis objek JSON yang sama
+ * persis di dua tempat, sehingga bentuk respons bisa lari tidak cocok dengan
+ * yang dibaca `src/context/slices/usePaymentSlice.js`.
+ *
+ * @param {import('express').Response} res - Objek respons Express
+ * @param {{ message: string, user: object }} result - Hasil gerbang pembelian
+ * @returns {import('express').Response} Respons JSON
+ */
+export const replyAlreadyPro = (res, result) =>
+  res.json({ success: true, alreadyPro: true, message: result.message, user: result.user });

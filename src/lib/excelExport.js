@@ -1,3 +1,11 @@
+/**
+ * Modul ekspor laporan spreadsheet Excel (.xlsx) interaktif untuk admin.
+ * Memformat lembar kerja multi-halaman dengan styling tema brand Wahidiyah Book (hijau & cream),
+ * zebra-striping, format angka mata uang otomatis, dan penyesuaian lebar kolom responsif.
+ *
+ * @module src/lib/excelExport
+ */
+
 import ExcelJS from 'exceljs';
 import { formatWIB } from '@lib/date';
 import { formatRupiah } from '@lib/formatUtils';

@@ -1,3 +1,11 @@
+/**
+ * Modul layanan transaksi langganan dan verifikasi transfer manual.
+ * Mengelola query riwayat transaksi, verifikasi admin dengan mekanisme klaim atomik,
+ * serta pencatatan transaksi manual dengan validasi penetapan harga sisi server.
+ *
+ * @module server/services/transactions_service
+ */
+
 import { supabaseServer } from '../db.js';
 import {
   decideTransactionVerification,
@@ -19,8 +27,12 @@ import { createServiceError } from '../lib/errors.js';
 import { toBoundedInt } from '../lib/validate.js';
 
 /**
- * Daftar transaksi untuk panel admin, terbaru di atas.
- * `limit` dari query string dijepit ke 1..200 (bawaan 50).
+ * Mengambil daftar transaksi untuk panel admin, diurutkan dari yang terbaru.
+ * Parameter limit dibatasi pada rentang 1..200 (default 50).
+ *
+ * @param {object} [options] - Opsi kueri transaksi
+ * @param {number|string} [options.limit] - Jumlah data yang diminta
+ * @returns {Promise<Array<object>>} Daftar transaksi lengkap beserta nama dan email pengguna
  */
 export async function listTransactions({ limit } = {}) {
   let query = supabaseServer
@@ -43,12 +55,17 @@ export async function listTransactions({ limit } = {}) {
 }
 
 /**
- * Memverifikasi transaksi transfer manual.
+ * Memverifikasi transaksi transfer manual (approve / reject).
  *
- * Hasil yang bukan galat dikembalikan sebagai `outcome`:
+ * Hasil yang bukan galat dikembalikan sebagai objek `outcome`:
  *  - `idempotent` — status sudah sama dengan aksi; tidak menambah masa aktif.
- *  - `verified`   — klaim baris berhasil dan (bila approve) Pro diaktifkan.
+ *  - `verified`   — klaim baris berhasil dan (bila approve) paket Pro diaktifkan.
  * Galat aturan bisnis dilempar sebagai `createServiceError` (404/409).
+ *
+ * @param {object} params - Parameter verifikasi
+ * @param {string} params.id - ID transaksi
+ * @param {'approve'|'reject'} params.action - Aksi verifikasi
+ * @returns {Promise<{ outcome: string, status: string, message: string }>} Hasil verifikasi
  */
 export async function verifyTransaction({ id, action }) {
   const { data: tx, error: transactionError } = await supabaseServer
@@ -120,14 +137,16 @@ export async function verifyTransaction({ id, action }) {
 }
 
 /**
- * Mencatat transaksi transfer manual baru (VULN-06).
+ * Mencatat transaksi transfer manual baru (mitigasi manipulasi harga VULN-06).
  *
  * Nominal, nama paket, dan biaya layanan dibaca dari katalog server; nilai
  * `amount` dari klien hanya klaim yang harus cocok — `admin_fee`/`total_paid`
  * kiriman klien tidak dibaca sama sekali.
  *
- * Hasil: `already-pro` (tidak perlu membuat transaksi) atau `pending`
- * (transaksi tersimpan, menunggu konfirmasi gateway).
+ * @param {object} params - Parameter transaksi baru
+ * @param {object} params.user - Objek data akun pengguna aktif
+ * @param {object} [params.body={}] - Payload request klien
+ * @returns {Promise<{ outcome: string, transaction?: object, user: object, message?: string }>} Hasil pencatatan transaksi
  */
 export async function createManualTransaction({ user, body = {} }) {
   const pricing = resolveManualTransferPricing(body);

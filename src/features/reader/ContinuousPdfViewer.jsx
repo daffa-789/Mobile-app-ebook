@@ -1,13 +1,30 @@
-import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
-import { pdfjsLib } from './pdfWorkerSetup';
-import { getPinchScale, getPinchZoom } from './zoomUtils';
-import { PdfPageSheet } from './PdfPageSheet';
-
 /**
- * ContinuousPdfViewer
  * Penampil PDF dengan model kanvas lembar halaman tetap (Fixed Sheet Canvas),
  * menjaga rasio asli PDF secara presisi seperti Acrobat / Chrome PDF Viewer.
  * Posisi teks dan baris bacaan terkunci 100% stabil (Reading Anchor Lock) saat zoom in / zoom out.
+ *
+ * @module src/features/reader/ContinuousPdfViewer
+ */
+
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
+import { pdfjsLib } from './pdfWorkerSetup';
+import { PdfPageSheet } from './PdfPageSheet';
+import { usePdfPinchGesture } from './usePdfPinchGesture';
+import { usePdfCanvasRenderer } from './usePdfCanvasRenderer';
+
+/**
+ * Komponen penampil berkas PDF secara gulir vertikal berkelanjutan.
+ *
+ * @param {object} props - Properti komponen
+ * @param {ArrayBuffer|null} props.pdfBuffer - Buffer biner berkas PDF
+ * @param {number} props.zoom - Level zoom persentase (40 - 300)
+ * @param {(newZoom: number | ((prev: number) => number)) => void} props.setZoom - Setter level zoom
+ * @param {number} props.currentPage - Nomor halaman aktif
+ * @param {(page: number, total: number) => void} [props.onPageChange] - Callback perubahan nomor halaman
+ * @param {number|null} [props.targetScrollPage] - Nomor halaman target loncat navigasi
+ * @param {() => void} [props.onTargetScrollHandled] - Callback selesai scroll loncat halaman
+ * @param {string|number} [props.bookId] - Identitas buku untuk pelacak baca
+ * @returns {import('react').JSX.Element}
  */
 export const ContinuousPdfViewer = ({
   pdfBuffer,
@@ -17,7 +34,7 @@ export const ContinuousPdfViewer = ({
   onPageChange,
   targetScrollPage,
   onTargetScrollHandled,
-  bookId,
+  bookId: _bookId,
 }) => {
   const containerRef = useRef(null);
   const [pdfDoc, setPdfDoc] = useState(null);
@@ -27,8 +44,6 @@ export const ContinuousPdfViewer = ({
   const [containerWidth, setContainerWidth] = useState(800);
   const [loadError, setLoadError] = useState(null);
 
-  // Status Render Task aktif untuk mencegah tabrakan render di canvas yang sama
-  const renderTasksRef = useRef({});
   const canvasRefs = useRef({});
   const pageContainerRefs = useRef({});
   const pageStackRef = useRef(null);
@@ -37,20 +52,11 @@ export const ContinuousPdfViewer = ({
   const currentViewRef = useRef({ page: currentPage || 1, ratio: 0 });
   const prevZoomRef = useRef(zoom);
   const customFocalYRef = useRef(null);
-
-  // Ref untuk mendeteksi Pinch-to-zoom (2 jari di mobile)
-  const touchStartDistRef = useRef(0);
-  const initialPinchZoomRef = useRef(100);
-  const lastPinchDistRef = useRef(0);
-  const pinchOriginRef = useRef({ x: 0, y: 0, clientX: 0, clientY: 0 });
   const pinchAnchorRef = useRef(null);
-  const isPinchingRef = useRef(false);
-  const pinchRafRef = useRef(null);
-  const touchMoveHandlerRef = useRef(null);
 
   // 1. Muat Dokumen PDF dari ArrayBuffer
   useEffect(() => {
-    if (!pdfBuffer) return;
+    if (!pdfBuffer) return undefined;
     let cancelled = false;
 
     setLoadError(null);
@@ -87,12 +93,12 @@ export const ContinuousPdfViewer = ({
       cancelled = true;
       loadingTask.destroy().catch(() => {});
     };
-  }, [pdfBuffer]);
+  }, [pdfBuffer, onPageChange]);
 
   // 2. Pantau Lebar Kontainer secara Responsif (ResizeObserver)
   useEffect(() => {
     const el = containerRef.current;
-    if (!el) return;
+    if (!el) return undefined;
 
     const updateWidth = () => {
       const w = el.clientWidth;
@@ -106,7 +112,6 @@ export const ContinuousPdfViewer = ({
   }, []);
 
   // 3. Hitung Dimensi Halaman Kanvas Tetap (Fixed Canvas Dimensions)
-  // Menjaga rasio aspek presisi native PDF tanpa distorsi atau peregangan teks
   const isMobile = containerWidth < 640;
   const basePdfWidth = pageDimensions.width || 595.28;
   const basePdfHeight = pageDimensions.height || 841.89;
@@ -116,7 +121,6 @@ export const ContinuousPdfViewer = ({
     ? Math.max(280, containerWidth - 16)
     : Math.min(Math.max(480, containerWidth - 48), 850);
 
-  // Lebar dan tinggi halaman yang tepat mengikuti skala perbesaran
   const displayPageWidth = Math.round(baseFitWidth * (zoom / 100));
   const displayPageHeight = Math.round(displayPageWidth * naturalAspect);
 
@@ -163,7 +167,7 @@ export const ContinuousPdfViewer = ({
 
   useEffect(() => {
     const el = containerRef.current;
-    if (!el) return;
+    if (!el) return undefined;
 
     let ticking = false;
     const onScroll = () => {
@@ -181,8 +185,6 @@ export const ContinuousPdfViewer = ({
   }, [updateReadingPosition]);
 
   // 5. Kunci Posisi Fokus Membaca saat Zoom Berubah (Reading Anchor Lock)
-  // Pinch hanya mengubah transform saat jari bergerak; ukuran PDF dan canvas
-  // dihitung ulang sekali setelah gesture selesai.
   useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container || prevZoomRef.current === zoom) {
@@ -217,120 +219,34 @@ export const ContinuousPdfViewer = ({
     prevZoomRef.current = zoom;
   }, [zoom, displayPageHeight, totalPages]);
 
-  // 6. Preview pinch memakai transform GPU, lalu commit zoom setelah jari dilepas.
-  const handleTouchStart = (e) => {
-    if (e.touches.length !== 2) return;
+  // 6. Integrasi Gesture Multi-Touch Pinch
+  const { handleTouchStart, handleTouchEnd } = usePdfPinchGesture({
+    containerRef,
+    pageStackRef,
+    zoom,
+    setZoom,
+    updateReadingPosition,
+    currentViewRef,
+    pinchAnchorRef,
+  });
 
-    const [firstTouch, secondTouch] = e.touches;
-    const distance = Math.hypot(
-      firstTouch.clientX - secondTouch.clientX,
-      firstTouch.clientY - secondTouch.clientY,
-    );
-    const midpointX = (firstTouch.clientX + secondTouch.clientX) / 2;
-    const midpointY = (firstTouch.clientY + secondTouch.clientY) / 2;
-    const container = containerRef.current;
-    const pageStack = pageStackRef.current;
-    if (!container || !pageStack) return;
+  // 7. Integrasi Renderer Canvas PDF.js
+  usePdfCanvasRenderer({
+    pdfDoc,
+    totalPages,
+    displayPageWidth,
+    containerRef,
+    pageContainerRefs,
+    canvasRefs,
+    currentViewRef,
+    currentPage,
+    zoom,
+  });
 
-    const containerRect = container.getBoundingClientRect();
-    const pageStackRect = pageStack.getBoundingClientRect();
-    const focalY = midpointY - containerRect.top;
-    updateReadingPosition(focalY);
-
-    touchStartDistRef.current = distance;
-    lastPinchDistRef.current = distance;
-    initialPinchZoomRef.current = zoom;
-    pinchOriginRef.current = {
-      x: midpointX - pageStackRect.left,
-      y: midpointY - pageStackRect.top,
-      clientX: midpointX,
-      clientY: midpointY,
-    };
-    pinchAnchorRef.current = { ...currentViewRef.current, focalY };
-    isPinchingRef.current = true;
-    pageStack.style.willChange = 'transform';
-  };
-
-  const handleTouchMove = (e) => {
-    if (!isPinchingRef.current || e.touches.length !== 2) return;
-    if (e.cancelable) e.preventDefault();
-
-    const [firstTouch, secondTouch] = e.touches;
-    const currentDist = Math.hypot(
-      firstTouch.clientX - secondTouch.clientX,
-      firstTouch.clientY - secondTouch.clientY,
-    );
-    const midpointX = (firstTouch.clientX + secondTouch.clientX) / 2;
-    const midpointY = (firstTouch.clientY + secondTouch.clientY) / 2;
-    lastPinchDistRef.current = currentDist;
-
-    const container = containerRef.current;
-    if (container) {
-      pinchAnchorRef.current = {
-        ...currentViewRef.current,
-        focalY: midpointY - container.getBoundingClientRect().top,
-      };
-    }
-
-    if (pinchRafRef.current) cancelAnimationFrame(pinchRafRef.current);
-    pinchRafRef.current = requestAnimationFrame(() => {
-      const pageStack = pageStackRef.current;
-      if (!pageStack || touchStartDistRef.current <= 10) {
-        pinchRafRef.current = null;
-        return;
-      }
-
-      const scale = getPinchScale(
-        initialPinchZoomRef.current,
-        touchStartDistRef.current,
-        currentDist,
-      );
-      const origin = pinchOriginRef.current;
-      pageStack.style.transformOrigin = `${origin.x}px ${origin.y}px`;
-      pageStack.style.transform = `translate(${midpointX - origin.clientX}px, ${midpointY - origin.clientY}px) scale(${scale})`;
-      pinchRafRef.current = null;
-    });
-  };
-
-  touchMoveHandlerRef.current = handleTouchMove;
-
-  const handleTouchEnd = (e) => {
-    if (!isPinchingRef.current || e.touches.length >= 2) return;
-
-    isPinchingRef.current = false;
-    if (pinchRafRef.current) cancelAnimationFrame(pinchRafRef.current);
-    pinchRafRef.current = null;
-
-    const targetZoom = getPinchZoom(
-      initialPinchZoomRef.current,
-      touchStartDistRef.current,
-      lastPinchDistRef.current,
-    );
-    touchStartDistRef.current = 0;
-
-    if (targetZoom === zoom) {
-      pageStackRef.current?.style.removeProperty('transform');
-      pageStackRef.current?.style.removeProperty('transform-origin');
-      pageStackRef.current?.style.removeProperty('will-change');
-      pinchAnchorRef.current = null;
-      return;
-    }
-
-    setZoom(targetZoom);
-  };
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return undefined;
-
-    const handleNativeTouchMove = (event) => touchMoveHandlerRef.current?.(event);
-    container.addEventListener('touchmove', handleNativeTouchMove, { passive: false });
-    return () => container.removeEventListener('touchmove', handleNativeTouchMove);
-  }, []);
-
+  // 8. Handler Zoom Mouse Wheel (Ctrl/Cmd + Wheel)
   useEffect(() => {
     const el = containerRef.current;
-    if (!el) return;
+    if (!el) return undefined;
 
     const handleWheel = (e) => {
       if (e.ctrlKey || e.metaKey) {
@@ -340,7 +256,6 @@ export const ContinuousPdfViewer = ({
         updateReadingPosition(cursorY);
         customFocalYRef.current = cursorY;
 
-        // Perbesaran seamless berkelanjutan tanpa batasan kelipatan 5%
         const delta = -e.deltaY;
         const deltaZoom = delta * 0.15;
         setZoom((prev) => Math.min(300, Math.max(40, Math.round(prev + deltaZoom))));
@@ -349,105 +264,11 @@ export const ContinuousPdfViewer = ({
 
     el.addEventListener('wheel', handleWheel, { passive: false });
     return () => el.removeEventListener('wheel', handleWheel);
-  }, [setZoom]);
+  }, [setZoom, updateReadingPosition]);
 
-  // 7. Render Halaman ke Canvas HTML5 Menggunakan PDF.js
-  const renderPageCanvas = useCallback(
-    async (pageNumber) => {
-      if (!pdfDoc || pageNumber < 1 || pageNumber > totalPages) return;
-      const canvas = canvasRefs.current[pageNumber];
-      if (!canvas) return;
-
-      // Batalkan render task sebelumnya jika masih berjalan di canvas ini
-      if (renderTasksRef.current[pageNumber]) {
-        try {
-          renderTasksRef.current[pageNumber].cancel();
-        } catch {
-          // Abaikan jika sudah selesai
-        }
-      }
-
-      try {
-        const page = await pdfDoc.getPage(pageNumber);
-        const unscaledViewport = page.getViewport({ scale: 1.0 });
-
-        // Hitung skala rendering beresolusi tinggi (Retina / Sharpness, dibatasi maks 2 agar hemat memori)
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const scale = (displayPageWidth / unscaledViewport.width) * dpr;
-        const viewport = page.getViewport({ scale });
-
-        canvas.width = Math.round(viewport.width);
-        canvas.height = Math.round(viewport.height);
-
-        const ctx = canvas.getContext('2d');
-        const renderContext = {
-          canvasContext: ctx,
-          viewport: viewport,
-        };
-
-        const task = page.render(renderContext);
-        renderTasksRef.current[pageNumber] = task;
-        await task.promise;
-      } catch (err) {
-        if (err?.name !== 'RenderingCancelledException') {
-          console.warn(`[ContinuousPdfViewer] Gagal merender halaman ${pageNumber}:`, err);
-        }
-      } finally {
-        delete renderTasksRef.current[pageNumber];
-      }
-    },
-    [pdfDoc, totalPages, displayPageWidth],
-  );
-
-  // 8. IntersectionObserver untuk Lazy Rendering Canvas Halaman
+  // 9. Loncat ke Halaman Tertentu (Target Scroll Page)
   useEffect(() => {
-    if (!pdfDoc || totalPages === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const pageNum = Number(entry.target.getAttribute('data-page-number'));
-          if (!pageNum) return;
-
-          if (entry.isIntersecting) {
-            renderPageCanvas(pageNum);
-          }
-        });
-      },
-      {
-        root: containerRef.current,
-        rootMargin: '400px 0px 400px 0px',
-        threshold: 0.01,
-      },
-    );
-
-    for (let p = 1; p <= totalPages; p++) {
-      const el = pageContainerRefs.current[p];
-      if (el) observer.observe(el);
-    }
-
-    return () => observer.disconnect();
-  }, [pdfDoc, totalPages, renderPageCanvas]);
-
-  // 9. Re-render Halaman Aktif saat Zoom Berubah (Cepat & Ringan)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const activeP = currentViewRef.current.page || currentPage || 1;
-      const pagesToPrioritize = [activeP - 1, activeP, activeP + 1].filter(
-        (p) => p >= 1 && p <= totalPages,
-      );
-
-      pagesToPrioritize.forEach((p) => {
-        renderPageCanvas(p);
-      });
-    }, 80);
-
-    return () => clearTimeout(timer);
-  }, [zoom, displayPageWidth, totalPages, currentPage, renderPageCanvas]);
-
-  // 10. Loncat ke Halaman Tertentu (Target Scroll Page)
-  useEffect(() => {
-    if (!pdfDoc || totalPages === 0 || !targetScrollPage) return;
+    if (!pdfDoc || totalPages === 0 || !targetScrollPage) return undefined;
     const timer = setTimeout(() => {
       if (targetScrollPage >= 1 && targetScrollPage <= totalPages) {
         const pageEl = pageContainerRefs.current[targetScrollPage];
@@ -469,7 +290,6 @@ export const ContinuousPdfViewer = ({
     );
   }
 
-  // Buat array nomor halaman [1, 2, ..., totalPages]
   const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   return (
@@ -487,7 +307,6 @@ export const ContinuousPdfViewer = ({
         overflowAnchor: 'none',
       }}
     >
-      {/* Tampilan Lembar Dokumen Kanvas Tetap (Fixed Sheet Canvas) */}
       <div
         ref={pageStackRef}
         className="mx-auto flex flex-col items-center gap-4"

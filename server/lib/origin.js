@@ -1,15 +1,24 @@
-/* Resolusi origin frontend untuk redirect OAuth (VULN-04).
+/**
+ * Resolusi origin frontend untuk redirect OAuth aman (mitigasi open redirect / VULN-04).
  *
- * `Host` dan `X-Forwarded-Proto` adalah masukan yang dikendalikan penyerang.
- * Keduanya tidak boleh menentukan tujuan redirect kecuali origin hasilnya
- * sudah ada di allowlist. `FRONTEND_ORIGIN` selalu menang bila diisi, dan
- * nilai yang cacat diperlakukan sebagai gagal (null), bukan diam-diam
- * diganti origin turunan Host.
+ * `Host` dan `X-Forwarded-Proto` adalah masukan yang berpotensi dikendalikan penyerang.
+ * Keduanya tidak boleh menentukan tujuan redirect kecuali origin hasilnya sudah ada
+ * di daftar allowlist terverifikasi. Variabel `FRONTEND_ORIGIN` selalu diprioritaskan bila diisi,
+ * dan nilai yang tidak valid diperlakukan sebagai gagal (null).
+ *
+ * @module server/lib/origin
  */
 
 const SAFE_PROTOCOLS = new Set(['http', 'https']);
 
-/** Normalisasi menjadi origin (`protokol://host[:port]`) atau null bila cacat. */
+/**
+ * Normalisasi nilai URL menjadi origin (`protokol://host[:port]`) atau null bila cacat / protokol tidak aman.
+ *
+ * @param {string|null|undefined} value - URL string mentah
+ * @returns {string|null} Origin terformat atau null jika tidak valid
+ * @example
+ * normalizeOrigin('https://wahidiyahbook.com/path?query=1') // => 'https://wahidiyahbook.com'
+ */
 export const normalizeOrigin = (value) => {
   const raw = String(value ?? '').trim();
   if (!raw) return null;
@@ -22,7 +31,12 @@ export const normalizeOrigin = (value) => {
   }
 };
 
-/** Ambil protokol pertama yang sah dari header majemuk; selain http/https diabaikan. */
+/**
+ * Ambil protokol pertama yang sah dari header majemuk; selain http/https diabaikan.
+ *
+ * @param {string|null|undefined} value - Nilai header x-forwarded-proto
+ * @returns {string|null} 'http', 'https', atau null
+ */
 export const sanitizeForwardedProto = (value) => {
   const first = String(value ?? '')
     .split(',')[0]
@@ -34,9 +48,9 @@ export const sanitizeForwardedProto = (value) => {
 /**
  * Tentukan origin frontend yang boleh dituju redirect.
  *
- * @param {object} env - Sumber `FRONTEND_ORIGIN` (biasanya `process.env`).
- * @param {object|null} req - Request Express; boleh null untuk uji env saja.
- * @param {string[]} allowedOrigins - Daftar origin yang sah (CORS allowlist).
+ * @param {object} [env=process.env] - Sumber `FRONTEND_ORIGIN` (biasanya `process.env`).
+ * @param {import('express').Request|null} [req=null] - Request Express; boleh null untuk uji env saja.
+ * @param {string[]} [allowedOrigins=[]] - Daftar origin yang sah (CORS allowlist).
  * @returns {string|null} Origin sah, atau null bila tidak ada yang bisa dipercaya.
  */
 export const resolveFrontendOrigin = (env = process.env, req = null, allowedOrigins = []) => {

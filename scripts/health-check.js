@@ -1,3 +1,10 @@
+/**
+ * @file scripts/health-check.js
+ * @description Skrip otomasi uji kesehatan sistem terpadu (7/7 Quality Checklist).
+ * Memverifikasi integritas kredensial environment (.env), konektivitas gateway pembayaran (Midtrans),
+ * gateway notifikasi (WhatsApp/Fonnte), serta kueri database Supabase (users, books, transactions, events).
+ */
+
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';

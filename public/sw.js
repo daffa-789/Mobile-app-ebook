@@ -26,7 +26,9 @@
 //      termasuk rakitan API yang kini satu sumber untuk Vercel dan server lokal.
 //      Nama berkas hasil build berganti hash, tapi cache app shell lama tetap harus
 //      dibuang supaya navigasi tidak jatuh ke shell versi sebelumnya.
-const CACHE_NAME = 'wahidiyah-app-shell-v20';
+// v21: layar autentikasi dibuat datar (bayangan kartu & cahaya tombol dihapus dari
+//      index.css). Berkas CSS hasil build berganti hash, jadi app shell lama dibuang.
+const CACHE_NAME = 'wahidiyah-app-shell-v21';
 const PRECACHE_URLS = [
   '/',
   '/index.html',

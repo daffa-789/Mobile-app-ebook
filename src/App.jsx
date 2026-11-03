@@ -1,10 +1,15 @@
-import { Suspense, lazy, useEffect, useRef } from 'react';
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useApp } from '@context/AppContext';
-import { DeviceFrame } from '@ui/DeviceFrame';
-import { InAppReminders } from '@ui/InAppReminders';
+/**
+ * Komponen Utama Router Aplikasi Wahidiyah Book.
+ * Mengoordinasikan deklarasi rute halaman, pengalihan URL, dan pemuatan kode asinkron (code-splitting).
+ *
+ * @module src/App
+ */
+
+import { Suspense, lazy } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ScrollRestoration } from '@ui/ScrollRestoration';
 import { PwaInstallBanner } from './components/PwaInstallBanner';
+import { layout } from '@lib/styles';
 
 import { LoginScreen } from '@features/auth/LoginScreen';
 import { RegisterScreen } from '@features/auth/RegisterScreen';
@@ -12,8 +17,18 @@ import { HomeScreen } from '@features/home/HomeScreen';
 import { CalendarScreen } from '@features/calendar/CalendarScreen';
 import { ProScreen } from '@features/subscription/ProScreen';
 import { PaymentMethodScreen } from '@features/payment/PaymentMethodScreen';
-import { layout } from '@lib/styles';
 
+import {
+  ScreenLoading,
+  RequireAuth,
+  Framed,
+  UserOnly,
+  shellPage,
+  AdminRoute,
+} from './components/routing/RouteGuards';
+import { RouterBridge, ProfileRoutePreloader } from './components/routing/RouterBridge';
+
+// Layar Pemuatan Asinkron (Code-Splitting via React.lazy)
 const VerifyEmailScreen = lazy(() =>
   import('@features/auth/VerifyEmailScreen').then((m) => ({ default: m.VerifyEmailScreen })),
 );
@@ -39,6 +54,7 @@ const PaymentSuccessScreen = lazy(() =>
     default: m.PaymentSuccessScreen,
   })),
 );
+
 const loadEditProfileScreen = () =>
   import('@features/profile/EditProfileScreen').then((m) => ({ default: m.EditProfileScreen }));
 const loadSubscriptionHistoryScreen = () =>
@@ -49,6 +65,7 @@ const loadHelpCenterScreen = () =>
   import('@features/help/HelpCenterScreen').then((m) => ({ default: m.HelpCenterScreen }));
 const loadAboutScreen = () =>
   import('@features/about/AboutScreen').then((m) => ({ default: m.AboutScreen }));
+
 const EditProfileScreen = lazy(loadEditProfileScreen);
 const SubscriptionHistoryScreen = lazy(loadSubscriptionHistoryScreen);
 const HelpCenterScreen = lazy(loadHelpCenterScreen);
@@ -57,99 +74,14 @@ const AdminDashboard = lazy(() =>
   import('@features/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })),
 );
 
-const ScreenLoading = () => (
-  <div
-    className="min-h-[400px] w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6"
-    aria-label="Memuat halaman..."
-  >
-    <div className="rounded-3xl bg-cream-100 p-6 animate-pulse border border-cream-200">
-      <div className="h-6 w-48 rounded-md bg-cream-200/80 mb-3" />
-      <div className="h-4 w-72 max-w-full rounded-md bg-cream-200/60" />
-    </div>
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <div className="h-28 rounded-2xl bg-cream-100 border border-cream-200 animate-pulse" />
-      <div className="h-28 rounded-2xl bg-cream-100 border border-cream-200 animate-pulse" />
-      <div className="h-28 rounded-2xl bg-cream-100 border border-cream-200 animate-pulse" />
-    </div>
-  </div>
-);
-
-const AuthBoot = () => (
-  <div className="min-h-screen bg-cream-100 flex items-center justify-center px-6">
-    <div
-      role="status"
-      aria-label="Memeriksa sesi pengguna"
-      className="flex items-center gap-3 rounded-2xl border border-cream-300 bg-cream-50 px-5 py-4 text-body font-semibold text-ink-700 shadow-sm"
-    >
-      <span className="h-4 w-4 rounded-full border-2 border-brand-200 border-t-brand-700 animate-spin" />
-    </div>
-  </div>
-);
-
-/**
- * RequireAuth (sebelumnya GuestOnly): Memastikan pengguna sudah terautentikasi (login).
- * Jika belum login, rute diarahkan ke /login dan lokasi asal disimpan untuk pengalihan pasca-login.
- */
-const RequireAuth = ({ children }) => {
-  const { isLoggedIn, authReady, rememberIntendedLocation } = useApp();
-  const location = useLocation();
-  const intendedPath = `${location.pathname}${location.search || ''}`;
-
-  const wasAuthorizedHereRef = useRef(false);
-
-  useEffect(() => {
-    if (isLoggedIn) {
-      wasAuthorizedHereRef.current = true;
-      return;
-    }
-    if (!authReady || wasAuthorizedHereRef.current) return;
-    rememberIntendedLocation(intendedPath);
-  }, [authReady, isLoggedIn, intendedPath, rememberIntendedLocation]);
-
-  if (!authReady) return <AuthBoot />;
-  if (!isLoggedIn) return <Navigate to="/login" replace />;
-  return children;
-};
-
-const Framed = ({ children }) => <DeviceFrame>{children}</DeviceFrame>;
+const PROFILE_LOADERS = [
+  loadEditProfileScreen,
+  loadSubscriptionHistoryScreen,
+  loadHelpCenterScreen,
+  loadAboutScreen,
+];
 
 const authPage = (node) => <div className={layout.screen}>{node}</div>;
-
-const Shell = ({ children }) => (
-  <RequireAuth>
-    <Framed>{children}</Framed>
-  </RequireAuth>
-);
-
-const UserOnly = ({ children }) => {
-  const { authReady, user } = useApp();
-  if (!authReady) return <AuthBoot />;
-  if (user.role === 'admin') return <Navigate to="/admin" replace />;
-  return children;
-};
-
-const shellPage = (node) => (
-  <UserOnly>
-    <Shell>
-      <Suspense fallback={<ScreenLoading />}>{node}</Suspense>
-
-      <InAppReminders />
-    </Shell>
-  </UserOnly>
-);
-
-const AdminRoute = ({ children }) => {
-  const { isLoggedIn, authReady, user } = useApp();
-  if (!authReady) return <AuthBoot />;
-
-  if (!isLoggedIn) return <Navigate to="/login" replace />;
-
-  if (user.role !== 'admin') {
-    return <Navigate to="/" replace />;
-  }
-  return children;
-};
-
 const subscriptionHistoryPage = shellPage(<SubscriptionHistoryScreen />);
 const helpCenterPage = shellPage(<HelpCenterScreen />);
 const editProfilePage = shellPage(<EditProfileScreen />);
@@ -164,63 +96,17 @@ const adminPortalPage = (
   </Framed>
 );
 
-const RouterBridge = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { setRouterNavigator, syncScreenFromPath } = useApp();
-
-  useEffect(() => {
-    setRouterNavigator(navigate);
-  }, [navigate, setRouterNavigator]);
-
-  useEffect(() => {
-    syncScreenFromPath(location.pathname);
-  }, [location.pathname, syncScreenFromPath]);
-
-  return null;
-};
-
-const ProfileRoutePreloader = () => {
-  const { authReady, isLoggedIn, user } = useApp();
-
-  useEffect(() => {
-    if (!authReady || !isLoggedIn || user?.role === 'admin') return undefined;
-
-    let cancelled = false;
-    const preloadRoutes = () => {
-      if (cancelled) return;
-      void Promise.allSettled([
-        loadEditProfileScreen(),
-        loadSubscriptionHistoryScreen(),
-        loadHelpCenterScreen(),
-        loadAboutScreen(),
-      ]);
-    };
-
-    if (typeof window.requestIdleCallback === 'function') {
-      const idleCallbackId = window.requestIdleCallback(preloadRoutes, { timeout: 1500 });
-      return () => {
-        cancelled = true;
-        window.cancelIdleCallback?.(idleCallbackId);
-      };
-    }
-
-    const timeoutId = window.setTimeout(preloadRoutes, 300);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
-    };
-  }, [authReady, isLoggedIn, user?.role]);
-
-  return null;
-};
-
+/**
+ * Komponen root aplikasi.
+ *
+ * @returns {import('react').JSX.Element}
+ */
 function App() {
   return (
     <>
       <RouterBridge />
       <ScrollRestoration />
-      <ProfileRoutePreloader />
+      <ProfileRoutePreloader loaders={PROFILE_LOADERS} />
       <PwaInstallBanner />
       <Suspense fallback={<ScreenLoading />}>
         <Routes>

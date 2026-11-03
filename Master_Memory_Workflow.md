@@ -1196,6 +1196,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R73 | Pemeliharaan sistem 1 Nov 2026: Pemeriksaan kesehatan 7/7, script quality gate, dan optimasi aksesibilitas — lihat 15.3. |
 | R74 | Peningkatan tooling 2 Nov 2026: Quality gate `check:full`, standardisasi JSDoc rute/layanan, dan penguatan pembaca PDF — lihat 15.4. |
 | R75 | Dokumentasi arsitektur terpadu 3 Nov 2026: Standardisasi JSDoc menyeluruh pada modul client, lib server, service layer, dan runner — lihat 15.5. |
+| R76 | Dekomposisi modular & pembersihan kode 3 Nov 2026: Pemecahan CarouselTab, PaymentConfirmScreen, ContinuousPdfViewer, dan eliminasi dead import — lihat 15.6. |
 
 ### 15.1 Yang sudah tidak ada lagi (R71, 30 Oktober 2026)
 
@@ -1221,6 +1222,15 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `auth_service.js:350`.
+
+### 15.6 Pemeliharaan R76 (3 November 2026)
+
+| Perubahan | Rincian |
+|---|---|
+| Pemecahan Carousel Admin | `CarouselTab.jsx` dipecah menjadi subkomponen modular (`src/features/admin/carousel/CarouselSlideItem.jsx`, `CarouselFormPanel.jsx`) dan custom hook `src/features/admin/hooks/useAdminCarouselEditor.js`. |
+| Modularisasi Konfirmasi Pembayaran | `PaymentConfirmScreen.jsx` dipecah menjadi modul independen (`PaymentPlanSummary.jsx`, `QrisPaymentCard.jsx`, `ManualPaymentForm.jsx`, `PaymentProcessingOverlay.jsx`). |
+| Modularisasi Pembaca PDF | Lembar kanvas halaman pada `ContinuousPdfViewer.jsx` dipisahkan ke subkomponen terdedikasi `src/features/reader/PdfPageSheet.jsx`. |
+| Pembersihan Dead Code | Mengeliminasi dead import ikon yang tidak terpakai (`ArrowLeft` pada `EditProfileScreen.jsx`). |
 
 ### 15.5 Pemeliharaan R75 (3 November 2026)
 

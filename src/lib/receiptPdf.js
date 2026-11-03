@@ -10,8 +10,11 @@ const MARGIN = 6;
 const ISI = LEBAR - MARGIN * 2;
 const LEBAR_NILAI = ISI * 0.48;
 
-/* Indentasi nilai panjang yang dicetak di barisnya sendiri. */
-const INDENT = 6;
+/* Kolom tetap untuk nilai yang tidak muat sebaris (nama, email): label jalan di
+   kiri, nilainya turun ke baris sendiri mulai kolom ini dan rata di situ — ruang
+   tengah-kanan sengaja dibiarkan kosong supaya rapi. */
+const KOLOM = MARGIN + 18;
+const LEBAR_KOLOM = MARGIN + ISI - KOLOM;
 
 const UKURAN = { judul: 14, kecil: 7, teks: 8 };
 
@@ -26,14 +29,12 @@ const lebarSatuAksara = (pt) => pt * 0.3528 * 0.6;
 const perkiraanBaris = (teks, pt, maks) =>
   Math.max(1, Math.ceil(String(teks).length / Math.floor(maks / lebarSatuAksara(pt))));
 
-const susunBaris = (data, printDate) => {
+const susunBaris = (data) => {
   const { refNo, dateStr, planName, amount, adminFee, totalPaid, userName, userEmail, userPhone } =
     data;
 
   const baris = [
     { jenis: 'judul', teks: 'WAHIDIYAH BOOK' },
-    { jenis: 'kecil', teks: 'Perpustakaan Digital Sholawat Wahidiyah' },
-    { jenis: 'kecil', teks: 'https://wahidiyah-book.vercel.app' },
     { jenis: 'aturan' },
     { jenis: 'kecil', teks: 'KWITANSI PEMBAYARAN', tebal: true },
     { jenis: 'pasang', label: 'No', nilai: String(refNo) },
@@ -60,11 +61,8 @@ const susunBaris = (data, printDate) => {
     { jenis: 'pasang', label: 'Bayar', nilai: 'QRIS' },
     { jenis: 'aturan' },
     { jenis: 'kecil', teks: '*   L U N A S   *', tebal: true },
-    { jenis: 'kecil', teks: 'Terverifikasi gateway Midtrans' },
-    { jenis: 'kecil', teks: 'Sah menurut UU ITE 11/2008 Ps. 5' },
     { jenis: 'aturan' },
     { jenis: 'kecil', teks: 'Terima kasih sudah berlangganan' },
-    { jenis: 'kecil', teks: `Dicetak ${printDate} WIB` },
     { jenis: 'kecil', teks: 'Bantuan: support@bukuku.id' },
   );
 
@@ -83,7 +81,7 @@ const tinggiBaris = (b) => {
   const satuBaris = perkiraanBaris(b.nilai, UKURAN.teks, LEBAR_NILAI) === 1;
   return satuBaris
     ? TINGGI.teks
-    : TINGGI.teks * (1 + perkiraanBaris(b.nilai, UKURAN.teks, ISI - INDENT));
+    : TINGGI.teks * (1 + perkiraanBaris(b.nilai, UKURAN.teks, LEBAR_KOLOM));
 };
 
 /**
@@ -97,15 +95,7 @@ const tinggiBaris = (b) => {
 export const downloadReceiptPdf = (details, user) => {
   const data = resolveReceiptFields(details, user);
 
-  const printDate = new Date().toLocaleString('id-ID', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  const baris = susunBaris(data, printDate);
+  const baris = susunBaris(data);
   const tinggi = baris.reduce((t, b) => t + tinggiBaris(b), 0) + MARGIN + 4;
 
   const doc = new jsPDF({
@@ -175,11 +165,12 @@ export const downloadReceiptPdf = (details, user) => {
     }
 
     /* Nilai panjang (nama, email) tidak dipotong di tengah kata: label jalan
-       sendiri, lalu nilainya satu baris penuh rata kiri dengan indentasi. */
+       sendiri, lalu nilainya dimulai pada kolom tetap dan rata di kolom itu,
+       sehingga ruang tengah-kanan dibiarkan kosong. */
     doc.text(b.label, MARGIN, y + 3);
     y += TINGGI.teks;
-    const barisNilai = doc.splitTextToSize(nilai, ISI - INDENT);
-    doc.text(barisNilai, MARGIN + INDENT, y + 3);
+    const barisNilai = doc.splitTextToSize(nilai, LEBAR_KOLOM);
+    doc.text(barisNilai, KOLOM, y + 3);
     y += TINGGI.teks * barisNilai.length;
   }
 

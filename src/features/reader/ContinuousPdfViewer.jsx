@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { pdfjsLib } from './pdfWorkerSetup';
 import { getPinchScale, getPinchZoom } from './zoomUtils';
+import { PdfPageSheet } from './PdfPageSheet';
 
 /**
  * ContinuousPdfViewer
@@ -495,27 +496,15 @@ export const ContinuousPdfViewer = ({
         }}
       >
         {pageNumbers.map((pageNum) => (
-          <div
+          <PdfPageSheet
             key={pageNum}
-            id={`pdf-page-${pageNum}`}
-            data-page-number={pageNum}
-            aria-label={`Halaman ${pageNum} dari ${totalPages}`}
-            ref={(el) => (pageContainerRefs.current[pageNum] = el)}
-            className="relative shadow-md md:shadow-lg rounded-sm sm:rounded-md overflow-hidden bg-ui-card border border-ink-200/50 dark:border-ink-700/50"
-            style={{
-              width: `${displayPageWidth}px`,
-              height: `${displayPageHeight}px`,
-            }}
-          >
-            <canvas
-              ref={(el) => (canvasRefs.current[pageNum] = el)}
-              className="block w-full h-full"
-              style={{
-                width: `${displayPageWidth}px`,
-                height: `${displayPageHeight}px`,
-              }}
-            />
-          </div>
+            pageNum={pageNum}
+            totalPages={totalPages}
+            displayPageWidth={displayPageWidth}
+            displayPageHeight={displayPageHeight}
+            registerContainer={(el) => (pageContainerRefs.current[pageNum] = el)}
+            registerCanvas={(el) => (canvasRefs.current[pageNum] = el)}
+          />
         ))}
       </div>
     </div>

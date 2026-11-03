@@ -1,3 +1,14 @@
+/**
+ * @file scripts/start.js
+ * @description Runner mode produksi terpadu (npm start) untuk Wahidiyah Book.
+ * Memeriksa ketersediaan direktori dist/, mengompilasi aset Vite otomatis bila belum ada,
+ * mendeteksi ketersediaan port, dan menjalankan server Express produksi dengan SERVE_STATIC=true.
+ *
+ * Mendukung opsi flag CLI:
+ *  - `--rebuild` : Memaksa kompilasi ulang dist/ sebelum server menyala
+ *  - `--no-build` : Melewatkan pemeriksaan kompilasi (wajib sudah ada dist/)
+ */
+
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';

@@ -95,7 +95,7 @@ export const Framed = ({ children }) => <DeviceFrame>{children}</DeviceFrame>;
  * @param {import('react').ReactNode} props.children - Komponen anak
  * @returns {import('react').JSX.Element}
  */
-export const Shell = ({ children }) => (
+const Shell = ({ children }) => (
   <RequireAuth>
     <Framed>{children}</Framed>
   </RequireAuth>

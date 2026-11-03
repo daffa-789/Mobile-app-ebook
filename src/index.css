@@ -16,34 +16,18 @@
     'Helvetica Neue',
     sans-serif;
   color-scheme: light;
-
-  /* Token struktural (tidak berubah antar tema). Nilainya disuntikkan ulang
-     oleh src/theme/themeInjector.js dari component.json. */
-  --radius-btn: 8px;
-  --radius-card: 10px;
-  --radius-input: 8px;
-  --radius-modal: 12px;
-
-  --sidebar-w-expanded: 248px;
-  --sidebar-w-collapsed: 68px;
-
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   PALET WARNA — "Editorial Elegan" (Terang & Malam)
+   PALET WARNA — "Editorial Elegan" (Terang)
    ══════════════════════════════════════════════════════════════════════════
    Tiap warna punya DUA bentuk:
      --cream-50        → tripel RGB ("251 248 243") dipakai Tailwind
      --color-cream-50  → hex ("#FBF8F3") dipakai kelas kustom di berkas ini
 
    Blok ini adalah FALLBACK statis agar render pertama tidak berkedip sebelum
-   themeInjector.js berjalan. Nilai runtime tetap bersumber dari component.json.
-
-   `.theme-light-scope` memaksa subtree tertentu (mis. pembaca PDF yang punya
-   sistem tema sendiri) agar selalu memakai palet terang. */
-:root,
-.theme-light-scope {
+   themeInjector.js berjalan. Nilai runtime tetap bersumber dari component.json. */
+:root {
   color-scheme: light;
 
   --brand-50: 240 247 243;
@@ -247,15 +231,7 @@ body,
   }
 }
 
-/* ── Mobile utilities: scrollbar-less horizontal lists & safe-area padding ── */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
+/* ── Mobile utility: padding aman untuk perangkat berponi ── */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 0.75rem);
 }
@@ -478,80 +454,4 @@ body,
     opacity: 1;
     transform: translateY(0) scale(1);
   }
-}
-
-/* ==========================================================
-   DYNAMIC DESIGN SYSTEM CLASSES (TERHUBUNG KE component.json)
-   Ubah nilai di component.json maka class di bawah otomatis berubah!
-   ========================================================== */
-
-/* 1. Tombol Dinamis */
-.app-btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background-color: var(--color-brand-primary, #14523a);
-  color: #ffffff;
-  font-weight: 700;
-  border-radius: var(--radius-btn, 14px);
-  height: var(--btn-height-md, 44px);
-  padding-left: var(--btn-px-md, 18px);
-  padding-right: var(--btn-px-md, 18px);
-  font-size: var(--btn-font-md, 13.5px);
-  transition:
-    background-color var(--duration-fast, 140ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
-    transform var(--duration-fast, 140ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
-    box-shadow var(--duration-fast, 140ms) var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
-  box-shadow: 0 6px 18px -6px rgba(20, 82, 58, 0.45);
-}
-
-.app-btn-primary:hover {
-  background-color: var(--color-brand-primary-hover, #0e3d2c);
-  transform: translateY(-1px);
-}
-
-.app-btn-primary:active {
-  transform: translateY(0);
-}
-
-/* 2. Kartu Dinamis */
-.app-card {
-  background-color: var(--color-ui-card, #fffdfa);
-  border-radius: var(--radius-card, 18px);
-  padding: var(--card-padding-md, 20px);
-  border: var(--card-border-width, 1px) solid var(--color-ui-border, #e4d9c6);
-  box-shadow: var(
-    --shadow-sm,
-    0 2px 8px -2px rgba(28, 26, 23, 0.06),
-    0 1px 2px rgba(28, 26, 23, 0.04)
-  );
-}
-
-/* 3. Input Dinamis */
-.app-input {
-  width: 100%;
-  height: var(--input-height, 48px);
-  border-radius: var(--radius-input, 12px);
-  padding-left: var(--input-px, 16px);
-  padding-right: var(--input-px, 16px);
-  font-size: var(--input-font-size, 14px);
-  border: var(--input-border-width, 1px) solid var(--color-ui-border, #e4d9c6);
-  background-color: var(--color-ui-card, #fffdfa);
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-}
-
-.app-input:focus {
-  outline: none;
-  border-color: var(--color-brand-primary, #14523a);
-  box-shadow: 0 0 0 3px rgba(20, 82, 58, 0.14);
-}
-
-/* 4. Frame HP Dinamis */
-.app-device-frame {
-  max-width: var(--device-frame-max-width, 430px);
-  border-radius: var(--device-frame-radius, 32px);
-  border: var(--device-frame-border-width, 8px) solid var(--device-frame-border-color, #1d1b17);
 }

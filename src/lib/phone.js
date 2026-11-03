@@ -41,12 +41,3 @@ export const displayPhone = (raw) => {
   }
   return normalized;
 };
-
-/**
- * Periksa apakah nomor telepon merupakan nomor seluler Indonesia yang valid (628 diikuti 7–12 digit).
- *
- * @param {string|number|null|undefined} raw - Nomor telepon yang akan diperiksa
- * @returns {boolean} True jika format nomor valid
- * @example isValidPhone('081234567890') // => true
- */
-export const isValidPhone = (raw) => /^628\d{7,12}$/.test(normalizePhone(raw));

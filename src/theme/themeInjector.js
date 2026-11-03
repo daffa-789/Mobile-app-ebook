@@ -101,103 +101,6 @@ const buildColorVars = (palette) => {
   return rows;
 };
 
-const buildStructuralVars = (tokens) => {
-  const rows = [];
-  const push = (name, value) => {
-    if (value !== undefined && value !== null && value !== '') rows.push([name, value]);
-  };
-
-  const cr = tokens.shapes?.componentRadius;
-  if (cr) {
-    push('--radius-btn', cr.button);
-    push('--radius-card', cr.card);
-    push('--radius-modal', cr.modal);
-    push('--radius-input', cr.input);
-    push('--radius-badge', cr.badge);
-  }
-
-  const btn = tokens.components?.button;
-  if (btn) {
-    push('--radius-btn', btn.radius);
-    push('--btn-height-sm', btn.heightSm);
-    push('--btn-height-md', btn.heightMd);
-    push('--btn-height-lg', btn.heightLg);
-    push('--btn-px-sm', btn.paddingXSm);
-    push('--btn-px-md', btn.paddingXMd);
-    push('--btn-px-lg', btn.paddingXLg);
-    push('--btn-font-sm', btn.fontSizeSm);
-    push('--btn-font-md', btn.fontSizeMd);
-    push('--btn-font-lg', btn.fontSizeLg);
-  }
-
-  const card = tokens.components?.card;
-  if (card) {
-    push('--radius-card', card.radius);
-    push('--card-padding-sm', card.paddingSm);
-    push('--card-padding-md', card.paddingMd);
-    push('--card-padding-lg', card.paddingLg);
-    push('--card-border-width', card.borderWidth);
-    push('--card-shadow', card.shadow);
-  }
-
-  const inp = tokens.components?.input;
-  if (inp) {
-    push('--radius-input', inp.radius);
-    push('--input-height', inp.height);
-    push('--input-px', inp.paddingX);
-    push('--input-font-size', inp.fontSize);
-    push('--input-border-width', inp.borderWidth);
-  }
-
-  const frame = tokens.components?.deviceFrame;
-  if (frame) {
-    push('--device-frame-radius', frame.radius);
-    push('--device-frame-max-width', frame.maxWidth);
-    push('--device-frame-max-height', frame.maxHeight);
-    push('--device-frame-border-width', frame.borderWidth);
-    push('--device-frame-border-color', frame.borderColor);
-  }
-
-  const modal = tokens.components?.modal;
-  if (modal) {
-    push('--radius-modal', modal.radius);
-    push('--modal-padding', modal.padding);
-    push('--modal-max-width', modal.maxWidth);
-  }
-
-  const sb = tokens.components?.sidebar;
-  if (sb) {
-    push('--sidebar-w-expanded', sb.widthExpanded);
-    push('--sidebar-w-collapsed', sb.widthCollapsed);
-    push('--sidebar-bg', sb.background);
-    push('--sidebar-item-radius', sb.itemRadius);
-  }
-
-  if (tokens.elevation) {
-    Object.entries(tokens.elevation).forEach(([key, value]) => push(`--shadow-${key}`, value));
-  }
-
-  const m = tokens.motion;
-  if (m) {
-    push('--duration-fast', m.durationFast);
-    push('--duration-base', m.durationBase);
-    push('--duration-slow', m.durationSlow);
-    push('--ease-out', m.easeOut);
-    push('--ease-in-out', m.easeInOut);
-  }
-
-  const L = tokens.layout;
-  if (L) {
-    push('--content-narrow', L.contentNarrow);
-    push('--content-default', L.contentDefault);
-    push('--content-wide', L.contentWide);
-    push('--page-padding-x', L.pagePaddingX);
-    push('--section-gap', L.sectionGap);
-  }
-
-  return rows;
-};
-
 const toBlock = (selector, rows) => {
   if (!rows.length) return '';
   const body = rows.map(([name, value]) => `  ${name}: ${value};`).join('\n');
@@ -207,7 +110,7 @@ const toBlock = (selector, rows) => {
 function applyThemeTokens(tokens = themeConfig) {
   if (typeof document === 'undefined') return;
 
-  const rows = [...buildColorVars(tokens.colors), ...buildStructuralVars(tokens)];
+  const rows = buildColorVars(tokens.colors);
 
   const css = toBlock(':root', rows);
 

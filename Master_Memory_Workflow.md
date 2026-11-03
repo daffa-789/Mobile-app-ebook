@@ -1324,7 +1324,7 @@ Duplikasi dicari dengan pemindai blok (shingle 6 baris, sadar-string) di seluruh
 | Hook Pinch & Render PDF | Ekstraksi `usePdfPinchGesture.js` (touch multi-touch GPU) dan `usePdfCanvasRenderer.js` (antrean render PDF.js & lazy observer) dari `ContinuousPdfViewer.jsx`. |
 | Modularisasi Rute App | Pemecahan `App.jsx` ke `src/components/routing/RouteGuards.jsx` dan `src/components/routing/RouterBridge.jsx`, menyisakan tabel rute deklaratif bersih. |
 | Subkomponen Autentikasi OTP | Pemecahan `VerifyEmailScreen.jsx` ke `PasswordResetSuccess.jsx`, `OtpDevNotice.jsx`, dan `OtpResendAction.jsx`. |
-| Desain Sistem & Token | Penegasan arsitektur token desain terpusat pada `component.json` yang disuntikkan via `themeInjector.js` ke seluruh variabel CSS, sizing, palette, dan radius komponen. |
+| Desain Sistem & Token | Penegasan arsitektur token desain terpusat pada `component.json`. Palet warna disuntikkan `themeInjector.js` menjadi CSS variable; sizing, radius, elevasi, dan layout dikonsumsi langsung oleh `tailwind.config.js`. Lapisan CSS variable struktural (`--radius-*`, `--btn-*`, `--card-*`, `--input-*`, `--shadow-*`, `--duration-*`, dsb.) sudah dibuang karena tidak ada satu pun pembaca setelah kelas `.app-*` dihapus. |
 
 ### 15.7 Pemeliharaan R77 (3 November 2026)
 

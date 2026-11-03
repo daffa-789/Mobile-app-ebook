@@ -22,7 +22,11 @@
 //      memenuhi kotak lencana, jadi pelatnya kini whole-square di kedua tema.
 // v19: pelat putih dibuang lagi. Wordmark QRIS satu warna, jadi ia dibalik lewat
 //      dark:invert (penanda mono pada katalog metode) sehingga menyatu dengan kartu.
-const CACHE_NAME = 'wahidiyah-app-shell-v19';
+// v20: service layer dipecah (paket auth/ & payment/) dan duplikasi kode dihapus,
+//      termasuk rakitan API yang kini satu sumber untuk Vercel dan server lokal.
+//      Nama berkas hasil build berganti hash, tapi cache app shell lama tetap harus
+//      dibuang supaya navigasi tidak jatuh ke shell versi sebelumnya.
+const CACHE_NAME = 'wahidiyah-app-shell-v20';
 const PRECACHE_URLS = [
   '/',
   '/index.html',

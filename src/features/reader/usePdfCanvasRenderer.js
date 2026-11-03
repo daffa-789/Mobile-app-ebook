@@ -1,12 +1,28 @@
 /**
  * Custom hook untuk mengelola proses rendering kanvas halaman PDF berbasis Mozilla PDF.js.
- * Mengimplementasikan antrean rendering aman, pembatalan task, rendering Retina HD,
- * serta lazy-rendering melalui IntersectionObserver untuk menghemat penggunaan memori peramban.
+ *
+ * Prinsip utama: kanvas yang terlihat tidak pernah dikosongkan lebih dulu. Mengubah
+ * `canvas.width`/`canvas.height` menghapus isinya seketika, dan bila pdf.js lalu
+ * menggambar secara asinkron di atasnya, halaman berkedip putih setiap kali zoom
+ * selesai. Karena itu setiap halaman dirender ke kanvas buffer, lalu hasilnya disalin
+ * sekali (drawImage) ke kanvas tampil pada task yang sama.
+ *
+ * Rendering tetap lazy lewat IntersectionObserver. Fungsi render dibuat stabil
+ * (membaca parameter terbaru dari ref) supaya pergantian zoom tidak membangun ulang
+ * pengamat dan memicu gelombang render ulang seluruh halaman yang sedang terlihat.
  *
  * @module src/features/reader/usePdfCanvasRenderer
  */
 
 import { useRef, useCallback, useEffect } from 'react';
+
+/* Batas luas backing store satu halaman (piksel). HP sering memakai devicePixelRatio 3
+   dan zoom 300% pada halaman A4 menghasilkan kanvas puluhan juta piksel — memori habis
+   dan render melambat. Di atas batas ini skala diturunkan proporsional: sedikit kurang
+   tajam jauh lebih baik daripada jank. */
+const MAX_CANVAS_PIXELS = 12_000_000;
+
+const MAX_DPR = 2;
 
 /**
  * Hook pengelola render kanvas PDF.js.
@@ -37,44 +53,75 @@ export function usePdfCanvasRenderer({
   zoom,
 }) {
   const renderTasksRef = useRef({});
+  // Ukuran yang sudah tergambar per halaman, supaya permintaan ulang yang sama diabaikan.
+  const renderedKeyRef = useRef({});
+  const visiblePagesRef = useRef(new Set());
 
-  // 1. Render Halaman ke Canvas HTML5 Menggunakan PDF.js
-  const renderPageCanvas = useCallback(
+  /* Parameter terbaru dibaca dari ref, bukan dari closure, sehingga renderPageCanvas
+     tidak perlu dibuat ulang setiap kali zoom berubah. */
+  const paramsRef = useRef({ pdfDoc, totalPages, displayPageWidth });
+  paramsRef.current = { pdfDoc, totalPages, displayPageWidth };
+
+  const buatBuffer = (lebar, tinggi) => {
+    if (typeof OffscreenCanvas === 'function') return new OffscreenCanvas(lebar, tinggi);
+    const c = document.createElement('canvas');
+    c.width = lebar;
+    c.height = tinggi;
+    return c;
+  };
+
+  // 1. Render satu halaman ke buffer, lalu salin sekaligus ke kanvas tampil.
+  const gambarSekarang = useCallback(
     async (pageNumber) => {
-      if (!pdfDoc || pageNumber < 1 || pageNumber > totalPages) return;
+      const {
+        pdfDoc: dokumen,
+        totalPages: total,
+        displayPageWidth: lebarTarget,
+      } = paramsRef.current;
+      if (!dokumen || pageNumber < 1 || pageNumber > total) return;
+
       const canvas = canvasRefs.current[pageNumber];
       if (!canvas) return;
 
-      // Batalkan render task sebelumnya jika masih berjalan di canvas ini
-      if (renderTasksRef.current[pageNumber]) {
-        try {
-          renderTasksRef.current[pageNumber].cancel();
-        } catch {
-          // Abaikan jika sudah selesai
-        }
-      }
-
       try {
-        const page = await pdfDoc.getPage(pageNumber);
-        const unscaledViewport = page.getViewport({ scale: 1.0 });
+        const page = await dokumen.getPage(pageNumber);
+        const dasar = page.getViewport({ scale: 1.0 });
+        if (!(dasar.width > 0) || !(dasar.height > 0)) return;
 
-        // Hitung skala rendering beresolusi tinggi (Retina / Sharpness, dibatasi maks 2 agar hemat memori)
-        const dpr = Math.min(window.devicePixelRatio || 1, 2);
-        const scale = (displayPageWidth / unscaledViewport.width) * dpr;
-        const viewport = page.getViewport({ scale });
+        const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+        let skala = (lebarTarget / dasar.width) * dpr;
+        const luas = dasar.width * skala * (dasar.height * skala);
+        if (luas > MAX_CANVAS_PIXELS) skala *= Math.sqrt(MAX_CANVAS_PIXELS / luas);
 
-        canvas.width = Math.round(viewport.width);
-        canvas.height = Math.round(viewport.height);
+        const kunci = `${Math.round(lebarTarget)}@${skala.toFixed(3)}`;
+        if (renderedKeyRef.current[pageNumber] === kunci) return;
 
-        const ctx = canvas.getContext('2d');
-        const renderContext = {
-          canvasContext: ctx,
-          viewport: viewport,
-        };
+        // Batalkan render task sebelumnya jika masih berjalan di halaman ini
+        const berjalan = renderTasksRef.current[pageNumber];
+        if (berjalan) {
+          try {
+            berjalan.cancel();
+          } catch {
+            /* abaikan jika sudah selesai */
+          }
+        }
 
-        const task = page.render(renderContext);
-        renderTasksRef.current[pageNumber] = task;
-        await task.promise;
+        const viewport = page.getViewport({ scale: skala });
+        const lebar = Math.round(viewport.width);
+        const tinggi = Math.round(viewport.height);
+
+        const buffer = buatBuffer(lebar, tinggi);
+        const tugas = page.render({ canvasContext: buffer.getContext('2d'), viewport });
+        renderTasksRef.current[pageNumber] = tugas;
+        await tugas.promise;
+
+        /* Resize dan penyalinan terjadi pada task yang sama, jadi peramban tidak
+           sempat melukis kanvas kosong di antaranya. */
+        canvas.width = lebar;
+        canvas.height = tinggi;
+        canvas.getContext('2d').drawImage(buffer, 0, 0);
+
+        renderedKeyRef.current[pageNumber] = kunci;
       } catch (err) {
         if (err?.name !== 'RenderingCancelledException') {
           console.warn(`[ContinuousPdfViewer] Gagal merender halaman ${pageNumber}:`, err);
@@ -83,7 +130,21 @@ export function usePdfCanvasRenderer({
         delete renderTasksRef.current[pageNumber];
       }
     },
-    [pdfDoc, totalPages, displayPageWidth, canvasRefs],
+    [canvasRefs],
+  );
+
+  /* Render dijalankan bergiliran, satu halaman per waktu. Tanpa antrean, satu
+     perubahan zoom memicu beberapa render bersamaan: buffer kanvas menumpuk di
+     memori HP dan thread utama tersendat di saat yang paling sensitif. */
+  const antreanRef = useRef(Promise.resolve());
+  const renderPageCanvas = useCallback(
+    (pageNumber) => {
+      const jalan = () => gambarSekarang(pageNumber);
+      const hasil = antreanRef.current.then(jalan, jalan);
+      antreanRef.current = hasil.catch(() => {});
+      return hasil;
+    },
+    [gambarSekarang],
   );
 
   // 2. IntersectionObserver untuk Lazy Rendering Canvas Halaman
@@ -97,7 +158,10 @@ export function usePdfCanvasRenderer({
           if (!pageNum) return;
 
           if (entry.isIntersecting) {
+            visiblePagesRef.current.add(pageNum);
             renderPageCanvas(pageNum);
+          } else {
+            visiblePagesRef.current.delete(pageNum);
           }
         });
       },
@@ -116,21 +180,23 @@ export function usePdfCanvasRenderer({
     return () => observer.disconnect();
   }, [pdfDoc, totalPages, renderPageCanvas, containerRef, pageContainerRefs]);
 
-  // 3. Re-render Halaman Aktif saat Zoom Berubah (Cepat & Ringan)
+  // 3. Render ulang saat zoom berubah: yang sedang terlihat dulu, lalu sekitar halaman aktif
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const activeP = currentViewRef.current?.page || currentPage || 1;
-      const pagesToPrioritize = [activeP - 1, activeP, activeP + 1].filter(
-        (p) => p >= 1 && p <= totalPages,
-      );
+    if (!pdfDoc || totalPages === 0) return undefined;
 
-      pagesToPrioritize.forEach((p) => {
-        renderPageCanvas(p);
-      });
-    }, 80);
+    const timer = setTimeout(() => {
+      const aktif = currentViewRef.current?.page || currentPage || 1;
+      const kandidat = new Set(visiblePagesRef.current);
+      [aktif - 1, aktif, aktif + 1].forEach((p) => kandidat.add(p));
+
+      [...kandidat]
+        .filter((p) => p >= 1 && p <= totalPages)
+        .sort((a, b) => Math.abs(a - aktif) - Math.abs(b - aktif))
+        .forEach((p) => renderPageCanvas(p));
+    }, 60);
 
     return () => clearTimeout(timer);
-  }, [zoom, displayPageWidth, totalPages, currentPage, renderPageCanvas, currentViewRef]);
+  }, [zoom, displayPageWidth, pdfDoc, totalPages, currentPage, renderPageCanvas, currentViewRef]);
 
   return { renderPageCanvas };
 }

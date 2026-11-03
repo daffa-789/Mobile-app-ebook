@@ -8,23 +8,19 @@ import { resolveReceiptFields } from './receiptFields.js';
 const LEBAR = 80;
 const MARGIN = 6;
 const ISI = LEBAR - MARGIN * 2;
-const LEBAR_NILAI = ISI * 0.48;
 
-/* Kolom tetap untuk nilai yang tidak muat sebaris (nama, email): label jalan di
-   kiri, nilainya turun ke baris sendiri mulai kolom ini dan rata di situ — ruang
-   tengah-kanan sengaja dibiarkan kosong supaya rapi. */
-const KOLOM = MARGIN + 18;
-const LEBAR_KOLOM = MARGIN + ISI - KOLOM;
+/* Label kiri, nilai rata kanan — sama untuk semua baris, termasuk nama dan email
+   yang perlu dua baris: tiap barisnya tetap menempel ke tepi kanan. Lebar label
+   22 mm cukup untuk "Paket Bulanan"/"WhatsApp" dan menyisakan 46 mm untuk nilai,
+   sehingga alamat email muat satu baris. */
+const LEBAR_LABEL = 22;
+const LEBAR_NILAI = ISI - LEBAR_LABEL;
 
 const UKURAN = { judul: 14, kecil: 7, teks: 8 };
 
 /* Setiap garis putus-putus menempati pita dengan ruang sama di atas dan bawah,
    supaya ritme vertikal tidak ada yang menempel dan ada yang melebar. */
 const TINGGI = { judul: 7, kecil: 3.7, teks: 4.5, aturan: 4.8 };
-
-/* Jarak label ke nilai yang turun baris — lebih rapat dari satu baris penuh agar
-   nama benar-benar terasa berada di bawah "Kepada", bukan menggantung. */
-const JEDA_LABEL = 3.4;
 
 /* Courier adalah huruf mono: satu karakter = 0,6 em. Angka ini dipakai untuk
    memperkirakan jumlah baris SEBELUM dokumen dibuat, karena jsPDF 4 tidak punya
@@ -79,10 +75,7 @@ const tinggiBaris = (b) => {
 
   if (b.jenis === 'kecil') return TINGGI.kecil * perkiraanBaris(b.teks, UKURAN.kecil, ISI);
 
-  const satuBaris = perkiraanBaris(b.nilai, UKURAN.teks, LEBAR_NILAI) === 1;
-  return satuBaris
-    ? TINGGI.teks
-    : JEDA_LABEL + TINGGI.teks * perkiraanBaris(b.nilai, UKURAN.teks, LEBAR_KOLOM);
+  return TINGGI.teks * perkiraanBaris(b.nilai, UKURAN.teks, LEBAR_NILAI);
 };
 
 /**
@@ -144,24 +137,12 @@ export const downloadReceiptPdf = (details, user) => {
     }
 
     doc.setFontSize(UKURAN.teks);
-    const nilai = String(b.nilai);
-    const muatSebaris = doc.splitTextToSize(nilai, LEBAR_NILAI).length === 1;
-
-    if (muatSebaris) {
-      doc.text(b.label, MARGIN, y + 3, { maxWidth: ISI - LEBAR_NILAI });
+    const barisNilai = doc.splitTextToSize(String(b.nilai), LEBAR_NILAI);
+    barisNilai.forEach((nilai, i) => {
+      if (i === 0) doc.text(b.label, MARGIN, y + 3);
       doc.text(nilai, kanan, y + 3, { align: 'right' });
       y += TINGGI.teks;
-      continue;
-    }
-
-    /* Nilai panjang (nama, email) tidak dipotong di tengah kata: label jalan
-       sendiri, lalu nilainya dimulai pada kolom tetap dan rata di kolom itu,
-       sehingga ruang tengah-kanan dibiarkan kosong. */
-    doc.text(b.label, MARGIN, y + 3);
-    y += JEDA_LABEL;
-    const barisNilai = doc.splitTextToSize(nilai, LEBAR_KOLOM);
-    doc.text(barisNilai, KOLOM, y + 3);
-    y += TINGGI.teks * barisNilai.length;
+    });
   }
 
   const cleanRef = String(data.refNo).replace(/[^a-zA-Z0-9_-]/g, '_');

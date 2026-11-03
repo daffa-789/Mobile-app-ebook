@@ -1,8 +1,10 @@
 /**
- * Service Layer — Carousel Beranda.
+ * Service Layer — Carousel & Banner Beranda.
  *
- * Aturan bisnis slide (periode tayang, normalisasi kolom, konversi gambar)
- * berada di sini. Route hanya mengurus HTTP.
+ * Mengelola aturan bisnis slide (periode tayang aktif, normalisasi kolom,
+ * urutan tampilan, konversi gambar ke WebP serta sanitasi MIME sniffing).
+ *
+ * @module server/services/carousel_service
  */
 
 import { supabaseServer } from '../db.js';
@@ -84,6 +86,11 @@ const toSlideResponse = (slide) => ({
   ends_at: isoToYmd(slide.ends_at),
 });
 
+/**
+ * Mengambil daftar slide aktif yang sedang berada dalam masa tayang untuk tampilan beranda publik.
+ *
+ * @returns {Promise<{ slides: Array<object>, carouselReady: boolean }>} Daftar slide aktif
+ */
 export async function listActiveSlides() {
   const { data, error } = await supabaseServer
     .from('carousel_slides')
@@ -103,6 +110,11 @@ export async function listActiveSlides() {
   return { slides, carouselReady: true };
 }
 
+/**
+ * Mengambil seluruh daftar slide (aktif maupun nonaktif) untuk kebutuhan manajemen panel admin.
+ *
+ * @returns {Promise<{ slides: Array<object>, carouselReady: boolean }>} Daftar seluruh slide
+ */
 export async function listAllSlides() {
   const { data, error } = await supabaseServer
     .from('carousel_slides')
@@ -118,6 +130,12 @@ export async function listAllSlides() {
   return { slides: (data || []).map(toSlideResponse), carouselReady: true };
 }
 
+/**
+ * Menambahkan slide carousel baru.
+ *
+ * @param {object} [body={}] - Data formulir slide baru
+ * @returns {Promise<string>} ID slide yang berhasil dibuat
+ */
 export async function createSlide(body = {}) {
   const { fields } = readSlideInput(body);
   if (!fields.title) {
@@ -151,6 +169,14 @@ export async function createSlide(body = {}) {
   return id;
 }
 
+/**
+ * Memperbarui data teks dan periode slide yang ada.
+ *
+ * @param {object} params - Parameter pembaruan
+ * @param {string} params.id - ID slide
+ * @param {object} [params.body={}] - Bidang yang diperbarui
+ * @returns {Promise<void>}
+ */
 export async function updateSlide({ id, body = {} }) {
   const { fields, has } = readSlideInput(body);
   if (has.title && !fields.title) {
@@ -179,6 +205,12 @@ export async function updateSlide({ id, body = {} }) {
   if (!data?.length) throw createServiceError('Banner tidak ditemukan', { statusCode: 404 });
 }
 
+/**
+ * Menghapus slide carousel berdasarkan ID.
+ *
+ * @param {string} id - ID slide
+ * @returns {Promise<void>}
+ */
 export async function deleteSlide(id) {
   const { data, error } = await supabaseServer
     .from('carousel_slides')
@@ -193,6 +225,15 @@ export async function deleteSlide(id) {
   if (!data?.length) throw createServiceError('Banner tidak ditemukan', { statusCode: 404 });
 }
 
+/**
+ * Mengunggah dan mengonversi berkas gambar slide menjadi format WebP terkompresi.
+ * Menggunakan deteksi magic bytes (sniffing) untuk mitigasi eksploitasi MIME type.
+ *
+ * @param {object} params - Parameter gambar
+ * @param {string} params.id - ID slide target
+ * @param {Buffer} params.buffer - Buffer biner gambar yang diunggah
+ * @returns {Promise<void>}
+ */
 export async function updateSlideImage({ id, buffer }) {
   if (!buffer?.length) {
     throw createServiceError('Tidak ada berkas gambar yang diterima', { statusCode: 400 });

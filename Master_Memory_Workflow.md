@@ -1208,6 +1208,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R73 | Pemeliharaan sistem 1 Nov 2026: Pemeriksaan kesehatan 7/7, script quality gate, dan optimasi aksesibilitas — lihat 15.3. |
 | R74 | Peningkatan tooling 2 Nov 2026: Quality gate `check:full`, standardisasi JSDoc rute/layanan, dan penguatan pembaca PDF — lihat 15.4. |
 | R75 | Dokumentasi arsitektur terpadu 3 Nov 2026: Standardisasi JSDoc menyeluruh pada modul client, lib server, service layer, dan runner — lihat 15.5. |
+| R81 | Tindak lanjut code review 3 Nov 2026: sitasi bagian usang, header controller usang, dead export, satu duplikasi Web Push terakhir, dan layar autentikasi dibuat datar — lihat 15.11. |
 | R80 | Penghapusan duplikasi kode 3 Nov 2026: 13 klaster (rakitan API, runner port, gerbang beli, boilerplate JSON, kolom kwitansi, dll.) — lihat 15.10. |
 | R79 | Dekomposisi service layer 3 Nov 2026: `auth_service.js` dan `payment_service.js` menjadi paket `auth/` + `payment/`, serta pemisahan subsystem Web Push — lihat 15.9. |
 | R78 | Dekomposisi ContinuousPdfViewer, App.jsx, dan VerifyEmailScreen 3 Nov 2026: Ekstraksi custom hook canvas/pinch, routing guards, dan subkomponen OTP — lihat 15.8. |
@@ -1238,6 +1239,29 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `server/services/auth/password_reset_service.js:103`.
+
+### 15.11 Pemeliharaan R81 (3 November 2026)
+
+Tindak lanjut dari code review dua-axis (Standards + Spec) atas rentang `323e419..HEAD`.
+
+| Perubahan | Rincian |
+|---|---|
+| Sitasi bagian yang salah | 13 komentar di `server/` merujuk **"§4.1 panduan arsitektur"** padahal §4.1 = *Visual Atmosphere & Design POV*, dan **"§2.1 panduan"** padahal §2.1 = *Katalog Buku*. Aturan yang dimaksud adalah **§3.1** (konvensi 4 lapisan); prinsip klaim idempoten ada di **§6.2**. Salah kutip ini diwarisi dari `auth_service.js`/`payment_service.js` lama dan ikut menyebar saat paket dibuat. |
+| Header controller usang | `auth_controller.js` dan `payment_controller.js` masih menulis "memanggil `auth_service`/`payment_service`" — modul yang dihapus pada R79. Kini menyebut paketnya. |
+| Duplikasi terakhir Web Push | Pasangan `isMissingSchema(e)` + `warnSchemaOnce(e, 'PUSH')` ditulis ulang di **6 tempat** (4 di `eventReminder.js`, 2 di `pushSubscriptionStore.js`). Diganti satu gerbang `noteSchemaMissing(error, scope = 'PUSH')`; `isMissingSchema` dan `warnSchemaOnce` tidak lagi diekspor karena tidak ada pemakai di luar `pushGuards.js`. `eventReminder.js` kembali ke 319 baris. |
+| Dead export yang dibuat R80 | `activeSubscriptionConflict` di `server/lib/membership.js` tetap `export` padahal setelah R80 tidak ada berkas lain yang mengimpornya (konsumennya sudah pindah ke `resolvePurchaseGate` di berkas yang sama) → dikembalikan menjadi fungsi internal. |
+| Komentar berbahasa Inggris | `server/app.js` menyisipkan "produksi diam-diam **behave beda**" → "berperilaku beda" (aturan: komentar Indonesia). |
+| Layar autentikasi dibuat datar | Bayangan kartu `.auth-card` (`0 24px 60px`, kedua tema) dan cahaya `.auth-primary-button` (`0 8px 18px` + `0 12px 22px` saat hover) dihapus, bersama entri `box-shadow` pada transisi tombol. Melanggar aturan lama "layar autentikasi datar, tanpa glow/blur". Cincin fokus input **dipertahankan** — itu penanda aksesibilitas keyboard, bukan hiasan. Terverifikasi di `dist`: pola `24px 60px` dan `8px 18px` 0 kali. |
+
+**Temuan review yang MASIH terbuka — butuh keputusan pemilik, bukan pekerjaan otomatis:**
+
+| # | Temuan | Kenapa tidak langsung diubah |
+|---|---|---|
+| 1 | `transactions_service.js:97-127` (verifikasi transfer manual) adalah jalur transisi status keempat, hampir menyalin bentuk klaim bersyarat `settlement_service.js:40-80` | Menyatukannya mengubah jalur verifikasi admin yang menyentuh uang; perlu uji manual alur approve/reject |
+| 2 | `order_service.js:102` (hasil `reused`) mengirim `qrMidtransUrl` **tanpa** gerbang `MIDTRANS_IS_PRODUCTION`, sedangkan `:189` (hasil `created`) menggatesnya | Perilaku produksi berubah; ini keputusan keamanan/kepatuhan, bukan perapian kode |
+| 3 | Respons reset sandi: jalur seragam tidak memuat `identifier`/`phone`/`devOtp`, jalur terkirim memuatnya — isi body masih bisa membedakan akun dikenal vs tidak dikenal | Sudah ada sebelum R79; memperbaikinya berarti menyamakan bentuk payload dan bisa mengubah tampilan `ForgotPasswordScreen` |
+| 4 | Duplikasi murni tampilan: kartu agenda di 3 berkas (`SelectedDateAgenda`, `CalendarAllEventsList`, `CalendarSelectedDatePanel`), blok alert + field password di `ForgotPasswordScreen`/`RegisterScreen`/`LoginScreen`, dan `firstIssueMessage` yang belum dipakai `books_service.js:199` | Tidak bisa diverifikasi visual di lingkungan ini (tanpa layar/screenshot); risiko regresi UI > manfaat |
+| 5 | `books_service.js` (392 baris, 11 ekspor: upload-intent, muat konten + konversi DOCX, CRUD) dan `auth_controller.js` (341 baris, 10 endpoint) masih bisa dipecah | Keduanya satu tema; pemecahan menambah lompatan berkas tanpa menghilangkan seam nyata |
 
 ### 15.10 Pemeliharaan R80 (3 November 2026)
 
@@ -1276,10 +1300,10 @@ Duplikasi dicari dengan pemindai blok (shingle 6 baris, sadar-string) di seluruh
 | Perubahan | Rincian |
 |---|---|
 | Paket `server/services/auth/` | `auth_service.js` (689 baris, 4 alur bercampur) dipecah menjadi `messages.js`, `session_service.js`, `registration_service.js`, `password_reset_service.js`, `otp_resend_service.js`, `google_oauth_service.js`. Teks anti-enumerasi (`RESET_UNIFORM_RESPONSE`, `RESET_UNIFORM_WA_RESPONSE`, `INVALID_CREDENTIALS_MESSAGE`, `GOOGLE_ACCOUNT_MESSAGE`) dan `firstIssueMessage` dipusatkan di `messages.js` — pemisahan tanpa modul ini berpotensi menggandakan pesan dan membuka celah "akun tidak terdaftar". |
-| Paket `server/services/payment/` | `payment_service.js` (476 baris) dipecah menjadi `constants.js`, `order_service.js`, `settlement_service.js`, `status_service.js`, `notification_service.js`. `settlement_service.js` menjadi satu-satunya tempat status transaksi berpindah (dipakai polling, webhook, dan kegagalan charge). Re-export mati `createServiceError` dihapus; konsumen memakainya dari `server/lib/errors.js`. |
+| Paket `server/services/payment/` | `payment_service.js` (476 baris) dipecah menjadi `constants.js`, `order_service.js`, `settlement_service.js`, `status_service.js`, `notification_service.js`. `settlement_service.js` menjadi satu-satunya tempat status transaksi berpindah **untuk jalur QRIS** (dipakai polling, webhook, dan kegagalan charge). Koreksi R81: jalur verifikasi transfer manual masih punya klaim bersyaratnya sendiri di `transactions_service.js:97-127`, jadi klaim "satu-satunya" tidak berlaku menyeluruh — menyatukannya adalah pekerjaan yang belum dikerjakan. Re-export mati `createServiceError` dihapus; konsumen memakainya dari `server/lib/errors.js`. |
 | Subsystem Web Push | `server/lib/eventReminder.js` (429 baris) dipecah tiga: `pushGuards.js` (gerbang VAPID + toleransi skema yang dipakai bersama), `pushSubscriptionStore.js` (seluruh akses `push_subscriptions`), dan `eventReminder.js` yang tersisa khusus pengiriman + penjadwal (319 baris). Bendera "peringatan skema sekali" tetap satu karena hidup di `pushGuards.js`. |
 | Sengaja TIDAK dihapus | Web Push tidak dibuang meski notifikasi pengguna pernah ditunda: modul ini masih satu-satunya jalur siaran pengumuman agenda dari panel admin (`events_service.js` → `sendEventAnnouncementNow`) dan tabel `push_subscriptions` sudah ditoleransi gagal-tenang. Menghapusnya memutus tombol yang masih dipakai. |
-| Batas dekomposisi | Tidak ada barrel/re-export: `auth_controller.js` dan `payment_controller.js` mengimpor modul spesifik. Isi tiap fungsi dipindah verbatim (diff baris kode vs versi lama hanya berbeda pada baris impor dan kata kunci `export`). File terbesar yang tersisa kini `books_service.js` (392) dan `receiptPdf.js` (369) — keduanya satu tujuan, tidak dipecah lagi. |
+| Batas dekomposisi | Tidak ada barrel/re-export: `auth_controller.js` dan `payment_controller.js` mengimpor modul spesifik. Isi tiap fungsi dipindah verbatim (diff baris kode vs versi lama hanya berbeda pada baris impor dan kata kunci `export`). File terbesar yang tersisa kini `books_service.js` (392) dan `receiptPdf.js` (363) — keduanya satu tujuan, tidak dipecah lagi. |
 
 ### 15.8 Pemeliharaan R78 (3 November 2026)
 

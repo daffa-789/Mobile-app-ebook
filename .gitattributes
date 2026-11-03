@@ -1,0 +1,36 @@
+# Semua berkas teks disimpan dan di-checkout dengan LF — di repo maupun di
+# working tree. Aturan ini mengalahkan core.autocrlf, yang di mesin Windows
+# membuat `git restore`/`checkout` menulis CRLF sehingga Prettier (endOfLine: lf)
+# melaporkan gaya berkas bermasalah padahal isinya tidak berubah.
+* text=auto eol=lf
+
+# Teks yang jelas harus LF
+*.js text eol=lf
+*.jsx text eol=lf
+*.mjs text eol=lf
+*.json text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.md text eol=lf
+*.sql text eol=lf
+*.py text eol=lf
+*.svg text eol=lf
+*.webmanifest text eol=lf
+
+# Biner: jangan pernah disentuh akhiran barisnya
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.zip binary
+*.gz binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.pfb binary
+*.bcmap binary

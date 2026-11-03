@@ -13,13 +13,15 @@ Prasyarat: Node.js 24.x, konfigurasi Supabase, dan file .env yang diisi sesuai d
 
 ## Perintah utama
 
-- **npm run build** — build frontend Vite.
+- **npm run dev** — jalankan aplikasi terpadu (Express backend + Vite frontend HMR) pada port 3000.
+- **npm run build** — build frontend Vite ke direktori `dist/`.
 - **npm run format** — rapikan seluruh kode dengan Prettier.
 - **npm run format:check** — periksa kepatuhan format tanpa mengubah berkas.
-- **npm run health** — periksa konfigurasi layanan.
+- **npm run health** — periksa konfigurasi layanan (Supabase, Midtrans, WhatsApp, tabel database).
 - **npm test** / **npm run check** — jalankan pemeriksaan kualitas format dan kesehatan sistem.
 - **npm run check:full** — jalankan pemeriksaan kualitas lengkap beserta verifikasi kompilasi build.
-- **npm start** — jalankan aplikasi dalam mode produksi.
+- **npm run clean:ports** — bersihkan proses port 3000/5000 yang tertahan di background.
+- **npm start** — jalankan aplikasi dalam mode produksi pada port 5000.
 
 ## Dokumentasi
 

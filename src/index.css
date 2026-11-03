@@ -395,7 +395,9 @@ body,
     border-radius: 12px;
     padding: 1.75rem;
     background: #fbf8f3;
-    box-shadow: 0 24px 60px rgba(28, 26, 23, 0.1);
+    /* Datar: layar autentikasi sengaja tanpa bayangan & tanpa glow (aturan
+       pemilik). Pemisah kartu = border 1px + sudut, bukan kedalaman. */
+    box-shadow: none;
   }
 
   /* Mobile & PWA: tetap di tengah, lalu digeser sedikit ke bawah. Margin atas
@@ -502,16 +504,13 @@ body,
   color: #fbf8f3;
   font-size: 0.875rem;
   font-weight: 800;
-  box-shadow: 0 8px 18px rgba(20, 82, 58, 0.22);
   transition:
     transform 160ms ease,
-    box-shadow 160ms ease,
     opacity 160ms ease;
 }
 
 .auth-primary-button:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 12px 22px rgba(20, 82, 58, 0.28);
 }
 
 .auth-primary-button:active:not(:disabled) {
@@ -879,7 +878,7 @@ body,
 .dark .app-surface .auth-card {
   border-color: rgba(68, 62, 51, 0.95);
   background: #201e17;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  box-shadow: none;
 }
 
 .dark .app-surface .auth-label {

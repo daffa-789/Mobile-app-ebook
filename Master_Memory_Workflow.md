@@ -86,7 +86,7 @@ Aplikasi **Wahidiyah Book** dibangun menggunakan arsitektur **Modular Layered Mo
 - **Bantuan Pengujian Sandbox:** Kotak *"Simulator QRIS Midtrans"* menyediakan tautan QR yang dapat disalin (`qrMidtransUrl` pada sandbox, atau URL proxy gambar) untuk ditempel ke kolom **"QR Code Image Url"** simulator. Tidak ada tautan keluar otomatis maupun tombol pembayaran simulasi di aplikasi.
 - **Simpan QRIS ke Galeri Ponsel:** Gambar QR (SVG/PNG) digambar ulang ke `<canvas>` berukuran 320 px dengan kop hijau dan keterangan e-wallet, lalu diunduh sebagai PNG agar dapat dipindai dari galeri (DANA, GoPay, BCA, OVO, ShopeePay).
 - **Batalkan & Buat Ulang:** Tombol batal memanggil `POST /api/payments/qris/:orderId/cancel`, mematikan order di Midtrans bila didukung (QRIS sering menolak dengan 412), lalu membuat order baru. Bila Midtrans menolak, server menjelaskan bahwa QR lama masih berlaku sampai kedaluwarsa.
-- **Polling & Webhook Idempoten:** Pengecekan otomatis status transaksi setiap 3 detik dan verifikasi *SHA512 Signature Key* pada endpoint webhook notifikasi. Logika berada di `server/services/payment_service.js` dengan mekanisme klaim bersyarat (*conditional claim*) untuk mencegah aktivasi membership ganda.
+- **Polling & Webhook Idempoten:** Pengecekan otomatis status transaksi setiap 3 detik dan verifikasi *SHA512 Signature Key* pada endpoint webhook notifikasi. Logika berpindah di paket `server/services/payment/` — `status_service.js` (polling), `notification_service.js` (webhook), dan `settlement_service.js` (mesin status) — dengan mekanisme klaim bersyarat (*conditional claim*) untuk mencegah aktivasi membership ganda.
 - **Faktur Kwitansi Pembayaran Resmi & Unduh PDF Instan:**
   - Format kwitansi A4 resmi dengan desain profesional, branding hijau zamrud tua, metadata dua kolom rapi, rincian biaya transparan, dan stempel verifikasi resmi Wahidiyah Book.
   - Unduh langsung ke format PDF di sisi klien menggunakan pustaka `jspdf` — cepat, tanpa dialog `window.print()` peramban, dan terhindar dari pemotongan halaman fisik.
@@ -166,9 +166,11 @@ Pemisahan lapisan (*Separation of Concerns*) dilakukan secara ketat untuk menjam
    - Status migrasi per Oktober 2026: modul **books, users, transactions, events, carousel, auth, dan payments** sudah 0 referensi `supabaseServer` di berkas rutenya. Tiga rute masih memanggil Supabase langsung sebagai pengecualian yang diketahui: `subscriptions_routes.js` (riwayat + fallback transaksi), `admin_routes.js` (log aktivitas), dan `health_routes.js` (`/health`, `/stats`).
 2. **Controllers Layer (`server/controllers/`):**
    - Bukan lapisan wajib untuk semua modul. Hanya alur autentikasi dan pembayaran QRIS yang membutuhkannya karena memerlukan skema `zod`, ekstraksi `req`, dan amplop respons khusus.
-   - Modul lain (buku, agenda, carousel, pengguna, transaksi) melompat langsung dari route ke service; satu lapisan tambahan di sana hanya memindahkan kode tanpa menambah kejelasan. Nama berkas memakai garis bawah: `auth_controller.js`, `payment_controller.js`, `auth_service.js`, `payment_service.js`.
+   - Modul lain (buku, agenda, carousel, pengguna, transaksi) melompat langsung dari route ke service; satu lapisan tambahan di sana hanya memindahkan kode tanpa menambah kejelasan. Nama berkas memakai garis bawah: `auth_controller.js`, `payment_controller.js`.
 3. **Services Layer Murni (`server/services/`):**
-   - Menampung seluruh aturan bisnis (*business rules*) dan query Supabase: `auth_service`, `payment_service`, `books_service`, `events_service`, `carousel_service`, `users_service`, `transactions_service`.
+   - Menampung seluruh aturan bisnis (*business rules*) dan query Supabase. Modul yang masih terbaca dipakai lima service satu-berkas: `books_service`, `events_service`, `carousel_service`, `users_service`, `transactions_service`. Dua modul besar dipecah menjadi subfolder per alur (R79), tanpa barrel/re-export:
+     - `auth/`: `messages.js` (teks seragam anti-enumerasi + formatter galat Zod), `session_service.js`, `registration_service.js`, `password_reset_service.js`, `otp_resend_service.js`, `google_oauth_service.js`.
+     - `payment/`: `constants.js` (proyeksi kolom & himpunan status gagal), `order_service.js`, `settlement_service.js` (satu-satunya tempat status berpindah), `status_service.js`, `notification_service.js`.
    - **Bebas mutlak dari objek `req` dan `res` Express** sehingga aturan bisnis dapat diverifikasi tanpa menjalankan HTTP server.
    - Hasil bisnis yang wajar (bukan galat) dikembalikan sebagai objek `outcome`; kegagalan aturan bisnis dilempar melalui `createServiceError(pesan, { statusCode, code, extra })` dari `server/lib/errors.js`.
 4. **Helper & Database Layer (`server/lib/` & `server/db.js`):**
@@ -181,7 +183,7 @@ Pemisahan lapisan (*Separation of Concerns*) dilakukan secara ketat untuk menjam
    - `otp.js` + `oneTimeCode.js`: Manajemen pembuatan kode OTP terenkripsi, cooldown kirim ulang, dan kode sesi sekali-pakai.
    - `membership.js` + `constants.js`: Aturan aktivasi Pro, klaim transaksi bersyarat, dan harga paket (Rp 25.000 + Rp 3.000).
    - `storage.js` + `sniff.js`: Penanda `storage://buku/...`, URL bertanda, serta deteksi MIME dari magic bytes.
-   - `origin.js`, `pushEndpoint.js`, `webpush.js`, `eventReminder.js`: Validasi origin OAuth, whitelist endpoint push, pengiriman Web Push, dan pengingat agenda H-1.
+   - `origin.js`, `pushEndpoint.js`, `webpush.js`, `pushGuards.js`, `pushSubscriptionStore.js`, `eventReminder.js`: Validasi origin OAuth, whitelist endpoint push, pengiriman Web Push, gerbang VAPID/skema, penyimpanan tabel `push_subscriptions`, dan eksekusi + penjadwal pengingat agenda H-1.
    - `sanitizeHtml.js`: Re-export `shared/sanitizeHtml.js` untuk konversi DOCX.
    - `db.js`: Klien `supabaseServer` ber-role service dengan Row Level Security fail-closed.
 
@@ -1125,14 +1127,18 @@ Wahidiyah Book + Real Midtrans Skripsi/
 │   ├── generate-vapid-keys.js
 │   ├── get-gmail-token.js
 │   ├── health-check.js     # 6 pemeriksaan lingkungan & tabel
+│   ├── lib/portProbe.js    # probePort — dipakai tiga runner sekaligus (R80)
 │   └── start.js            # Produksi lokal :5000 (build + serve dist/)
 ├── server/
 │   ├── controllers/        # auth_controller.js, payment_controller.js
 │   ├── routes/             # 12 modul rute + index.js (array ROUTERS)
-│   ├── services/           # 7 service: auth, books, carousel, events, payment, transactions, users
-│   ├── lib/                # 15 helper: errors, http, midtrans, storage, sniff, validate, webpush, ...
+│   ├── services/           # 5 service datar: books, carousel, events, transactions, users + 2 paket (R79)
+│   │   ├── auth/           # messages, session, registration, password_reset, otp_resend, google_oauth
+│   │   └── payment/        # constants, order, settlement, status, notification
+│   ├── lib/                # 19 helper: errors, http, midtrans, storage, sniff, validate, webpush, pushGuards, pushSubscriptionStore, ...
 │   ├── middleware/         # errors, requestLog, security, uploads
 │   ├── providers/          # base.js, demo.js, fonnte.js, index.js
+│   ├── app.js              # Rakitan API bersama untuk api/index.js (Vercel) & server.js (R80)
 │   ├── auth.js             # JWT, bcrypt, helper status Pro
 │   ├── config.js           # Port, CSP, Midtrans, VAPID, TRUST_PROXY
 │   ├── db.js               # Klien Supabase server
@@ -1164,7 +1170,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 │   │   │   ├── events/     # AllAgendaPanel, EventCalendarPanel, EventFormPanel, ...
 │   │   │   └── hooks/      # useAdminDashboardData, useAdminBookEditor, useAdminEventEditor, useAdminCarouselEditor
 │   │   └── reader/         # ContinuousPdfViewer, PdfReaderScreen, PdfPageSheet, usePdfPinchGesture, usePdfCanvasRenderer, ...
-│   ├── lib/                # api, phone, date, excelExport, receiptPdf, navigation, normalizers, ...
+│   ├── lib/                # api (termasuk `apiJsonSend`), phone, date, excelExport, receiptPdf, receiptFields, navigation, normalizers, ...
 │   ├── theme/              # ThemeProvider, themeInjector, themeMode
 │   ├── App.jsx             # Router navigasi utama
 │   ├── index.css           # Token Tailwind 4 + palet Editorial Elegan
@@ -1202,6 +1208,8 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R73 | Pemeliharaan sistem 1 Nov 2026: Pemeriksaan kesehatan 7/7, script quality gate, dan optimasi aksesibilitas — lihat 15.3. |
 | R74 | Peningkatan tooling 2 Nov 2026: Quality gate `check:full`, standardisasi JSDoc rute/layanan, dan penguatan pembaca PDF — lihat 15.4. |
 | R75 | Dokumentasi arsitektur terpadu 3 Nov 2026: Standardisasi JSDoc menyeluruh pada modul client, lib server, service layer, dan runner — lihat 15.5. |
+| R80 | Penghapusan duplikasi kode 3 Nov 2026: 13 klaster (rakitan API, runner port, gerbang beli, boilerplate JSON, kolom kwitansi, dll.) — lihat 15.10. |
+| R79 | Dekomposisi service layer 3 Nov 2026: `auth_service.js` dan `payment_service.js` menjadi paket `auth/` + `payment/`, serta pemisahan subsystem Web Push — lihat 15.9. |
 | R78 | Dekomposisi ContinuousPdfViewer, App.jsx, dan VerifyEmailScreen 3 Nov 2026: Ekstraksi custom hook canvas/pinch, routing guards, dan subkomponen OTP — lihat 15.8. |
 | R77 | Dekomposisi modular layar utama 3 Nov 2026: Pemecahan PdfReaderScreen, CalendarScreen, dan EditProfileScreen ke subkomponen terdedikasi — lihat 15.7. |
 | R76 | Dekomposisi modular & pembersihan kode 3 Nov 2026: Pemecahan CarouselTab, PaymentConfirmScreen, ContinuousPdfViewer, dan eliminasi dead import — lihat 15.6. |
@@ -1229,7 +1237,49 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `shared/sanitizeHtml.js` — dipakai `PdfReaderScreen.jsx:177` (me-render HTML naskah ke semua pembaca) dan `books_service.js:275` (sanitasi saat menyajikan hasil konversi). Menghapusnya membuka stored XSS.
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
-- `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `auth_service.js:350`.
+- `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `server/services/auth/password_reset_service.js:103`.
+
+### 15.10 Pemeliharaan R80 (3 November 2026)
+
+Duplikasi dicari dengan pemindai blok (shingle 6 baris, sadar-string) di seluruh `server/`, `src/`, `scripts/`, `api/` — bukan dari dugaan. Yang diubah hanya blok yang benar-benar salinan; daftar yang sengaja dibiarkan ada di baris terakhir.
+
+| Klaster | Diganti oleh |
+|---|---|
+| `probePort` ditulis ulang di 3 runner (`clean-ports.js`, `dev.js`, `start.js`) | `scripts/lib/portProbe.js` — satu fungsi, tiga impor |
+| Rakitan Express (context → security → cors → compression → json → trustProxy → routes → 404) disalin di `api/index.js` DAN `server/server.js` | `server/app.js` → `createApiApp()`. Kedua titik masuk kini tidak bisa lagi punya urutan middleware yang berbeda (dev hijau, produksi diam-diam beda). `errorHandler` tetap dipasang tiap titik masuk karena server.js menyisipkan static/Vite sebelum handler itu |
+| Gerbang pembelian (sapu kedaluwarsa → muat pengguna → tolak bila Pro) disalin di jalur QRIS dan jalur transfer manual | `membership.resolvePurchaseGate(userId, fallbackUser)` |
+| Objek respons `already-pro` yang sama persis ditulis di controller dan di rute | `http.replyAlreadyPro(res, result)` |
+| Muat baris agenda + toleransi skema Web Push (2×10 baris) | `eventReminder.loadEventRow(eventId, columns)` — `schemaMissing` tetap dipisah dari `not-found` agar nilai `reason` tidak berubah |
+| Penutup tulis `carousel_slides` (tabel belum ada → 503, tidak kena baris → 404) di 3 jalur tulis | `carousel_service.ensureSlideWritten({ data, error })` |
+| Respons sesi `{ success, message, token, user }` di 3 endpoint auth | `auth_controller.replySession(res, result, message, status)` |
+| Pemetaan field unggah buku (6 kunci) di rute buat dan rute ubah | `books_routes.bookUploadFields(req)` |
+| Boilerplate `method` + `headers` `Content-Type` + `JSON.stringify` ditulis ulang di **20 situs / 13 berkas** | `api.apiJsonSend(path, body, { method, headers, ...rest })` — tersisa 1 situs `Content-Type` manual di klien (POST cancel tanpa badan) plus 1 di dalam helper itu sendiri |
+| Penurunan 9 kolom kwitansi disalin antara tampilan layar dan generator PDF | `src/lib/receiptFields.js` → `resolveReceiptFields(details, user)` |
+| Penggabungan lokasi + tautan Maps dan perakitan payload agenda (create vs edit) | dinaikkan ke satu blok di atas cabang `if (editingEventId)` |
+| Jalur sukses/gagal toast ditulis 3× dalam `withToast.js` sendiri | `succeed()` / `rejectWith()` modul itu |
+| Potongan kelas cincin fokus + status aktif pada dua varian `SidebarNavButton` | konstanta lokal `focusRing` / `activeState` |
+
+**Yang sengaja TIDAK diubah** (pemindai menandainya, tapi setelah dibaca bukan duplikasi atau mengubahnya merusak hal lain):
+
+| Kandidat | Putusan |
+|---|---|
+| `qrTransaction` dsb. muncul identik 8 baris di 3 berkas | Bukan duplikasi: itu objek return hook, destruktur di pemanggil, dan daftar props komponen. Menyatukannya berarti membuat abstraksi palsu |
+| Daftar props/destructure lain (`stats,`, `setForm,`, `pdfDoc,`, `user,`, `containerRef,`) | Kesamaan kebetulan dari tanda baca — dibiarkan |
+| markup kartu agenda di `SelectedDateAgenda.jsx`, `CalendarAllEventsList.jsx`, `CalendarSelectedDatePanel.jsx` (7–8 baris ×3) | Duplikasi nyata, tapi murni tampilan. Ekstraksi komponen tidak bisa diverifikasi di lingkungan ini (tidak ada layar/screenshot, `innerHeight=0`), jadi tidak dilakukan tanpa izin |
+| Blok PowerShell pembunuh port di 3 runner | Mirip tapi berbeda pesan & semantik (`SKIP` non-node di dev.js, hanya `KILL` di clean-ports.js). Menyatukannya akan mengubah keluaran yang dibaca developer setiap hari |
+| POST `/cancel` tanpa badan & `DELETE /events/:id` | Tetap `apiJson`: helper `apiJsonSend` mengasumsikan ada badan JSON |
+
+**Catatan jumlah baris:** total `server/` + `src/` hampir tidak berubah (21.920 → 21.935) — nilai pemubahan ini bukan baris yang hilang, melainkan **satu tempat untuk mengubah kontrak**: 20 bentuk permintaan manual jadi satu helper, dua titik rakitan API jadi satu, dua gerbang beli jadi satu. Isi fungsi dipindah verbatim; helper `apiJsonSend` diuji setara dengan bentuk lama (6 kasus opsi `fetch` identik), `resolveReceiptFields` diuji 4 kasus fallback, dan seluruhnya lolos `npm run check:full` (Prettier bersih, health 7/7, build 2823 modul) plus probe runtime: `/api/health`, `/api/books`, `/api/carousel`, `/api/events`, `/api/notifications/public-key`, dan `POST /api/auth/login` dengan kredensial salah (pesan anti-enumerasi tetap utuh).
+
+### 15.9 Pemeliharaan R79 (3 November 2026)
+
+| Perubahan | Rincian |
+|---|---|
+| Paket `server/services/auth/` | `auth_service.js` (689 baris, 4 alur bercampur) dipecah menjadi `messages.js`, `session_service.js`, `registration_service.js`, `password_reset_service.js`, `otp_resend_service.js`, `google_oauth_service.js`. Teks anti-enumerasi (`RESET_UNIFORM_RESPONSE`, `RESET_UNIFORM_WA_RESPONSE`, `INVALID_CREDENTIALS_MESSAGE`, `GOOGLE_ACCOUNT_MESSAGE`) dan `firstIssueMessage` dipusatkan di `messages.js` — pemisahan tanpa modul ini berpotensi menggandakan pesan dan membuka celah "akun tidak terdaftar". |
+| Paket `server/services/payment/` | `payment_service.js` (476 baris) dipecah menjadi `constants.js`, `order_service.js`, `settlement_service.js`, `status_service.js`, `notification_service.js`. `settlement_service.js` menjadi satu-satunya tempat status transaksi berpindah (dipakai polling, webhook, dan kegagalan charge). Re-export mati `createServiceError` dihapus; konsumen memakainya dari `server/lib/errors.js`. |
+| Subsystem Web Push | `server/lib/eventReminder.js` (429 baris) dipecah tiga: `pushGuards.js` (gerbang VAPID + toleransi skema yang dipakai bersama), `pushSubscriptionStore.js` (seluruh akses `push_subscriptions`), dan `eventReminder.js` yang tersisa khusus pengiriman + penjadwal (319 baris). Bendera "peringatan skema sekali" tetap satu karena hidup di `pushGuards.js`. |
+| Sengaja TIDAK dihapus | Web Push tidak dibuang meski notifikasi pengguna pernah ditunda: modul ini masih satu-satunya jalur siaran pengumuman agenda dari panel admin (`events_service.js` → `sendEventAnnouncementNow`) dan tabel `push_subscriptions` sudah ditoleransi gagal-tenang. Menghapusnya memutus tombol yang masih dipakai. |
+| Batas dekomposisi | Tidak ada barrel/re-export: `auth_controller.js` dan `payment_controller.js` mengimpor modul spesifik. Isi tiap fungsi dipindah verbatim (diff baris kode vs versi lama hanya berbeda pada baris impor dan kata kunci `export`). File terbesar yang tersisa kini `books_service.js` (392) dan `receiptPdf.js` (369) — keduanya satu tujuan, tidak dipecah lagi. |
 
 ### 15.8 Pemeliharaan R78 (3 November 2026)
 

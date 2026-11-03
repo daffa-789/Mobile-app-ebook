@@ -1,18 +1,46 @@
 import { useState, useEffect } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Download, Sparkles } from 'lucide-react';
+import { toast } from 'sonner';
 import { useApp } from '@context/AppContext';
 import { formatWIB } from '@lib/date';
 import { layout, controls } from '@lib/styles';
-import { PaymentReceiptModal } from '../payment/PaymentReceiptModal';
 
 export const SubscriptionHistoryScreen = () => {
   const { subscriptions, refreshSubscriptions, navigateTo, user } = useApp();
   const [displayCount, setDisplayCount] = useState(2);
-  const [selectedSub, setSelectedSub] = useState(null);
+  const [refUnduh, setRefUnduh] = useState(null);
 
   useEffect(() => {
     refreshSubscriptions?.();
   }, [refreshSubscriptions]);
+
+  /* Riwayat tidak lagi membuka pratinjau kwitansi: satu tombol unduh cukup dan
+     layarnya tetap ringan. Angka kwitansi tetap satu sumber dengan PDF karena
+     keduanya memakai resolveReceiptFields. */
+  const handleUnduhPdf = async (sub) => {
+    if (refUnduh) return;
+
+    setRefUnduh(sub.id);
+    try {
+      const { downloadReceiptPdf } = await import('@lib/receiptPdf');
+      downloadReceiptPdf(
+        {
+          refNo: sub.ref || sub.orderId,
+          dateStr: formatWIB(sub.createdAt),
+          planName: sub.planName || 'Paket Bulanan Pro',
+          amount: sub.rawPrice || 25000,
+          adminFee: sub.adminFee || 0,
+          totalPaid: sub.totalPaid || 25000,
+          periodStr: sub.period || '1 Bulan Langganan Pro',
+        },
+        user,
+      );
+    } catch {
+      toast.error('Kwitansi PDF gagal disiapkan. Silakan coba lagi.');
+    } finally {
+      setRefUnduh(null);
+    }
+  };
 
   const isAllLoaded = displayCount >= subscriptions.length;
 
@@ -49,10 +77,9 @@ export const SubscriptionHistoryScreen = () => {
                 <div
                   key={sub.id}
                   data-testid={`sub-card-${sub.id}`}
-                  onClick={() => setSelectedSub(sub)}
-                  className="bg-cream-50 rounded-3xl p-5 border border-cream-300/80 shadow-sm hover:shadow-md hover:border-brand-300 transition-all cursor-pointer active:scale-[0.99]"
+                  className="bg-cream-50 rounded-3xl p-5 border border-cream-300/80"
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-3">
                     <div>
                       <h3 className="text-sm font-bold text-ink-900 flex items-center gap-1.5">
                         <span>{sub.planName}</span>
@@ -65,15 +92,28 @@ export const SubscriptionHistoryScreen = () => {
                       </p>
                     </div>
 
-                    <span
-                      className={`text-micro font-bold px-2.5 py-0.5 rounded-full border ${
-                        isActive
-                          ? 'bg-brand-100 text-brand-800 border-brand-300'
-                          : 'bg-cream-200 text-ink-500 border-cream-300'
-                      }`}
-                    >
-                      {sub.status}
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      <span
+                        className={`text-micro font-bold px-2.5 py-0.5 rounded-full border ${
+                          isActive
+                            ? 'bg-brand-100 text-brand-800 border-brand-300'
+                            : 'bg-cream-200 text-ink-500 border-cream-300'
+                        }`}
+                      >
+                        {sub.status}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => handleUnduhPdf(sub)}
+                        disabled={refUnduh === sub.id}
+                        aria-busy={refUnduh === sub.id}
+                        className="inline-flex items-center gap-1.5 rounded text-micro font-bold text-brand-800 hover:text-brand-950 transition cursor-pointer disabled:opacity-60 disabled:cursor-wait focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>{refUnduh === sub.id ? 'Menyiapkan…' : 'Unduh PDF'}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -94,26 +134,6 @@ export const SubscriptionHistoryScreen = () => {
           </button>
         </div>
       )}
-
-      {/* Kwitansi / Invoice Resmi Popup */}
-      <PaymentReceiptModal
-        isOpen={Boolean(selectedSub)}
-        onClose={() => setSelectedSub(null)}
-        details={
-          selectedSub
-            ? {
-                refNo: selectedSub.ref || selectedSub.orderId,
-                dateStr: formatWIB(selectedSub.createdAt),
-                planName: selectedSub.planName || 'Paket Bulanan Pro',
-                amount: selectedSub.rawPrice || 25000,
-                adminFee: selectedSub.adminFee || 0,
-                totalPaid: selectedSub.totalPaid || 25000,
-                periodStr: selectedSub.period || '1 Bulan Langganan Pro',
-              }
-            : null
-        }
-        user={user}
-      />
     </div>
   );
 };

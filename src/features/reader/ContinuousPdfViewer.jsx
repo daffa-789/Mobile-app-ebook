@@ -16,7 +16,7 @@ import { usePdfCanvasRenderer } from './usePdfCanvasRenderer';
  * Komponen penampil berkas PDF secara gulir vertikal berkelanjutan.
  *
  * @param {object} props - Properti komponen
- * @param {ArrayBuffer|null} props.pdfBuffer - Buffer biner berkas PDF
+ * @param {Blob|null} props.pdfBlob - Berkas PDF mentah hasil unduhan
  * @param {number} props.zoom - Level zoom persentase (40 - 300)
  * @param {(newZoom: number | ((prev: number) => number)) => void} props.setZoom - Setter level zoom
  * @param {number} props.currentPage - Nomor halaman aktif
@@ -27,7 +27,7 @@ import { usePdfCanvasRenderer } from './usePdfCanvasRenderer';
  * @returns {import('react').JSX.Element}
  */
 export const ContinuousPdfViewer = ({
-  pdfBuffer,
+  pdfBlob,
   zoom,
   setZoom,
   currentPage,
@@ -54,46 +54,60 @@ export const ContinuousPdfViewer = ({
   const customFocalYRef = useRef(null);
   const pinchAnchorRef = useRef(null);
 
-  // 1. Muat Dokumen PDF dari ArrayBuffer
+  // Callback dari induk sering berubah identitas (mis. saat total halaman diketahui),
+  // sedangkan effect pencari dokumen tidak boleh ikut berjalan ulang karenanya.
+  const onPageChangeRef = useRef(onPageChange);
   useEffect(() => {
-    if (!pdfBuffer) return undefined;
+    onPageChangeRef.current = onPageChange;
+  }, [onPageChange]);
+
+  // 1. Muat Dokumen PDF dari Berkas Sumber
+  useEffect(() => {
+    if (!pdfBlob) return undefined;
     let cancelled = false;
+    let loadingTask = null;
 
     setLoadError(null);
-    const loadingTask = pdfjsLib.getDocument({
-      data: pdfBuffer,
-      cMapPacked: true,
-    });
 
-    loadingTask.promise
-      .then(async (doc) => {
-        if (cancelled) return;
-        setPdfDoc(doc);
-        setTotalPages(doc.numPages);
-        onPageChange?.(1, doc.numPages);
+    /* Byte dibaca ulang per percobaan: PDF.js memindahkan ArrayBuffer yang
+     * diberikan ke thread worker (transferable), jadi buffer tersebut berhenti
+     * berfungsi di main thread dan tidak mungkin dipakai untuk muat kedua. */
+    (async () => {
+      const buffer = await pdfBlob.arrayBuffer();
+      if (cancelled) return;
 
-        // Ambil ukuran native halaman pertama dari berkas PDF
-        try {
-          const firstPage = await doc.getPage(1);
-          const vp = firstPage.getViewport({ scale: 1.0 });
-          if (vp.width > 0 && vp.height > 0) {
-            setPageDimensions({ width: vp.width, height: vp.height });
-          }
-        } catch (e) {
-          console.warn('[ContinuousPdfViewer] Gagal membaca dimensi halaman pertama:', e);
-        }
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        console.error('[ContinuousPdfViewer] Gagal memuat PDF:', err);
-        setLoadError('Dokumen PDF tidak dapat didekode.');
+      loadingTask = pdfjsLib.getDocument({
+        data: new Uint8Array(buffer),
+        cMapPacked: true,
       });
+      const doc = await loadingTask.promise;
+      if (cancelled) return;
+
+      setPdfDoc(doc);
+      setTotalPages(doc.numPages);
+      onPageChangeRef.current?.(1, doc.numPages);
+
+      // Ambil ukuran native halaman pertama dari berkas PDF
+      try {
+        const firstPage = await doc.getPage(1);
+        const vp = firstPage.getViewport({ scale: 1.0 });
+        if (vp.width > 0 && vp.height > 0) {
+          setPageDimensions({ width: vp.width, height: vp.height });
+        }
+      } catch (e) {
+        console.warn('[ContinuousPdfViewer] Gagal membaca dimensi halaman pertama:', e);
+      }
+    })().catch((err) => {
+      if (cancelled) return;
+      console.error('[ContinuousPdfViewer] Gagal memuat PDF:', err);
+      setLoadError('Dokumen PDF tidak dapat didekode.');
+    });
 
     return () => {
       cancelled = true;
-      loadingTask.destroy().catch(() => {});
+      loadingTask?.destroy().catch(() => {});
     };
-  }, [pdfBuffer, onPageChange]);
+  }, [pdfBlob]);
 
   // 2. Pantau Lebar Kontainer secara Responsif (ResizeObserver)
   useEffect(() => {

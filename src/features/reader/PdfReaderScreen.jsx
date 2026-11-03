@@ -42,8 +42,7 @@ export const PdfReaderScreen = () => {
   const { activeBook, navigateTo } = useApp();
   const [textContent, setTextContent] = useState('');
   const [docHtml, setDocHtml] = useState('');
-  const [pdfBuffer, setPdfBuffer] = useState(null);
-  const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfBlob, setPdfBlob] = useState(null);
   const [contentStatus, setContentStatus] = useState('idle');
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -156,11 +155,9 @@ export const PdfReaderScreen = () => {
   // Muat konten PDF, Word (docx), atau teks
   useEffect(() => {
     let cancelled = false;
-    let objectUrl = null;
     setTextContent('');
     setDocHtml('');
-    setPdfBuffer(null);
-    setPdfUrl(null);
+    setPdfBlob(null);
 
     if (!activeBook?.id) {
       setContentStatus('idle');
@@ -215,15 +212,11 @@ export const PdfReaderScreen = () => {
         .then(async (response) => {
           if (response.status === 403) throw new Error('PRO_LOCKED');
           if (!response.ok) throw new Error('FETCH_FAILED');
-          const blob = await response.blob();
-          const buffer = await blob.arrayBuffer();
-          return { blob, buffer };
+          return response.blob();
         })
-        .then(({ blob, buffer }) => {
+        .then((blob) => {
           if (cancelled) return;
-          setPdfBuffer(buffer);
-          objectUrl = URL.createObjectURL(blob);
-          setPdfUrl(objectUrl);
+          setPdfBlob(blob);
           setContentStatus('ready');
         })
         .catch((err) => {
@@ -235,7 +228,6 @@ export const PdfReaderScreen = () => {
 
     return () => {
       cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [activeBook?.id, activeBook?.contentUrl, extension, reloadToken]);
 
@@ -277,9 +269,9 @@ export const PdfReaderScreen = () => {
             previewRef={readingPreviewRef}
             pinchHandlers={pinchZoomHandlers}
           />
-        ) : PDF_TYPES.has(extension) && (pdfBuffer || pdfUrl) ? (
+        ) : PDF_TYPES.has(extension) && pdfBlob ? (
           <ContinuousPdfViewer
-            pdfBuffer={pdfBuffer}
+            pdfBlob={pdfBlob}
             zoom={zoom}
             setZoom={setClampedZoom}
             currentPage={currentPage}

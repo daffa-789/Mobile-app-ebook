@@ -20,7 +20,11 @@ const UKURAN = { judul: 14, kecil: 7, teks: 8 };
 
 /* Setiap garis putus-putus menempati pita dengan ruang sama di atas dan bawah,
    supaya ritme vertikal tidak ada yang menempel dan ada yang melebar. */
-const TINGGI = { judul: 7, kecil: 3.7, teks: 4.5, aturan: 4.8, aturanGanda: 5.6 };
+const TINGGI = { judul: 7, kecil: 3.7, teks: 4.5, aturan: 4.8 };
+
+/* Jarak label ke nilai yang turun baris — lebih rapat dari satu baris penuh agar
+   nama benar-benar terasa berada di bawah "Kepada", bukan menggantung. */
+const JEDA_LABEL = 3.4;
 
 /* Courier adalah huruf mono: satu karakter = 0,6 em. Angka ini dipakai untuk
    memperkirakan jumlah baris SEBELUM dokumen dibuat, karena jsPDF 4 tidak punya
@@ -48,7 +52,6 @@ const susunBaris = (data) => {
   baris.push(
     { jenis: 'aturan' },
     { jenis: 'pasang', label: planName, nilai: formatRupiah(amount), tebal: true },
-    { jenis: 'kiri', teks: '30 Hari' },
   );
 
   if (adminFee > 0) {
@@ -56,7 +59,7 @@ const susunBaris = (data) => {
   }
 
   baris.push(
-    { jenis: 'aturanGanda' },
+    { jenis: 'aturan' },
     { jenis: 'pasang', label: 'TOTAL', nilai: formatRupiah(totalPaid), tebal: true },
     { jenis: 'pasang', label: 'Bayar', nilai: 'QRIS' },
     { jenis: 'aturan' },
@@ -72,16 +75,14 @@ const susunBaris = (data) => {
 /** Perkiraan tinggi satu baris, termasuk nilai panjang yang akan dibungkus. */
 const tinggiBaris = (b) => {
   if (b.jenis === 'aturan') return TINGGI.aturan;
-  if (b.jenis === 'aturanGanda') return TINGGI.aturanGanda;
   if (b.jenis === 'judul') return TINGGI.judul;
-  if (b.jenis === 'kiri') return TINGGI.kecil;
 
   if (b.jenis === 'kecil') return TINGGI.kecil * perkiraanBaris(b.teks, UKURAN.kecil, ISI);
 
   const satuBaris = perkiraanBaris(b.nilai, UKURAN.teks, LEBAR_NILAI) === 1;
   return satuBaris
     ? TINGGI.teks
-    : TINGGI.teks * (1 + perkiraanBaris(b.nilai, UKURAN.teks, LEBAR_KOLOM));
+    : JEDA_LABEL + TINGGI.teks * perkiraanBaris(b.nilai, UKURAN.teks, LEBAR_KOLOM);
 };
 
 /**
@@ -112,16 +113,14 @@ export const downloadReceiptPdf = (details, user) => {
   const kanan = MARGIN + ISI;
 
   for (const b of baris) {
-    if (b.jenis === 'aturan' || b.jenis === 'aturanGanda') {
-      const pita = b.jenis === 'aturanGanda' ? TINGGI.aturanGanda : TINGGI.aturan;
+    if (b.jenis === 'aturan') {
       doc.setDrawColor(150, 145, 135);
       doc.setLineWidth(0.2);
       doc.setLineDash([1.4, 1.4], 0);
-      const tengah = y + pita / 2;
+      const tengah = y + TINGGI.aturan / 2;
       doc.line(MARGIN, tengah, kanan, tengah);
-      if (b.jenis === 'aturanGanda') doc.line(MARGIN, tengah + 1, kanan, tengah + 1);
       doc.setLineDash([], 0);
-      y += pita;
+      y += TINGGI.aturan;
       continue;
     }
 
@@ -133,15 +132,6 @@ export const downloadReceiptPdf = (details, user) => {
       doc.text(b.teks, LEBAR / 2, y + 4.5, { align: 'center' });
       doc.setTextColor(32, 30, 26);
       y += TINGGI.judul;
-      continue;
-    }
-
-    if (b.jenis === 'kiri') {
-      doc.setFontSize(UKURAN.kecil);
-      doc.setTextColor(90, 86, 78);
-      doc.text(b.teks, MARGIN, y + 3);
-      doc.setTextColor(32, 30, 26);
-      y += TINGGI.kecil;
       continue;
     }
 
@@ -168,7 +158,7 @@ export const downloadReceiptPdf = (details, user) => {
        sendiri, lalu nilainya dimulai pada kolom tetap dan rata di kolom itu,
        sehingga ruang tengah-kanan dibiarkan kosong. */
     doc.text(b.label, MARGIN, y + 3);
-    y += TINGGI.teks;
+    y += JEDA_LABEL;
     const barisNilai = doc.splitTextToSize(nilai, LEBAR_KOLOM);
     doc.text(barisNilai, KOLOM, y + 3);
     y += TINGGI.teks * barisNilai.length;

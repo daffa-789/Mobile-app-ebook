@@ -1,3 +1,10 @@
+/**
+ * Modul pembuat pengingat agenda dan masa aktif langganan Pro.
+ * Menghitung selisih hari kedaluwarsa keanggotaan dan menyusun notifikasi agenda harian.
+ *
+ * @module src/lib/reminders
+ */
+
 /* Helper di bawah ini bersifat internal modul — hanya dipakai oleh
    `buildReminders` dan fungsi lihat/simpan di berkas ini. Tidak di-export agar
    permukaan API modul tetap sempit dan jelas mana yang stabil untuk dipakai

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Download, CheckCircle2 } from 'lucide-react';
+import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { useApp } from '@context/AppContext';
 import { typography } from '@lib/styles';
-import { PaymentReceiptModal } from './PaymentReceiptModal';
 
 export const PaymentSuccessScreen = () => {
   const { user, lastPaymentResult, selectedPlan, selectedPaymentMethod, navigateTo } = useApp();
-  const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [menyiapkanPdf, setMenyiapkanPdf] = useState(false);
 
   useEffect(() => {
     // Tembakkan animasi confetti selebrasi saat halaman pembayaran sukses dimuat
@@ -57,6 +57,22 @@ export const PaymentSuccessScreen = () => {
     ['Masa aktif', hasPeriod ? details.periodStr : 'Aktif 30 Hari (Pro)'],
     ['Biaya layanan', adminFee === 0 ? 'Gratis (Rp 0)' : `Rp ${adminFee.toLocaleString('id-ID')}`],
   ];
+
+  /* Tidak ada pratinjau kwitansi: tombol ini langsung menghasilkan PDF-nya,
+     sama seperti tombol "Unduh PDF" di riwayat langganan. */
+  const handleUnduhPdf = async () => {
+    if (menyiapkanPdf) return;
+
+    setMenyiapkanPdf(true);
+    try {
+      const { downloadReceiptPdf } = await import('@lib/receiptPdf');
+      downloadReceiptPdf({ ...details, amount, adminFee, totalPaid: total }, user);
+    } catch {
+      toast.error('Kwitansi PDF gagal disiapkan. Silakan coba lagi.');
+    } finally {
+      setMenyiapkanPdf(false);
+    }
+  };
 
   return (
     <div className="min-h-[640px] bg-cream-50 px-4 py-8 sm:px-6">
@@ -113,11 +129,13 @@ export const PaymentSuccessScreen = () => {
         <div className="mt-5 flex flex-col sm:flex-row gap-3">
           <button
             type="button"
-            onClick={() => setShowReceiptModal(true)}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-brand-700 bg-ui-card px-4 py-3.5 text-sm font-bold text-brand-800 transition hover:bg-brand-50 shadow-xs cursor-pointer"
+            onClick={handleUnduhPdf}
+            disabled={menyiapkanPdf}
+            aria-busy={menyiapkanPdf}
+            className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl border-2 border-brand-700 bg-ui-card px-4 py-3.5 text-sm font-bold text-brand-800 transition hover:bg-brand-50 shadow-xs cursor-pointer disabled:cursor-wait disabled:opacity-70"
           >
             <Download className="w-4 h-4 text-brand-700" />
-            <span>Simpan Kwitansi (PDF)</span>
+            <span>{menyiapkanPdf ? 'Menyiapkan PDF…' : 'Simpan Kwitansi (PDF)'}</span>
           </button>
           <button
             type="button"
@@ -127,14 +145,6 @@ export const PaymentSuccessScreen = () => {
             <span>Mulai Membaca Buku</span>
           </button>
         </div>
-
-        {/* Modal Kwitansi */}
-        <PaymentReceiptModal
-          isOpen={showReceiptModal}
-          onClose={() => setShowReceiptModal(false)}
-          details={details}
-          user={user}
-        />
       </div>
     </div>
   );

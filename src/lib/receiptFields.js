@@ -1,13 +1,13 @@
 /**
  * @file src/lib/receiptFields.js
- * @description Penurunan kolom kwitansi — satu sumber kebenaran untuk tampilan
- * layar (`features/payment/PaymentReceiptModal.jsx`) dan berkas PDF
+ * @description Penurunan kolom kwitansi — satu sumber kebenaran bagi layar yang
+ * menyiapkan datanya (sukses pembayaran & riwayat langganan) dan berkas PDF
  * (`lib/receiptPdf.js`).
  *
- * Angka yang dilihat pengguna sebelum mengunduh harus sama dengan yang tercetak
- * di arsip resminya. Selama sembilan baris penurunan ini tersalin di dua berkas,
- * salah satu bisa berubah diam-diam (mis. biaya admin default) dan kwitansi
- * layar tidak lagi cocok dengan kwitansi PDF.
+ * Angka yang dilihat pengguna harus sama dengan yang tercetak di arsip resminya.
+ * Selama penurunan ini tersalin di beberapa berkas, salah satunya bisa berubah
+ * diam-diam (mis. biaya admin default) dan kwitansi layar tidak lagi cocok
+ * dengan kwitansi PDF.
  */
 
 /**

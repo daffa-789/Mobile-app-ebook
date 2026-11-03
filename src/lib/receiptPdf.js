@@ -13,8 +13,11 @@ const LEBAR_NILAI = ISI * 0.48;
 /* Indentasi nilai panjang yang dicetak di barisnya sendiri. */
 const INDENT = 6;
 
-const UKURAN = { judul: 13, kecil: 7.5, teks: 8 };
-const TINGGI = { judul: 6.5, kecil: 3.9, teks: 4.4, aturan: 3.6 };
+const UKURAN = { judul: 14, kecil: 7, teks: 8 };
+
+/* Setiap garis putus-putus menempati pita dengan ruang sama di atas dan bawah,
+   supaya ritme vertikal tidak ada yang menempel dan ada yang melebar. */
+const TINGGI = { judul: 7, kecil: 3.7, teks: 4.5, aturan: 4.8, aturanGanda: 5.6 };
 
 /* Courier adalah huruf mono: satu karakter = 0,6 em. Angka ini dipakai untuk
    memperkirakan jumlah baris SEBELUM dokumen dibuat, karena jsPDF 4 tidak punya
@@ -52,7 +55,7 @@ const susunBaris = (data, printDate) => {
   }
 
   baris.push(
-    { jenis: 'aturan' },
+    { jenis: 'aturanGanda' },
     { jenis: 'pasang', label: 'TOTAL', nilai: formatRupiah(totalPaid), tebal: true },
     { jenis: 'pasang', label: 'Bayar', nilai: 'QRIS' },
     { jenis: 'aturan' },
@@ -71,6 +74,7 @@ const susunBaris = (data, printDate) => {
 /** Perkiraan tinggi satu baris, termasuk nilai panjang yang akan dibungkus. */
 const tinggiBaris = (b) => {
   if (b.jenis === 'aturan') return TINGGI.aturan;
+  if (b.jenis === 'aturanGanda') return TINGGI.aturanGanda;
   if (b.jenis === 'judul') return TINGGI.judul;
   if (b.jenis === 'kiri') return TINGGI.kecil;
 
@@ -84,8 +88,8 @@ const tinggiBaris = (b) => {
 
 /**
  * Unduh kwitansi bergaya struk: satu kolom sempit, huruf mono, garis putus-putus.
- * Nilainya sama dengan pratinjau di PaymentReceiptModal karena keduanya memakai
- * resolveReceiptFields.
+ * Nilainya diambil dari resolveReceiptFields, sama dengan angka yang tampil di
+ * layar sukses pembayaran dan riwayat langganan.
  *
  * @param {object} details Rincian pembayaran (refNo, dateStr, planName, amount, adminFee, totalPaid)
  * @param {object} user Rincian pengguna (name, email, phone)
@@ -114,17 +118,20 @@ export const downloadReceiptPdf = (details, user) => {
   doc.setFont('courier', 'normal');
   doc.setTextColor(32, 30, 26);
 
-  let y = MARGIN + 2;
+  let y = MARGIN + 1;
   const kanan = MARGIN + ISI;
 
   for (const b of baris) {
-    if (b.jenis === 'aturan') {
+    if (b.jenis === 'aturan' || b.jenis === 'aturanGanda') {
+      const pita = b.jenis === 'aturanGanda' ? TINGGI.aturanGanda : TINGGI.aturan;
       doc.setDrawColor(150, 145, 135);
       doc.setLineWidth(0.2);
-      doc.setLineDash([1.2, 1.2], 0);
-      doc.line(MARGIN, y + 1.2, kanan, y + 1.2);
+      doc.setLineDash([1.4, 1.4], 0);
+      const tengah = y + pita / 2;
+      doc.line(MARGIN, tengah, kanan, tengah);
+      if (b.jenis === 'aturanGanda') doc.line(MARGIN, tengah + 1, kanan, tengah + 1);
       doc.setLineDash([], 0);
-      y += TINGGI.aturan;
+      y += pita;
       continue;
     }
 

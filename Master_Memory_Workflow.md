@@ -1195,6 +1195,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R72 | Perapian 31 Okt 2026: Prettier, service layer 5 modul, dan pemecahan komponen admin — lihat 15.2. |
 | R73 | Pemeliharaan sistem 1 Nov 2026: Pemeriksaan kesehatan 7/7, script quality gate, dan optimasi aksesibilitas — lihat 15.3. |
 | R74 | Peningkatan tooling 2 Nov 2026: Quality gate `check:full`, standardisasi JSDoc rute/layanan, dan penguatan pembaca PDF — lihat 15.4. |
+| R75 | Dokumentasi arsitektur terpadu 3 Nov 2026: Standardisasi JSDoc menyeluruh pada modul client, lib server, service layer, dan runner — lihat 15.5. |
 
 ### 15.1 Yang sudah tidak ada lagi (R71, 30 Oktober 2026)
 
@@ -1220,6 +1221,14 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `auth_service.js:350`.
+
+### 15.5 Pemeliharaan R75 (3 November 2026)
+
+| Perubahan | Rincian |
+|---|---|
+| Modul Klien & Utilitas | Dokumentasi JSDoc lengkap pada utilitas klien (`phone.js`, `date.js`, `navigation.js`, `api.js`, `excelExport.js`, `reminders.js`, dan custom hook `useAdminDashboardData.js`). |
+| Library & Service Server | Dokumentasi JSDoc pada error handler (`errors.js`), utilitas waktu (`time.js`), resolver origin (`origin.js`), validasi Zod (`validate.js`), dan service layer (`transactions_service`, `users_service`, `carousel_service`, `books_service`, `auth_service`). |
+| Runner & Dokumentasi | Penambahan JSDoc arsitektur pada runner `scripts/health-check.js` dan `scripts/start.js`, serta penyelarasan katalog perintah pada `README.md`. |
 
 ### 15.4 Peningkatan R74 (2 November 2026)
 

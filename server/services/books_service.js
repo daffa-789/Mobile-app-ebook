@@ -123,6 +123,14 @@ const loadBookRow = async (id, columns) => {
   return data;
 };
 
+/**
+ * Mengambil daftar buku katalog dengan filter pencarian dan opsi pengurutan.
+ *
+ * @param {object} [options] - Opsi filter dan sorting
+ * @param {string} [options.search] - Kata kunci pencarian judul
+ * @param {'oldest'|'title_asc'|'title_desc'|'newest'} [options.sort] - Metode pengurutan
+ * @returns {Promise<Array<object>>} Daftar buku terformat
+ */
 export async function listBooks({ search, sort } = {}) {
   let query = supabaseServer.from('books').select(BOOK_FIELDS);
 
@@ -149,12 +157,28 @@ export async function listBooks({ search, sort } = {}) {
   return (data || []).map(toBookResponse);
 }
 
+/**
+ * Mengambil detail informasi satu buku berdasarkan ID.
+ *
+ * @param {string} id - ID buku
+ * @returns {Promise<object>} Data buku lengkap
+ */
 export async function getBookById(id) {
   const book = await loadBookRow(id, BOOK_FIELDS);
   if (!book) throw createServiceError('Buku tidak ditemukan', { statusCode: 404 });
   return toBookResponse(book);
 }
 
+/**
+ * Menambahkan entri buku baru tanpa unggahan naskah fisik.
+ *
+ * @param {object} params - Data buku baru
+ * @param {string} params.title - Judul buku
+ * @param {number} [params.pages=1] - Jumlah halaman
+ * @param {boolean} [params.isLocked=false] - Status khusus anggota Pro
+ * @param {string|null} [params.coverUrl] - URL sampul buku
+ * @returns {Promise<string>} ID buku yang berhasil dibuat
+ */
 export async function createBook({ title, pages, isLocked, coverUrl }) {
   const id = generateId('buku');
   const { error } = await supabaseServer.from('books').insert({

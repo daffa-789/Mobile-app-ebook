@@ -46,7 +46,7 @@ export const TextDocViewer = ({
     >
       <article
         ref={previewRef}
-        className="relative w-full max-w-3xl bg-ui-card p-8 sm:p-14 rounded-2xl shadow-lg border border-ink-200/60 leading-relaxed text-body text-ink-800 dark:text-cream-100 whitespace-pre-wrap select-none my-auto"
+        className="relative w-full max-w-3xl bg-ui-card p-8 sm:p-14 rounded-2xl shadow-lg border border-ink-200/60 leading-relaxed text-body text-ink-800 whitespace-pre-wrap select-none my-auto"
         style={{ fontSize: `${(zoom / 100) * 1.05}rem` }}
       >
         {isSampleMode && (
@@ -65,10 +65,7 @@ export const TextDocViewer = ({
         )}
 
         {currentSample?.title && (
-          <h2
-            className="mb-4 text-center font-black text-brand-900 dark:text-cream-50"
-            style={{ fontSize: '1.75em' }}
-          >
+          <h2 className="mb-4 text-center font-black text-brand-900" style={{ fontSize: '1.75em' }}>
             {currentSample.title}
           </h2>
         )}

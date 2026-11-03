@@ -7,7 +7,6 @@ export const PAYMENT_METHODS = [
         name: 'QRIS Midtrans',
         icon: 'wallet',
         logoUrl: '/payments/qris.svg',
-        mono: true,
         color: '#EA2127',
       },
     ],

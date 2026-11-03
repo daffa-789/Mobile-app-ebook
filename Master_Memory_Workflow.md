@@ -245,21 +245,21 @@ Seluruh rute antarmuka wajib menerapkan TIGA color key dari Tema 1 "Editorial El
 **Aturan Penerapan:**
 1. **Status Fungsional:** Menggunakan token semantik `semantic-success/warning/danger/info` (bukan warna dekoratif, tidak dihitung dalam 60-30-10).
 2. **Larangan Palet Mentah:** Dilarang keras memakai kelas warna Tailwind mentah (`slate-*`, `gray-*`, `zinc-*`, `indigo-*`, `rose-*`, `emerald-*`, dll.) untuk elemen struktural. Seluruh warna wajib melalui CSS variable token.
-3. **Pengecualian Resmi:** Logo Google multicolor pada tombol OAuth, logo resmi QRIS di `public/payments/` (`qris.svg` dan `qris-putih.svg`), serta token merah resmi QRIS `qris-600/700` (`#E30613`/`#C00511` — kemasan merah baku QRIS Indonesia). Logo satu warna seperti wordmark QRIS diberi penanda `mono: true` di katalog metode pembayaran lalu dibalik lewat `dark:invert` — bukan memakai pelat putih, karena pelat menciptakan kotak putih yang tidak menyatu dengan kartu di mode gelap.
-4. **Mode Malam (Dark Mode):** Tetap mengikuti proporsi 60-30-10 via CSS variable (charcoal hangat menggantikan krem, zamrud dinaikkan terangnya agar terbaca kontras).
+3. **Pengecualian Resmi:** Logo Google multicolor pada tombol OAuth, logo resmi QRIS di `public/payments/` (`qris.svg` dan `qris-putih.svg`), serta token merah resmi QRIS `qris-600/700` (`#E30613`/`#C00511` — kemasan merah baku QRIS Indonesia). Wordmark QRIS satu warna tampil apa adanya di atas kartu terang; tidak lagi dibalik, karena penanda `mono` dan varian invert tema gelap sudah ikut dihapus bersama mode malam. Bukan memakai pelat putih, karena pelat menciptakan kotak putih yang tidak menyatu dengan kartu.
+4. **Satu Tema Terang:** Aplikasi tidak lagi punya mode malam. Seluruh warna mengalir dari CSS variable palet "Editorial Elegan" versi terang, dan proporsi 60-30-10 dijaga pada palet itu saja.
 
-### 4.4 Palet Tunggal "Editorial Elegan" (Terang & Malam)
-Sumber kebenaran warna ada di `component.json` (`colors`) dan disuntikkan ke CSS variables oleh `src/theme/themeInjector.js`. Hanya ada **satu palet** dengan dua mode, bukan kumpulan tema yang bisa dipilih:
+### 4.4 Palet Tunggal "Editorial Elegan" (Terang)
+Sumber kebenaran warna ada di `component.json` (`colors`) dan disuntikkan ke CSS variables oleh `src/theme/themeInjector.js`. Hanya ada **satu palet untuk satu tema terang**: mode malam dan pilihan tema sudah dibuang, jadi tidak ada kelas `dark` di `<html>`, tidak ada `ThemeProvider`/`themeMode.js`, tidak ada tombol ganti tema, dan tidak ada skrip pra-cat di `index.html`.
 
-| Peran | Mode Terang | Mode Malam | Token |
-|---|---|---|---|
-| **Brand / Sekunder** | Hijau Zamrud Tua `#14523A` (brand-700), hover `#0E3D2C` | Zamrud diterangkan `rgb(111 196 155)` / `#6FC49B` | `brand-*` |
-| **Latar Dominan** | Krem Hangat `#FBF8F3`, surface `#F7F2E9`, card `#FFFDFA` | Charcoal hangat `#14130F`, surface `#1B1A14`, card `#201E17` | `cream-*`, `ui-*` |
-| **Teks / Ink** | Tinta Arang `#1D1B17`, sekunder `#5A554E`, muted `#7C766E` | Off-white hangat `#F4EFE3`, sekunder `#C0B7A4`, muted `#948B79` | `ink-*`, `ui-text-*` |
-| **Aksen** | Emas Antik `#B8860B` (gold-500), highlight `#D4AF4F` | Emas lebih terang `rgb(217 180 74)` | `gold-*`, `accent-gold` |
-| **Border** | `#E4D9C6` | `#443E33` | `ui-border`, `cream-300` |
+| Peran | Nilai | Token |
+|---|---|---|
+| **Brand / Sekunder** | Hijau Zamrud Tua `#14523A` (brand-700), hover `#0E3D2C` | `brand-*` |
+| **Latar Dominan** | Krem Hangat `#FBF8F3`, surface `#F7F2E9`, card `#FFFDFA` | `cream-*`, `ui-*` |
+| **Teks / Ink** | Tinta Arang `#1D1B17`, sekunder `#5A554E`, muted `#7C766E` | `ink-*`, `ui-text-*` |
+| **Aksen** | Emas Antik `#B8860B` (gold-500), highlight `#D4AF4F` | `gold-*`, `accent-gold` |
+| **Border** | `#E4D9C6` | `ui-border`, `cream-300` |
 
-Pemilihan mode dilakukan `ThemeProvider` (`src/theme/themeMode.js`) dengan tiga preferensi: `light`, `dark`, dan `system` (mengikuti `prefers-color-scheme`). Pilihan disimpan di `localStorage` dengan kunci `wb_theme`; skrip pra-cat di `index.html` mencegah kedipan tema. Mode malam bukan inversi putih/hitam: latar tetap hangat dan nilai solid tombol dipisahkan (`--night-solid-*`) agar `bg-brand-700` tetap pekat sementara `text-brand-700` tetap terbaca.
+Permukaan yang memang gelap secara desain (sidebar admin) memakai token `semantic-dangerOnDark` dan `semantic-mutedOnDark`. Dua token itu bertahan karena ia menerangkan makna "teks di atas permukaan gelap", bukan bagian dari mode malam. Konsekuensi lain: `script-src` CSP kini cukup `'self'` karena tidak ada lagi skrip inline yang butuh hash `THEME_INIT_HASH`.
 
 ### 4.5 Tipografi & Hirarki Skala
 * **Display / Judul:** *Fraunces* (serif variabel dengan sumbu optik), fallback *Newsreader* → Georgia. Dipakai lewat `font-display`.
@@ -1171,7 +1171,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 │   │   │   └── hooks/      # useAdminDashboardData, useAdminBookEditor, useAdminEventEditor, useAdminCarouselEditor
 │   │   └── reader/         # ContinuousPdfViewer, PdfReaderScreen, PdfPageSheet, usePdfPinchGesture, usePdfCanvasRenderer, ...
 │   ├── lib/                # api (termasuk `apiJsonSend`), phone, date, excelExport, receiptPdf, receiptFields, navigation, normalizers, ...
-│   ├── theme/              # ThemeProvider, themeInjector, themeMode
+│   ├── theme/              # themeInjector (satu tema terang, tanpa provider)
 │   ├── App.jsx             # Router navigasi utama
 │   ├── index.css           # Token Tailwind 4 + palet Editorial Elegan
 │   └── main.jsx            # Entry point React DOM

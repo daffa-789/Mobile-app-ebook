@@ -43,13 +43,13 @@ export const ReaderTopBar = ({
   return (
     <header
       aria-label={title}
-      className="h-12 shrink-0 z-30 bg-ui-card/95 backdrop-blur-md border-b border-ink-200/70 dark:border-ink-800/80 px-4 sm:px-6 flex items-center justify-between shadow-xs"
+      className="h-12 shrink-0 z-30 bg-ui-card/95 backdrop-blur-md border-b border-ink-200/70 px-4 sm:px-6 flex items-center justify-between shadow-xs"
     >
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <button
           type="button"
           onClick={onBack}
-          className="p-2 -ml-2 rounded-xl text-ink-600 dark:text-ink-300 hover:text-ink-900 dark:hover:text-cream-50 hover:bg-ink-100 dark:hover:bg-ink-800/80 transition cursor-pointer shrink-0"
+          className="p-2 -ml-2 rounded-xl text-ink-600 hover:text-ink-900 hover:bg-ink-100 transition cursor-pointer shrink-0"
           title="Kembali ke beranda"
           aria-label="Kembali ke beranda"
         >
@@ -58,7 +58,7 @@ export const ReaderTopBar = ({
 
         <form
           onSubmit={onPageInputSubmit}
-          className="flex shrink-0 items-center gap-0.5 rounded-lg px-1.5 py-1 font-mono text-small font-semibold text-ink-500 dark:text-ink-400"
+          className="flex shrink-0 items-center gap-0.5 rounded-lg px-1.5 py-1 font-mono text-small font-semibold text-ink-500"
           aria-label="Navigasi halaman"
         >
           <input
@@ -67,7 +67,7 @@ export const ReaderTopBar = ({
             value={pageInput}
             onChange={(event) => setPageInput(event.target.value)}
             onBlur={onPageInputSubmit}
-            className="min-w-[1ch] max-w-[4ch] bg-transparent text-right text-ink-800 dark:text-cream-100 focus-visible:outline-none"
+            className="min-w-[1ch] max-w-[4ch] bg-transparent text-right text-ink-800 focus-visible:outline-none"
             style={{ width: `${Math.max(1, pageInput.length)}ch` }}
             aria-label="Halaman saat ini"
             title="Ketik nomor halaman lalu tekan Enter"
@@ -78,12 +78,12 @@ export const ReaderTopBar = ({
       </div>
 
       <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-        <div className="flex items-center bg-cream-100/90 dark:bg-ink-800/90 rounded-xl p-0.5 border border-cream-300 dark:border-ink-700 shadow-2xs">
+        <div className="flex items-center bg-cream-100/90 rounded-xl p-0.5 border border-cream-300 shadow-2xs">
           <button
             type="button"
             onClick={() => onAdjustZoom(-10)}
             disabled={zoom <= 40}
-            className="p-1.5 rounded-lg text-ink-600 dark:text-ink-300 hover:text-ink-900 dark:hover:text-cream-50 hover:bg-cream-200/80 dark:hover:bg-ink-700/80 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+            className="p-1.5 rounded-lg text-ink-600 hover:text-ink-900 hover:bg-cream-200/80 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
             title="Perkecil (Zoom Out)"
             aria-label="Perkecil dokumen"
           >
@@ -95,8 +95,8 @@ export const ReaderTopBar = ({
             onClick={onResetZoom}
             className={`px-2 py-0.5 rounded-md text-caption font-mono font-bold transition cursor-pointer ${
               zoom !== 100
-                ? 'text-brand-700 dark:text-brand-400 bg-cream-50 dark:bg-ink-900 shadow-2xs'
-                : 'text-ink-600 dark:text-ink-300 hover:text-ink-900 dark:hover:text-cream-50'
+                ? 'text-brand-700 bg-cream-50 shadow-2xs'
+                : 'text-ink-600 hover:text-ink-900'
             }`}
             title="Klik untuk reset ke 100%"
             aria-label={`Zoom ${zoom}%. Klik untuk reset ke 100%`}
@@ -108,7 +108,7 @@ export const ReaderTopBar = ({
             type="button"
             onClick={() => onAdjustZoom(10)}
             disabled={zoom >= 300}
-            className="p-1.5 rounded-lg text-ink-600 dark:text-ink-300 hover:text-ink-900 dark:hover:text-cream-50 hover:bg-cream-200/80 dark:hover:bg-ink-700/80 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
+            className="p-1.5 rounded-lg text-ink-600 hover:text-ink-900 hover:bg-cream-200/80 disabled:opacity-40 disabled:pointer-events-none transition cursor-pointer"
             title="Perbesar (Zoom In)"
             aria-label="Perbesar dokumen"
           >
@@ -118,12 +118,12 @@ export const ReaderTopBar = ({
 
         {supportsNativeFullscreen && (
           <>
-            <div className="h-4 w-px bg-cream-300 dark:bg-ink-700 mx-0.5" />
+            <div className="h-4 w-px bg-cream-300 mx-0.5" />
 
             <button
               type="button"
               onClick={onToggleFullscreen}
-              className="p-2 rounded-xl text-ink-600 dark:text-ink-300 hover:text-ink-900 dark:hover:text-cream-50 hover:bg-ink-100 dark:hover:bg-ink-800 transition cursor-pointer"
+              className="p-2 rounded-xl text-ink-600 hover:text-ink-900 hover:bg-ink-100 transition cursor-pointer"
               title={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh'}
               aria-label={isFullscreen ? 'Keluar Layar Penuh' : 'Layar Penuh'}
             >

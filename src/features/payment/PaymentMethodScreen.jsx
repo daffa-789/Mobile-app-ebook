@@ -82,7 +82,7 @@ export const PaymentMethodScreen = () => {
                             <img
                               src={opt.logoUrl}
                               alt={opt.name}
-                              className={`w-full h-full object-contain drop-shadow-sm ${opt.mono ? 'dark:invert' : ''}`}
+                              className="w-full h-full object-contain drop-shadow-sm"
                               onError={(e) => {
                                 e.target.style.display = 'none';
                                 e.target.nextSibling.style.display = 'flex';

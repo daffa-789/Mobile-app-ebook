@@ -1,13 +1,11 @@
 import themeConfig from '../../component.json';
 
-/* ── R53: Injeksi token desain sadar-tema ────────────────────────────────────
+/* ── R53: Injeksi token desain ────────────────────────────────────────────────
    Dulu berkas ini menuliskan warna sebagai inline style pada <html>, sehingga
-   tema tidak bisa diganti lewat kelas CSS. Sekarang seluruh token disuntikkan
-   sebagai SATU elemen <style> yang memuat dua blok:
-     :root  → nilai mode Terang
-     .dark  → nilai mode Malam
-   Dengan begitu memasang/melepas kelas `dark` di <html> cukup untuk berganti
-   tema, dan warna tetap bersumber dari component.json (single source of truth).
+   tema tidak bisa diganti lewat kelas CSS, lalu sempat memuat dua blok (:root
+   untuk Terang dan .dark untuk Malam). Aplikasi kini satu tema terang, jadi
+   hanya blok :root yang disuntikkan — seluruh warna tetap bersumber dari
+   component.json (single source of truth).
 
    Setiap warna ditulis DUA KALI:
      --cream-50 : "251 248 243"  → tripel RGB, dipakai Tailwind lewat
@@ -209,10 +207,9 @@ const toBlock = (selector, rows) => {
 function applyThemeTokens(tokens = themeConfig) {
   if (typeof document === 'undefined') return;
 
-  const lightRows = [...buildColorVars(tokens.colors), ...buildStructuralVars(tokens)];
-  const darkRows = buildColorVars(tokens.colors?.dark);
+  const rows = [...buildColorVars(tokens.colors), ...buildStructuralVars(tokens)];
 
-  const css = `${toBlock(':root', lightRows)}${toBlock('.dark', darkRows)}`;
+  const css = toBlock(':root', rows);
 
   let styleEl = document.getElementById(STYLE_ID);
   if (!styleEl) {

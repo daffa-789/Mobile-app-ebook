@@ -2,13 +2,13 @@
  * Skeleton Loader Components (D-09)
  *
  * Mengikuti 3 Color Key (DESIGN.md seksi 1.5):
- * Menggunakan token bg-cream-200/80 dan dark:bg-cream-300/40.
+ * Menggunakan token bg-cream-200/80.
  * Menghormati prefers-reduced-motion (animasi berhenti berkedip).
  */
 
 export const Skeleton = ({ className = '', ...props }) => (
   <div
-    className={`animate-pulse rounded-md bg-cream-200/80 dark:bg-cream-300/40 ${className}`}
+    className={`animate-pulse rounded-md bg-cream-200/80 ${className}`}
     aria-hidden="true"
     {...props}
   />
@@ -16,7 +16,7 @@ export const Skeleton = ({ className = '', ...props }) => (
 
 const BookCardSkeleton = () => (
   <div className="bg-cream-50 rounded-3xl border border-cream-300/80 p-3.5 sm:p-4 flex flex-col justify-between shadow-sm overflow-hidden ring-1 ring-ink-800/5">
-    <div className="w-full aspect-[3/4.2] rounded-2xl bg-cream-200/80 dark:bg-cream-300/40 mb-3 animate-pulse" />
+    <div className="w-full aspect-[3/4.2] rounded-2xl bg-cream-200/80 mb-3 animate-pulse" />
     <div className="space-y-2 flex-1 flex flex-col justify-between">
       <div>
         <div className="flex items-center justify-between gap-2 mb-2">
@@ -52,9 +52,9 @@ export const CalendarSkeleton = () => (
     aria-label="Memuat kalender..."
   >
     {/* Banner atas */}
-    <div className="rounded-3xl bg-cream-200/70 dark:bg-cream-300/30 p-6 animate-pulse">
-      <Skeleton className="h-7 w-64 rounded-md mb-2 bg-cream-300/80 dark:bg-cream-300/60" />
-      <Skeleton className="h-4 w-96 max-w-full rounded-md bg-cream-300/80 dark:bg-cream-300/60" />
+    <div className="rounded-3xl bg-cream-200/70 p-6 animate-pulse">
+      <Skeleton className="h-7 w-64 rounded-md mb-2 bg-cream-300/80" />
+      <Skeleton className="h-4 w-96 max-w-full rounded-md bg-cream-300/80" />
     </div>
 
     {/* Grid dua kolom */}

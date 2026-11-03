@@ -23,7 +23,7 @@ export const HtmlDocViewer = ({ docHtml, zoom, surfaceRef, previewRef, pinchHand
       onTouchStart={pinchHandlers.handleTouchStart}
       onTouchEnd={pinchHandlers.handleTouchEnd}
       onTouchCancel={pinchHandlers.handleTouchEnd}
-      className="w-full max-w-full md:max-w-4xl xl:max-w-5xl bg-ui-card shadow-none md:shadow-md rounded-none md:rounded-2xl p-4 sm:p-8 md:p-12 border-0 md:border border-ink-200/60 dark:border-ink-800/80 leading-relaxed text-ink-900 dark:text-cream-50 select-text overflow-y-auto h-full overscroll-contain"
+      className="w-full max-w-full md:max-w-4xl xl:max-w-5xl bg-ui-card shadow-none md:shadow-md rounded-none md:rounded-2xl p-4 sm:p-8 md:p-12 border-0 md:border border-ink-200/60 leading-relaxed text-ink-900 select-text overflow-y-auto h-full overscroll-contain"
       style={{
         fontSize: `${(zoom / 100) * 1.05}rem`,
         WebkitOverflowScrolling: 'touch',
@@ -33,7 +33,7 @@ export const HtmlDocViewer = ({ docHtml, zoom, surfaceRef, previewRef, pinchHand
     >
       <div
         ref={previewRef}
-        className="prose dark:prose-invert max-w-none [&>p]:mb-4 [&>p]:leading-relaxed [&>h1]:text-[1.5em] [&>h1]:font-black [&>h1]:mb-4 [&>h2]:text-[1.25em] [&>h2]:font-bold [&>h2]:mb-3 [&>table]:w-full [&>table]:border-collapse [&>table_td]:border [&>table_td]:border-cream-300 [&>table_td]:p-2 [&>table_th]:border [&>table_th]:border-cream-300 [&>table_th]:p-2 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5 font-serif sm:font-sans"
+        className="prose max-w-none [&>p]:mb-4 [&>p]:leading-relaxed [&>h1]:text-[1.5em] [&>h1]:font-black [&>h1]:mb-4 [&>h2]:text-[1.25em] [&>h2]:font-bold [&>h2]:mb-3 [&>table]:w-full [&>table]:border-collapse [&>table_td]:border [&>table_td]:border-cream-300 [&>table_td]:p-2 [&>table_th]:border [&>table_th]:border-cream-300 [&>table_th]:p-2 [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5 font-serif sm:font-sans"
         style={{ fontSize: `${(zoom / 100) * 1.05}rem` }}
         dangerouslySetInnerHTML={{ __html: docHtml }}
       />

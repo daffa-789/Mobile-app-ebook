@@ -52,17 +52,13 @@ export const QRIS_STATUS_RATE_LIMIT = {
 /*
  * VULN-09 — Content Security Policy.
  *
- * Hash skrip inline di index.html (tema pra-cat) dicantumkan eksplisit karena
- * CSP menolak inline script, dan 'unsafe-inline' akan membatalkan seluruh
- * tujuan CSP. Skrip itu tidak bisa dipindah ke berkas terpisah: ia harus jalan
- * sebelum lukisan pertama agar tidak ada kedipan terang.
- *
- * Karena suite uji sudah dihapus, hash di bawah tidak lagi dijaga otomatis.
- * Setiap kali skrip inline di index.html diubah, hitung ulang SHA-256 isinya
- * (mis. lewat `openssl dgst -sha256 -binary | openssl base64`) dan ganti
- * nilai ini — kalau tidak, CSP memblokir skrip tema pra-cat.
+ * index.html tidak lagi memuat skrip inline (dulu pra-cat tema malam), jadi
+ * script-src cukup 'self'. Bila suatu hari skrip inline ditambahkan lagi,
+ * daftarkan hash SHA-256 atas teks di antara <script> dan </script> persis
+ * seperti byte yang dikirim server (LF; dihitung dari file ber-CRLF hasilnya
+ * beda dan tetap ditolak). Selama CSP report-only hash yang keliru tidak
+ * menimbulkan apa pun — ia baru kelihatan saat CSP_ENFORCE=1.
  */
-const THEME_INIT_HASH = "'sha256-h6WxRX0CwhoUEoC8JE0ISRoQ9984c8tt++I5IUMO0rg='";
 
 export const CSP_DIRECTIVES = {
   'default-src': ["'self'"],
@@ -73,7 +69,7 @@ export const CSP_DIRECTIVES = {
   /* 'unsafe-inline' di style-src diperlukan untuk atribut style React dan
    * utilitas Tailwind; tidak ada jalan keluar selain menghapus keduanya.
    */
-  'script-src': ["'self'", THEME_INIT_HASH],
+  'script-src': ["'self'"],
   'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
   'font-src': ["'self'", 'https://fonts.gstatic.com'],
   'img-src': ["'self'", 'data:', 'blob:'],

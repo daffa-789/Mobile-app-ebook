@@ -11,23 +11,20 @@ const controlHeights = {
   lg: tokens.sizing.control.heightLg,
 };
 
-/* ── Warna berbasis CSS variable (R53: tema malam) ──────────────────────────
-   Setiap token warna kini menunjuk ke CSS variable RGB bertripel
-   (mis. `--cream-50: 251 248 243`) alih-alih hex statis. Dengan begitu satu
-   set utility Tailwind yang sama dapat berganti nilai saat kelas `dark`
-   dipasang di <html>. `<alpha-value>` menjaga modifier opasitas seperti
-   `bg-cream-50/95` tetap bekerja.
+/* ── Warna berbasis CSS variable ─────────────────────────────────────────────
+   Setiap token warna menunjuk ke CSS variable RGB bertripel
+   (mis. `--cream-50: 251 248 243`) alih-alih hex statis. `<alpha-value>` menjaga
+   modifier opasitas seperti `bg-cream-50/95` tetap bekerja.
 
-   Nilai LIGHT dan DARK untuk tiap variable disuntikkan oleh
-   `src/theme/themeInjector.js` (bersumber dari component.json) dan punya
-   fallback statis di `src/index.css` agar render pertama tidak berkedip. */
+   Nilainya disuntikkan oleh `src/theme/themeInjector.js` (bersumber dari
+   component.json) dan punya fallback statis di `src/index.css` agar render
+   pertama tidak berkedip. Satu tema terang, jadi hanya satu set nilai. */
 const v = (name) => `rgb(var(--${name}) / <alpha-value>)`;
 
 const scale = (prefix, shades) =>
   Object.fromEntries(shades.map((shade) => [shade, v(`${prefix}-${shade}`)]));
 
 export default {
-  darkMode: 'class',
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     borderRadius: {

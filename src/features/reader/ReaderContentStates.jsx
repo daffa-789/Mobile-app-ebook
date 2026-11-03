@@ -42,7 +42,7 @@ export const BookNotFoundState = ({ onBack }) => (
 export const ProLockedState = ({ onUpgrade }) => (
   <div className="my-auto max-w-md w-full rounded-3xl border border-cream-300 bg-ui-card p-8 text-center shadow-xl">
     <Lock className="mx-auto h-10 w-10 text-gold-500 mb-3" />
-    <h2 className="text-h3 font-bold text-ink-900 dark:text-cream-50">Konten Khusus Member Pro</h2>
+    <h2 className="text-h3 font-bold text-ink-900">Konten Khusus Member Pro</h2>
     <p className="mt-2 text-caption text-ink-500">
       Aktifkan paket Pro untuk membuka dan membaca naskah lengkap ini.
     </p>
@@ -66,7 +66,7 @@ export const ProLockedState = ({ onUpgrade }) => (
 export const DocumentErrorState = ({ onRetry }) => (
   <div className="my-auto max-w-md w-full rounded-3xl border border-cream-300 bg-ui-card p-8 text-center shadow-xl">
     <FileText className="mx-auto h-10 w-10 text-semantic-danger mb-3" />
-    <h2 className="text-h3 font-bold text-ink-900 dark:text-cream-50">Gagal Memuat Dokumen</h2>
+    <h2 className="text-h3 font-bold text-ink-900">Gagal Memuat Dokumen</h2>
     <p className="mt-2 text-caption text-ink-500">
       Berkas dokumen naskah tidak dapat dimuat atau diekstrak.
     </p>

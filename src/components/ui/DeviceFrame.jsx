@@ -2,7 +2,6 @@ import React, { useState, useMemo, useCallback, Fragment } from 'react';
 import { Menu, ArrowLeft } from 'lucide-react';
 import { Transition } from '@headlessui/react';
 import { useApp } from '@context/AppContext';
-import { ThemeToggle } from '@ui/ThemeToggle';
 import { tabIdFromPath } from '@lib/navigation';
 import { SidebarContent } from '../layout/SidebarContent';
 import { LogoutConfirmDialog } from '../layout/LogoutConfirmDialog';
@@ -151,10 +150,6 @@ const DeviceFrameBase = ({ children }) => {
               <span className="font-display text-lead font-bold tracking-tight text-ink-900">
                 Panel Admin
               </span>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <ThemeToggle />
             </div>
           </header>
         )}

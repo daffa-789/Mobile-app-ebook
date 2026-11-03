@@ -238,7 +238,7 @@ export const PdfReaderScreen = () => {
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-canvas-subtle text-ink-900 dark:text-cream-50 select-none overflow-hidden">
+    <div className="fixed inset-0 z-40 flex flex-col bg-canvas-subtle text-ink-900 select-none overflow-hidden">
       <ReaderTopBar
         title={activeBook.title}
         pageInput={pageInput}

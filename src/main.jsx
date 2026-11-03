@@ -3,39 +3,34 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { AppProvider } from '@context/AppContext';
-import { ThemeProvider, useTheme } from '@theme/ThemeProvider';
 import { ErrorBoundary } from '@ui/ErrorBoundary';
 import { Toaster } from 'sonner';
 import './theme/themeInjector.js';
 import './index.css';
 
-/* Sonner (toast) merender lewat portal di luar shell aplikasi, jadi warnanya
-   tidak ikut berubah otomatis — kita teruskan tema aktif secara eksplisit. */
-const AppToaster = () => {
-  const { theme } = useTheme();
-  return (
-    <Toaster
-      position="top-center"
-      expand
-      visibleToasts={1}
-      closeButton
-      duration={8000}
-      theme={theme}
-    />
-  );
-};
+/* Sonner merender lewat portal di luar shell aplikasi, jadi warna toastnya tidak
+   ikut gaya halaman. Default sonner "system" akan mengikuti pengaturan operasi,
+   jadi tema terang dipasang eksplisit. */
+const AppToaster = () => (
+  <Toaster
+    position="top-center"
+    expand
+    visibleToasts={1}
+    closeButton
+    duration={8000}
+    theme="light"
+  />
+);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <ThemeProvider>
-        <BrowserRouter>
-          <AppProvider>
-            <App />
-            <AppToaster />
-          </AppProvider>
-        </BrowserRouter>
-      </ThemeProvider>
+      <BrowserRouter>
+        <AppProvider>
+          <App />
+          <AppToaster />
+        </AppProvider>
+      </BrowserRouter>
     </ErrorBoundary>
   </React.StrictMode>,
 );

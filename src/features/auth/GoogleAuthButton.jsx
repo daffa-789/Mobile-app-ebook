@@ -91,7 +91,7 @@ export const GoogleAuthButton = ({ disabled = false, onError, mode = 'login' }) 
       type="button"
       onClick={handleGoogleLogin}
       disabled={disabled || isGoogleSubmitting}
-      className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-cream-300 dark:border-charcoal-700 bg-ui-card px-4 py-3 text-sm font-semibold text-ink-700 dark:text-ink-200 transition hover:border-cream-400 dark:hover:border-charcoal-600 hover:bg-cream-50 dark:hover:bg-charcoal-800 disabled:opacity-50"
+      className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-cream-300 bg-ui-card px-4 py-3 text-sm font-semibold text-ink-700 transition hover:border-cream-400 hover:bg-cream-50 disabled:opacity-50"
     >
       {isGoogleSubmitting ? (
         <>

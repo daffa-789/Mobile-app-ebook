@@ -28,36 +28,6 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Amiri:wght@400;700&display=swap"
       rel="stylesheet"
     />
-    <!--
-    R53 — Tema malam. Skrip kecil ini memasang kelas `dark` SEBELUM halaman
-    dilukis, supaya pengguna yang memilih mode malam tidak melihat kedipan
-    terang lebih dulu. Logikanya sengaja diduplikasi minimal dari
-    src/theme/themeMode.js (tidak bisa mengimpor modul ES di titik ini) —
-    termasuk theme-color, karena bilah status PWA ikut dilukis saat pra-cat.
-
-    PENTING (CSP, VULN-09): skrip inline ini tidak boleh memakai
-    'unsafe-inline', jadi hash SHA-256-nya didaftarkan di server/config.js
-    (THEME_INIT_HASH). Bila isinya diubah, `npm test` GAGAL sampai hash itu
-    diperbarui — itu memang tujuannya, bukan kebetulan.
-  -->
-    <script>
-      (function () {
-        try {
-          var stored = localStorage.getItem('wb_theme') || 'system';
-          var prefersDark =
-            window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          var isDark = stored === 'dark' || (stored === 'system' && prefersDark);
-          var root = document.documentElement;
-          if (isDark) root.classList.add('dark');
-          root.setAttribute('data-theme', isDark ? 'dark' : 'light');
-          root.style.colorScheme = isDark ? 'dark' : 'light';
-          var meta = document.querySelector('meta[name="theme-color"]');
-          if (meta) meta.setAttribute('content', isDark ? '#14130F' : '#14523A');
-        } catch (e) {
-          /* storage diblokir — tetap pakai mode terang */
-        }
-      })();
-    </script>
   </head>
 
   <body class="bg-cream-50 text-ink-800 antialiased min-h-screen">

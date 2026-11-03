@@ -1,7 +1,7 @@
 /**
  * Layar Pengaturan Profil Akun dan Preferensi Pengguna.
  * Mengoordinasikan pembaharuan nama akun, penautan status WhatsApp,
- * riwayat langganan, pusat bantuan, pengaturan tema tampilan, dan keluar sesi.
+ * riwayat langganan, pusat bantuan, dan keluar sesi.
  *
  * @module src/features/profile/EditProfileScreen
  */
@@ -9,7 +9,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useApp } from '@context/AppContext';
-import { useTheme } from '@theme/ThemeProvider';
 import { apiJsonSend, authHeaders } from '@lib/api';
 import { LogoutConfirmDialog } from '../../components/layout/LogoutConfirmDialog';
 import { ProfileAccountForm } from './ProfileAccountForm';
@@ -24,7 +23,6 @@ import { ProfileSessionSettings } from './ProfileSessionSettings';
  */
 export const EditProfileScreen = () => {
   const { user, patchUser, sessionToken, navigateTo, logout } = useApp();
-  const { isDark, toggleTheme } = useTheme();
 
   const [name, setName] = useState(user.name || '');
   const [email] = useState(user.email || '');
@@ -105,11 +103,7 @@ export const EditProfileScreen = () => {
 
         <ProfileNavigationLinks onNavigate={navigateTo} />
 
-        <ProfileSessionSettings
-          isDark={isDark}
-          onToggleTheme={toggleTheme}
-          onRequestLogout={() => setLogoutModalOpen(true)}
-        />
+        <ProfileSessionSettings onRequestLogout={() => setLogoutModalOpen(true)} />
       </div>
 
       <LogoutConfirmDialog

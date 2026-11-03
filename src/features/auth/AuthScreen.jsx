@@ -90,18 +90,16 @@ export const AuthScreen = ({ initialTab = 'login' }) => {
 
         <div className="relative my-5">
           <div className="absolute inset-0 flex items-center" aria-hidden="true">
-            <div className="w-full border-t border-cream-300 dark:border-charcoal-700" />
+            <div className="w-full border-t border-cream-300" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-cream-50 dark:bg-charcoal-800 px-3 font-semibold tracking-wider text-ink-500">
-              atau
-            </span>
+            <span className="bg-cream-50 px-3 font-semibold tracking-wider text-ink-500">atau</span>
           </div>
         </div>
 
         <GoogleAuthButton mode={activeTab} onError={setGeneralError} />
 
-        <div className="mt-6 border-t border-cream-200 dark:border-charcoal-700 pt-5 text-center text-sm text-ink-500">
+        <div className="mt-6 border-t border-cream-200 pt-5 text-center text-sm text-ink-500">
           {activeTab === 'login' ? (
             <>
               Belum memiliki akun?{' '}

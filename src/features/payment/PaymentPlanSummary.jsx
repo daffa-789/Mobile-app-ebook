@@ -27,7 +27,7 @@ export const PaymentPlanSummary = ({ selectedPlan, selectedPaymentMethod }) => {
               <img
                 src={selectedPaymentMethod.logoUrl}
                 alt={selectedPaymentMethod.name}
-                className={`w-full h-full object-contain ${selectedPaymentMethod.mono ? 'dark:invert' : ''}`}
+                className="w-full h-full object-contain"
               />
             </div>
           )}

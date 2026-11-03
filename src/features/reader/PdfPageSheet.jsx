@@ -30,7 +30,7 @@ export const PdfPageSheet = ({
       data-page-number={pageNum}
       aria-label={`Halaman ${pageNum} dari ${totalPages}`}
       ref={registerContainer}
-      className="relative shadow-md md:shadow-lg rounded-sm sm:rounded-md overflow-hidden bg-ui-card border border-ink-200/50 dark:border-ink-700/50"
+      className="relative shadow-md md:shadow-lg rounded-sm sm:rounded-md overflow-hidden bg-ui-card border border-ink-200/50"
       style={{
         width: `${displayPageWidth}px`,
         height: `${displayPageHeight}px`,

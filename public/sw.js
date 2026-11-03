@@ -21,7 +21,8 @@
 // v18: latar putih dipindah ke kelas .logo-plate; pita putih di dalam SVG tidak
 //      memenuhi kotak lencana, jadi pelatnya kini whole-square di kedua tema.
 // v19: pelat putih dibuang lagi. Wordmark QRIS satu warna, jadi ia dibalik lewat
-//      dark:invert (penanda mono pada katalog metode) sehingga menyatu dengan kartu.
+//      utility invert berversi tema gelap (penanda mono pada katalog metode)
+//      sehingga menyatu dengan kartu. Dua-duanya sudah dihapus bersama mode malam.
 // v20: service layer dipecah (paket auth/ & payment/) dan duplikasi kode dihapus,
 //      termasuk rakitan API yang kini satu sumber untuk Vercel dan server lokal.
 //      Nama berkas hasil build berganti hash, tapi cache app shell lama tetap harus
@@ -30,7 +31,10 @@
 //      index.css). Berkas CSS hasil build berganti hash, jadi app shell lama dibuang.
 // v22: layar autentikasi disatukan ke Unified AuthScreen (tab Masuk & Daftar, smart prefill email,
 //      Google Auth, subkomponen terpisah). App shell diperbarui.
-const CACHE_NAME = 'wahidiyah-app-shell-v22';
+// v23: mode malam dibuang — aplikasi satu tema terang. index.html kehilangan skrip
+//      pra-cat tema dan index.css kehilangan blok .dark + token --night-*, jadi
+//      app shell lama harus dibuang supaya tidak ada sisa tampilan gelap.
+const CACHE_NAME = 'wahidiyah-app-shell-v23';
 const PRECACHE_URLS = [
   '/',
   '/index.html',

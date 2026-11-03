@@ -1,3 +1,11 @@
+/**
+ * Modul klien API dan manajemen sesi peramban untuk Wahidiyah Book.
+ * Mengatur pembungkusan fetch (`apiJson`), fallback origin saat mode pengembangan,
+ * penanganan galat jaringan, dan persistensi token sesi di `localStorage`.
+ *
+ * @module src/lib/api
+ */
+
 const API_FALLBACK_ORIGIN = 'http://localhost:5000';
 
 const canUseApiFallback = (path) =>

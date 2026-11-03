@@ -1,34 +1,6 @@
 import { spawn } from 'child_process';
-import net from 'net';
+import { probePort } from './lib/portProbe.js';
 import pc from 'picocolors';
-
-function probePort(port, host = '127.0.0.1', timeout = 1000) {
-  return new Promise((resolve) => {
-    const socket = new net.Socket();
-    let done = false;
-    socket.setTimeout(timeout);
-    socket.once('connect', () => {
-      done = true;
-      socket.destroy();
-      resolve(true);
-    });
-    socket.once('timeout', () => {
-      if (!done) {
-        done = true;
-        socket.destroy();
-        resolve(false);
-      }
-    });
-    socket.once('error', () => {
-      if (!done) {
-        done = true;
-        socket.destroy();
-        resolve(false);
-      }
-    });
-    socket.connect(port, host);
-  });
-}
 
 async function cleanPort(port) {
   const isBusy = await probePort(port);

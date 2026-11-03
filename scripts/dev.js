@@ -9,7 +9,7 @@
 import { spawn } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import net from 'net';
+import { probePort } from './lib/portProbe.js';
 import dotenv from 'dotenv';
 import pc from 'picocolors';
 
@@ -26,34 +26,6 @@ if (process.platform === 'win32') {
   if (!currentPath.toLowerCase().includes('system32')) {
     env.PATH = `${system32};${currentPath}`;
   }
-}
-
-function probePort(port, host = '127.0.0.1', timeout = 1000) {
-  return new Promise((resolve) => {
-    const socket = new net.Socket();
-    let done = false;
-    socket.setTimeout(timeout);
-    socket.once('connect', () => {
-      done = true;
-      socket.destroy();
-      resolve(true);
-    });
-    socket.once('timeout', () => {
-      if (!done) {
-        done = true;
-        socket.destroy();
-        resolve(false);
-      }
-    });
-    socket.once('error', () => {
-      if (!done) {
-        done = true;
-        socket.destroy();
-        resolve(false);
-      }
-    });
-    socket.connect(port, host);
-  });
 }
 
 async function freePorts(ports = [3000, 5000]) {

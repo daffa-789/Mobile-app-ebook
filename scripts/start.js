@@ -12,7 +12,7 @@
 import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs';
-import net from 'net';
+import { probePort } from './lib/portProbe.js';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import pc from 'picocolors';
@@ -42,34 +42,6 @@ const viteBin = path.resolve(rootDir, 'node_modules', 'vite', 'bin', 'vite.js');
 const serverScript = path.resolve(rootDir, 'server', 'server.js');
 const distDir = path.resolve(rootDir, 'dist');
 const distIndex = path.join(distDir, 'index.html');
-
-function probePort(port, host = '127.0.0.1', timeout = 1000) {
-  return new Promise((resolve) => {
-    const socket = new net.Socket();
-    let done = false;
-    socket.setTimeout(timeout);
-    socket.once('connect', () => {
-      done = true;
-      socket.destroy();
-      resolve(true);
-    });
-    socket.once('timeout', () => {
-      if (!done) {
-        done = true;
-        socket.destroy();
-        resolve(false);
-      }
-    });
-    socket.once('error', () => {
-      if (!done) {
-        done = true;
-        socket.destroy();
-        resolve(false);
-      }
-    });
-    socket.connect(port, host);
-  });
-}
 
 async function freePort(port) {
   if (process.platform !== 'win32') return;

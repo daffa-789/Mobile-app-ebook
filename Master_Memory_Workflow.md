@@ -1011,6 +1011,22 @@ zotero-cli export \
   --style apa --format bib
 ```
 
+### 11.4. Batasan Penelitian: Lingkungan Uji Midtrans (ditetapkan 4 November 2026)
+
+Proyek ini berada pada **tahap pengembangan** dan datanya diambil atas nama penelitian di instansi, sehingga akun produksi Midtrans **tidak didaftarkan**. Onboarding produksi menuntut legalisasi lembaga — identitas, rekening penampung untuk settlement — yang tidak sepadan untuk proyek yang bisa saja berhenti setelah lulus.
+
+Konsekuensi yang perlu ditulis apa adanya di naskah:
+
+- Seluruh uji pembayaran berjalan di **Midtrans Sandbox** (`dashboard.sandbox.midtrans.com`). Akun sandbox dibuat dengan email saja, tanpa verifikasi identitas usaha dan tanpa pergerakan uang.
+- Yang diuji tetap **Midtrans Core API yang asli, bukan mock**: `payment_type: 'qris'`, payload EMVCo nyata, dan QR-nya dapat di-scan aplikasi dompet sungguhan. Yang berbeda hanya environment (`isProduction=false`) dan pasangan kunci berprefix `SB-Mid-`.
+- Setelmen disimulasikan lewat **simulator sandbox**: tombol `Salin Kode QR` di `src/features/payment/QrisPaymentCard.jsx` menyalin tautan QR untuk ditempel di kolom "QR Code Image Url" simulator.
+
+Kalimat siap pakai untuk Bab V (Kesimpulan dan Saran):
+
+> Uji coba integrasi pembayaran divalidasi pada lingkungan Midtrans Sandbox karena penelitian berada pada tahap pengembangan, sementara akun produksi memerlukan legalisasi lembaga. Migrasi ke lingkungan produksi hanya menuntut penggantian `MIDTRANS_IS_PRODUCTION` dan pasangan kunci, tanpa perubahan kode.
+
+Catatan istilah, agar tidak salah dibaca penguji: frasa **"Real Midtrans QRIS"** pada judul berkas ini dan nama repositori berarti **API nyata (bukan simulasi di sisi aplikasi)**, BUKAN lingkungan produksi dan BUKAN settlement nyata.
+
 ---
 
 ## 12. Prasyarat & Konfigurasi Lingkungan (.env)
@@ -1258,6 +1274,10 @@ Semua keputusan jalur mobile dari sesi 4 November dirapikan ke **16.2** (satu-sa
 | **Koreksi M1** | Klaim lama "✅ 100% SELESAI" **tidak benar**: tanda air di kanvas dan blokir klik kanan tidak ada di kode; hanya `select-none` yang tersisa. Relevan langsung ke judul skripsi dan Bab IV — keputusan pemulihan atau penurunan klaim belum diambil. |
 | Jebakan Git | Repo ini clone **single-branch** (`remote.origin.fetch` hanya `main`), sehingga branch lain tidak punya ref lacakan dan `git pull` di branch mobile berisiko. Perbaikan menunggu persetujuan. |
 | Belum dikerjakan | Scaffold Expo (menunggu izin, ±1–2 GB `node_modules`), dan **bukti OTA pada APK sideload** — asumsi paling berisiko, sengaja ditaruh paling awal. |
+| Batas uji pembayaran | **Sandbox saja.** Akun produksi tidak didaftarkan karena proyek masih tahap pengembangan dan datanya diambil atas nama penelitian di instansi. Ditulis sebagai batasan penelitian di **11.4**, lengkap dengan kalimat siap pakai untuk Bab V — kekurangan ini dinyatakan, bukan disembunyikan. |
+| §16.1 butir 3 | "Kesiapan Rilis Produksi" direlabel menjadi **opsional / bahan penerus**, dengan status "tidak dilakukan" per butir (Midtrans produksi, Fonnte produksi, domain lembaga). |
+| §16.2.12 | Baru: daftar yang **dibatalkan / diperkecil / menunggu keputusan**, termasuk penarikan usulan menurunkan `isProduction` otomatis dari prefix kunci (bahayanya: menyalakan transaksi nyata) dan pengecilan rekonsiliasi settlement jadi satu status-lookup saat login. |
+| Pemeriksaan bocornya kunci | **Bersih.** `.env` tidak pernah ter-commit di repo public ini, dan satu-satunya string berpola kunci di berkas ter-lacak adalah teks pesan error `server/lib/midtrans.js:21`. |
 
 ### 15.12 Pemeliharaan R82 (3 November 2026)
 
@@ -1415,10 +1435,10 @@ Fitur inti web sudah tersedia, tetapi kelulusan build, verifikasi manual, UAT, d
 2. **Pengujian Pengguna (User Acceptance Testing / UAT):**
    - Melakukan uji coba langsung kepada perwakilan jamaah pengamal Wahidiyah dan admin pengelola buku perpustakaan.
    - Mengukur tingkat kepuasan dan ketergunaan antarmuka menggunakan kuesioner baku *System Usability Scale* (SUS).
-3. **Kesiapan Rilis Produksi (Production Hardening & Go-Live):**
-   - Mengajukan akun produksi Midtrans Merchant ID (`Mid-server-...`) dan mengaktifkan QRIS Production (`MIDTRANS_IS_PRODUCTION=true`).
-   - Mendaftarkan nomor WhatsApp resmi lembaga ke provider Fonnte production untuk alokasi kuota OTP massal.
-   - Pemasangan domain resmi publik (mis. `buku.wahidiyah.org`) dengan sertifikat SSL/TLS HTTPS otomatis.
+3. **Kesiapan Rilis Produksi — BUKAN target proyek ini (ditetapkan 4 November 2026).** Butir ini dipertahankan hanya sebagai bahan bagi mahasiswa penerus bila proyek dilanjutkan; pemilik proyek tidak mengejar go-live (lihat batasan penelitian di 11.4):
+   - Mengajukan akun produksi Midtrans Merchant ID (`Mid-server-...`) dan mengaktifkan QRIS Production (`MIDTRANS_IS_PRODUCTION=true`). **Tidak dilakukan** — butuh legalisasi lembaga dan rekening penampung.
+   - Mendaftarkan nomor WhatsApp resmi lembaga ke provider Fonnte production untuk alokasi kuota OTP massal. **Tidak dilakukan** — pengujian memakai `WHATSAPP_PROVIDER=demo`/kuota testing.
+   - Pemasangan domain resmi publik (mis. `buku.wahidiyah.org`) dengan sertifikat SSL/TLS HTTPS otomatis. **Di luar kendali proyek** — domain milik Wahidiyah Pusat, jadi ini permintaan administrasi, bukan pembelian.
 
 ---
 
@@ -1436,6 +1456,7 @@ Status berubah pada 4 November 2026: dari "rencana pasca-skripsi" menjadi **jalu
 | Tetap di web | **Panel admin, pembayaran, dashboard** | Sudah terpisah (`src/features/admin`, 21 berkas / 2.766 baris) dan pemakai admin bekerja di desktop. Ini pola normal, bukan kompromi. |
 | Distribusi | **Sideload APK lewat GitHub Releases, TANPA Play Store** | Dibatasi ukuran Vercel (100 MB Hobby) dan AUP-nya; GitHub Releases 2 GiB per aset tanpa batas bandwidth. |
 | iOS | **Ditunda** | Build iOS sebenarnya BISA dari Windows (Expo mengompilasi di Mac cloud; paket gratis 15 build Android + 15 build iOS per bulan, plus simulator iOS cloud). Yang tidak bisa tanpa bayar: memasangnya ke iPhone — butuh Apple Developer Program $99/tahun. Expo tidak mengunci keputusan ini, jadi `eas build -p ios` tetap terbuka nanti. |
+| Batas uji pembayaran | **Sandbox saja**, akun produksi tidak didaftarkan | Proyek tahap pengembangan dengan data dari instansi; onboarding produksi menuntut legalisasi lembaga. Rinciannya di **11.4**, dan ini bukan kompromi diam-diam melainkan batasan yang dituliskan di Bab V. |
 
 #### 16.2.2 Realitas penggunaan ulang kode (angka terukur)
 
@@ -1503,6 +1524,8 @@ Spesifikasi lama menyebut `expo-secure-store` / SQLCipher dengan enkripsi AES-25
 
 #### 16.2.7 M4 — Pembaruan dalam aplikasi (tombol "Update" di Setting)
 
+> **Status 4 November 2026: diusulkan menjadi OPSIONAL, menunggu keputusan pemilik proyek.** Perkiraan pengerjaan ±1–2 hari + akun Expo + disiplin `runtimeVersion`. Nilainya hanya nyata bila ada pemakai yang tidak bisa dihubungi langsung; untuk puluhan penguji di satu sesi UAT, manfaatnya nol dan instal ulang manual lima menit per orang lebih murah. Spesifikasi di bawah tetap ditulis supaya jalur ini tidak perlu dirancang ulang bila proyek dilanjutkan.
+
 Karena tidak ada Play Store, tidak ada auto-update dari store — tombol ini bukan pajangan, tapi satu-satunya jalur pembaruan.
 
 **Mekanisme utama: OTA via `expo-updates` / EAS Update**
@@ -1521,6 +1544,8 @@ Karena tidak ada Play Store, tidak ada auto-update dari store — tombol ini buk
 **ASUMSI YANG BELUM TERBUKTI — taruh di urutan pengerjaan pertama:** dokumentasi OTA Expo tidak membahas distribusi APK di luar store. Protokolnya publik dan bisa di-self-host, jadi seharusnya jalan pada APK sideload, tapi itu baru akan nyata setelah satu update sungguhan mendarat di satu perangkat sungguhan. Desain layar Setting menunggu hasil tes ini.
 
 #### 16.2.8 M5 — Halaman unduh (rencana, sengaja sesudah APK pertama)
+
+> **Status 4 November 2026: diusulkan menjadi OPSIONAL, menunggu keputusan pemilik proyek.** Perkiraan ±1 hari + kewajiban menjaga akurasi setiap rilis. Untuk distribusi lewat QR di meja UAT, manfaatnya nol. Bila proyek dilanjutkan dan APK disebar luas, halaman ini kembali menjadi wajib — karena sideload tanpa petunjuk adalah cara tercepat membuat pengguna menyerah.
 
 Empat dari isinya tidak bisa ditulis benar sebelum ada build nyata: URL aset, versi, ukuran berkas, tanggal rilis. Tombol "unduh aplikasi" yang mengembalikan 404 lebih merugikan demo skripsi daripada tidak ada halaman sama sekali.
 
@@ -1564,6 +1589,19 @@ Perbaikan (menunggu persetujuan pemilik proyek, karena mengubah `.git/config`): 
 | 8 | Rilis APK #1 ke GitHub Releases | ⏳ Belum |
 | 9 | Halaman unduh (M5) | ⏳ Sesudah langkah 8, karena isinya bergantung padanya |
 | — | Pulihkan tanda air + blokir klik kanan di reader **web**, atau turunkan klaim Bab IV | ⚠️ Belum diputuskan, akibat koreksi di 16.2.4 |
+
+#### 16.2.12 Yang dibatalkan, yang diperkecil, dan yang menunggu keputusan (4 November 2026)
+
+Dicatat supaya tidak ada sesi berikutnya yang mengusulkan ulang barang yang sudah dibuang dengan alasan:
+
+| Item | Putusan | Alasan |
+|---|---|---|
+| Menurunkan `isProduction` otomatis dari prefix kunci Midtrans | **DIBATALKAN** (usulan yang ditarik kembali di sesi yang sama) | Kunci di `.env` saat ini `Mid-server-…` (produksi). Penurunan otomatis akan menyalakan mode produksi dan mulai membuat transaksi QRIS **sungguhan** — uang bergerak atas nama akun yang sengaja tidak dipakai. Yang dipasang justru kebalikannya: **tolak start** saat flag dan prefix kunci bertentangan, dengan pesan yang bisa dibaca. |
+| Cron rekonsiliasi settlement penuh | **DIPERKECIL** jadi satu status-lookup atas transaksi pending saat pengguna login membuka aplikasi | Logika setelmen **sudah ada dan tersedia di dua jalur panggil**: `server/services/payment/status_service.js:56` (lewat `settleTransaction`) dan `server/services/payment/notification_service.js:50` (jalur webhook). Yang hilang hanya **pemicunya** — `/api/payments/qris/:orderId/status` cuma dipanggil dari `setInterval` di `src/features/payment/useQrisPayment.js:142`, sehingga setelah pengguna meninggalkan layar bayar tidak ada lagi yang pernah bertanya. Karena itu tidak perlu cron baru dan tidak perlu service baru. |
+| Tombol Update OTA (16.2.7) dan halaman unduh (16.2.8) | **Diusulkan jadi opsional — menunggu keputusan pemilik proyek** | Tidak sepadan untuk puluhan penguji dalam satu sesi UAT; estimasi hari tercantum di masing-masing butir. |
+| Frasa "Real Midtrans QRIS" di judul berkas dan nama repo | **Menunggu keputusan** | Yang nyata itu API-nya, bukan lingkungan maupun settlement. Sudah diberi catatan istilah di **11.4** supaya tidak perlu dibela di ruang sidang. |
+| 14 baris di `transactions`: sandbox atau produksi? | **Belum terverifikasi — hanya pemilik proyek yang tahu** | Relevan sebelum naskah menyatakan apa pun. Bila ada yang produksi, itu uang nyata dan bukan sekadar simulasi. |
+| Key leakage check | **Bersih, terverifikasi 4 November 2026** | `.env` tidak pernah ter-commit (`git log --all -- .env` kosong), `.gitignore` baris 14–16 menutup `.env`, `.env.local`, `.env.*`, dan satu-satunya pencocokan string `Mid-server-`/`SB-Mid-` di berkas yang dilacak git adalah teks pesan error di `server/lib/midtrans.js:21`, bukan kunci asli. |
 
 ---
 

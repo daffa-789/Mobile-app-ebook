@@ -71,8 +71,8 @@ export const CSP_DIRECTIVES = {
    * utilitas Tailwind; tidak ada jalan keluar selain menghapus keduanya.
    */
   'script-src': ["'self'"],
-  /* Font kini di-host sendiri via @fontsource (dibundel Vite), jadi
-   * style/font tidak lagi perlu mengizinkan origin Google Fonts.
+  /* Tanpa font kustom sepenuhnya (font bawaan OS), jadi
+   * style/font cukup 'self' — origin Google Fonts tidak pernah diizinkan.
    */
   'style-src': ["'self'", "'unsafe-inline'"],
   'font-src': ["'self'"],

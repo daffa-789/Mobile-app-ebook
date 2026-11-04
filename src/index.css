@@ -2,18 +2,16 @@
 @config "../tailwind.config.js";
 
 :root {
+  /* Full font bawaan OS — 0 KB unduhan font. Stack mirroring
+     component.json (tokens.typography) yang menjadi sumber tunggal. */
   font-family:
-    'Plus Jakarta Sans',
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',
     Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Open Sans',
     'Helvetica Neue',
+    Arial,
     sans-serif;
   color-scheme: light;
 }
@@ -199,18 +197,17 @@ body,
   background: #403c37;
 }
 
-/* Arabic typography class */
+/* Arabic typography class — font Arab bawaan OS (Windows: Traditional Arabic,
+   macOS/iOS: Geeza Pro, Android: Noto Naskh Arabic), fallback serif klasik. */
 .font-arabic {
-  font-family: 'Amiri', serif;
+  font-family: 'Traditional Arabic', 'Geeza Pro', 'Noto Naskh Arabic', serif;
   line-height: 2.2;
 }
 
-/* Judul bergaya editorial — serif display dengan optical sizing.
-   font-optical-sizing membuat Fraunces memilih kontras goresan yang tepat
-   untuk ukuran teksnya, jadi judul besar tidak terlihat kurus. */
+/* Judul bergaya editorial — serif bawaan OS (Georgia dominan, tersedia di
+   semua OS; Cambria/Times sebagai fallback). 0 KB, tanpa FOUT. */
 .font-display {
-  font-family: 'Fraunces', 'Newsreader', Georgia, Cambria, serif;
-  font-optical-sizing: auto;
+  font-family: Georgia, Cambria, 'Times New Roman', serif;
   letter-spacing: -0.02em;
 }
 

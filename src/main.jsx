@@ -7,23 +7,10 @@ import { ErrorBoundary } from '@ui/ErrorBoundary';
 import { Toaster } from 'sonner';
 import './theme/themeInjector.js';
 
-/* Font di-host sendiri via @fontsource (dibundel Vite, satu origin, ter-cache).
-   Rantai Google Fonts (fonts.googleapis.com -> fonts.gstatic.com) sebelumnya
-   render-blocking dan menambah 2 origin + 2 koneksi TLS pada load pertama. */
-import '@fontsource/plus-jakarta-sans/400.css';
-import '@fontsource/plus-jakarta-sans/500.css';
-import '@fontsource/plus-jakarta-sans/600.css';
-import '@fontsource/plus-jakarta-sans/700.css';
-import '@fontsource/plus-jakarta-sans/800.css';
-import '@fontsource/fraunces/400.css';
-import '@fontsource/fraunces/500.css';
-import '@fontsource/fraunces/600.css';
-import '@fontsource/fraunces/700.css';
-import '@fontsource/fraunces/800.css';
-import '@fontsource/fraunces/900.css';
-import '@fontsource/amiri/400.css';
-import '@fontsource/amiri/700.css';
-
+/* Font: full stack bawaan OS (tanpa unduhan font sama sekali, 0 KB).
+   Sistem sebelumnya: Google Fonts -> @fontsource self-host -> kini system stack.
+   Alasan: pada Slow 4G font custom jadi biaya unduhan terbesar (~235-365 KB)
+   dan menambah FOUT; font OS dijamin tersedia di semua perangkat tanpa jaringan. */
 import './index.css';
 
 /* Sonner merender lewat portal di luar shell aplikasi, jadi warna toastnya tidak

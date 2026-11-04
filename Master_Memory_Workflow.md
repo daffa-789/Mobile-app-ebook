@@ -262,10 +262,13 @@ Sumber kebenaran warna ada di `component.json` (`colors`) dan disuntikkan ke CSS
 Permukaan yang memang gelap secara desain (sidebar admin) memakai token `semantic-dangerOnDark` dan `semantic-mutedOnDark`. Dua token itu bertahan karena ia menerangkan makna "teks di atas permukaan gelap", bukan bagian dari mode malam. Konsekuensi lain: `script-src` CSP kini cukup `'self'` karena tidak ada lagi skrip inline yang butuh hash `THEME_INIT_HASH`.
 
 ### 4.5 Tipografi & Hirarki Skala
-* **Display / Judul:** *Fraunces* (serif variabel dengan sumbu optik), fallback *Newsreader* → Georgia. Dipakai lewat `font-display`.
-* **Body / Teks Bacaan:** *Plus Jakarta Sans* (400–800), `line-height: 1.65`, batas maksimal paragraf `65ch`.
-* **Ayat & Kaligrafi Arab:** *Amiri* (400/700) lewat `.font-arabic`, ukuran proporsional lebih besar dengan ruang harakat yang lapang.
-* **Angka Finansial & Kode:** `font-mono` bawaan sistem untuk nominal QRIS dan nomor referensi; tidak ada font monospace kustom yang diunduh.
+> Keputusan akhir (revisi R29): seluruh font kustom dihapus — Google Fonts →
+> `@fontsource` self-host → kini **full font bawaan OS** (unduhan font = 0 KB,
+> tanpa FOUT). Identitas serif & Arab dipertahankan lewat stack bawaan OS.
+* **Display / Judul:** stack serif bawaan OS (`Georgia, Cambria, 'Times New Roman', serif`) lewat `.font-display`.
+* **Body / Teks Bacaan:** stack sans bawaan OS (`system-ui, 'Segoe UI', Roboto, …`), `line-height: 1.65`, batas maksimal paragraf `65ch`.
+* **Ayat & Kaligrafi Arab:** stack Arab bawaan OS (`'Traditional Arabic'` Windows, `'Geeza Pro'` macOS/iOS, `'Noto Naskh Arabic'` Android) lewat `.font-arabic`, ukuran proporsional lebih besar dengan ruang harakat yang lapang.
+* **Angka Finansial & Kode:** `font-mono` bawaan sistem untuk nominal QRIS dan nomor referensi; tidak ada font kustom yang diunduh sama sekali (0 KB).
 
 ### 4.6 Arsitektur Navigasi Terpadu (Responsive Design)
 * **Desktop Sidebar (Ramping & Fokus):**

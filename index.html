@@ -19,13 +19,12 @@
     />
     <title>E-Book Wahidiyah — Perpustakaan Digital</title>
     <!--
-    R29 — Fraunces sebagai font display (judul), kini di-host sendiri via @fontsource.
-    Kenapa Fraunces: ini serif "soft-serif" dengan sumbu optik & berat variabel,
-    terasa seperti tipografi katalog cetak — bukan serif generik (Times/Georgia).
-    Kenapa @fontsource: rantai Google Fonts (fonts.googleapis.com -> fonts.gstatic.com)
-    render-blocking, menambah 2 origin + 2 TLS handshake pada load pertama, dan
-    tidak bisa dimuat dari edge Vercel. Font kini dibundel Vite: same-origin,
-    brotli, ter-cache, offline-friendly.
+    R29 (revisi akhir) — Tipografi kini 100% font bawaan OS (system stack).
+    Riwayat: Google Fonts (2 origin pihak ketiga) -> @fontsource self-host
+    (font jadi biaya unduhan terbesar ~235-365 KB pada Slow 4G) -> kini
+    dihapus total: unduhan font = 0 KB, tanpa FOUT, tanpa origin tambahan.
+    Identitas serif dipertahankan lewat stack serif OS untuk judul (.font-display)
+    dan stack Arab bawaan OS (.font-arabic) sehingga teks Arab tetap terrender.
   --></head>
 
   <body class="bg-cream-50 text-ink-800 antialiased min-h-screen">

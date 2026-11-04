@@ -1237,6 +1237,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R72–R82 | 31 Okt – 3 Nov 2026: perapian Prettier & service layer, quality gate `check:full`, standardisasi JSDoc, dekomposisi layar utama dan service layer menjadi paket `auth/` + `payment/`, penghapusan 13 klaster duplikasi, penyatuan layar autentikasi menjadi satu kartu, layar auth dibuat datar. Subbagian riwayat rounds ini **dipangkas 4 Nov 2026** — `git log` yang menyimpan detailnya. Satu pelajaran ditahan di sini karena masih berlaku: nilai penghapusan duplikasi (R80) bukan pada baris yang hilang (21.920 → 21.935, praktis tetap), melainkan pada **satu tempat untuk mengubah kontrak**. |
 | R83 | Konsolidasi rencana mobile 4 Nov 2026: keputusan React Native/Expo, branch `mobile-app`, penjaga build, dan koreksi status M1 — lihat 15.13. |
 | R84 | Penjaga konfigurasi Midtrans + pemantik rekonsiliasi 4 Nov 2026: flag vs prefix kunci, health check membaca lingkungan dari kunci, `POST /api/payments/qris/reconcile`, plus temuan `override: true` pada `server/env.js` — lihat 15.14. |
+| R88 | Zoom trackpad 4 Nov 2026: pinch trackpad pindah ke jalur transform-GPU + commit sekali seperti pinch dua jari, `deltaMode` mouse dibedakan, `customFocalYRef` mati dihapus — lihat 15.18. |
 | R87 | Toolchain mobile 4 Nov 2026: scaffold SDK 53 ditemukan di branch `mobile-app`, `main` digabung ke sana, dan Expo SDK 58 ditetapkan dengan fallback resmi 57 — lihat 15.17. |
 | R86 | Pemangkasan & penyesuaian dokumen 4 Nov 2026: §16.2 diringkas 163 → 31 baris (spesifikasi tinggal di `Mobile-app plan.md`), riwayat R40–R71 dirapatkan, delapan drift dokumen dikoreksi di tempatnya, dan rujukan mati hasil pemangkasan disambungkan — lihat 15.16. |
 | R85 | Koreksi cron & metadata buku 4 Nov 2026: blok `crons` yang struktural selalu gagal dihapus dari `vercel.json` (diputuskan: tidak perlu infra), jumlah halaman PDF dihitung dari berkasnya dan 3 baris katalog diperbaiki, plus audit menyeluruh klaim dokumen vs kode — lihat 15.15. |
@@ -1259,6 +1260,23 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `server/services/auth/password_reset_service.js:103`.
+
+### 15.18 Zoom Trackpad R88 (4 November 2026)
+
+**Keluhan pemilik proyek:** zoom dengan trackpad di laptop tidak semulus pinch di HP (PWA). Keduanya aplikasi yang sama — jadi penyebabnya ada di jalur input, bukan platform.
+
+| Temuan | Detail |
+|---|---|
+| Akar masalah | `ContinuousPdfViewer.jsx` §8 memanggil `setZoom` **pada setiap event `wheel`**. Satu `setZoom` memicu render ulang canvas per halaman lewat `usePdfCanvasRenderer`, dan satu gestur trackpad mengirim puluhan event. Pinch dua jari tidak mengalami ini karena `usePdfPinchGesture` hanya mengubah transform CSS selama gestur dan meng-commit zoom satu kali saat jari diangkat. |
+| Cacat kedua | `Math.round(prev + delta * 0.15)` membuat delta trackpad kecil (di bawah ±7 unit) menghasilkan **nol perubahan** — dead zone, lalu lompatan mendadak saat ambangnya terlampaui. |
+| Perbaikan | Hook baru `src/features/reader/useWheelPinchZoom.js`: skala kumulatif per gestur → transform GPU di `requestAnimationFrame` → **commit sekali** setelah 120 ms tanpa event. `zoomUtils.js` mendapat `getWheelScale` dan `clampZoom`; `getPinchZoom` kini memakai `clampZoom` yang sama, jadi kedua jalur meng-commit dengan aturan identik. |
+| Mouse wheel ikut dibedakan | `deltaMode === 1` (per-baris) memakai langkah diskrit 1,2× per notch, bukan rumus kontinu — kalau tidak, satu klik roda mouse melompat puluhan persen. |
+| Batas per event | Faktor dibatasi 1,35× per event, karena trackpad mengirim delta sangat besar pada detik terakhir gestur (momentum release). |
+| State mati yang dibersihkan | `customFocalYRef` sudah tidak ada yang mengisi setelah handler lama dihapus, jadi deklarasi dan cabangnya dihapus — bukan dibiarkan sebagai kode yang selalu `null`. |
+
+**Bukti yang bisa diukur:** 20 event trackpad kecil (−3) kini menghasilkan **111%** (sebelumnya 100% — persis dead zone itu), 3 notch mouse → 173%, delta tunggal −400 teredam ke 135%, batas 40–300 tetap dihormati, dan regresi pinch tidak berubah (100% × rasio 1,5 → **136**). `vite build` ✓ 14,68 s, Prettier bersih.
+
+**Yang tidak bisa saya buktikan dari mesin ini:** rasa mulus itu sendiri — itu hanya bisa dinilai tanganmu di trackpad. Kalau masih terasa berbeda dari HP, yang diubah adalah dua angka, bukan strukturnya: `WHEEL_RESPONSE` (0.005 di `zoomUtils.js`) untuk kepekaan, dan `SETTLE_MS` (120 di `useWheelPinchZoom.js`) untuk kapan commit terjadi.
 
 ### 15.17 Toolchain Mobile R87 (4 November 2026)
 

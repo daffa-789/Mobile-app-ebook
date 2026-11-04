@@ -10,6 +10,7 @@ import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react
 import { pdfjsLib } from './pdfWorkerSetup';
 import { PdfPageSheet } from './PdfPageSheet';
 import { usePdfPinchGesture } from './usePdfPinchGesture';
+import { useWheelPinchZoom } from './useWheelPinchZoom';
 import { usePdfCanvasRenderer } from './usePdfCanvasRenderer';
 
 /**
@@ -51,7 +52,6 @@ export const ContinuousPdfViewer = ({
   // Pelacak posisi bacaan aktif secara riil ({ page: nomor halaman, ratio: offset vertikal dalam halaman })
   const currentViewRef = useRef({ page: currentPage || 1, ratio: 0 });
   const prevZoomRef = useRef(zoom);
-  const customFocalYRef = useRef(null);
   const pinchAnchorRef = useRef(null);
 
   // Callback dari induk sering berubah identitas (mis. saat total halaman diketahui),
@@ -208,14 +208,11 @@ export const ContinuousPdfViewer = ({
 
     const anchor = pinchAnchorRef.current;
     const { page, ratio } = anchor || currentViewRef.current;
-    const eyelineY =
-      anchor?.focalY ??
-      (customFocalYRef.current !== null ? customFocalYRef.current : container.clientHeight * 0.35);
+    const eyelineY = anchor?.focalY ?? container.clientHeight * 0.35;
 
     pageStackRef.current?.style.removeProperty('transform');
     pageStackRef.current?.style.removeProperty('transform-origin');
     pageStackRef.current?.style.removeProperty('will-change');
-    customFocalYRef.current = null;
 
     if (page >= 1 && page <= totalPages) {
       const GAP = 16;
@@ -257,28 +254,16 @@ export const ContinuousPdfViewer = ({
     zoom,
   });
 
-  // 8. Handler Zoom Mouse Wheel (Ctrl/Cmd + Wheel)
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return undefined;
-
-    const handleWheel = (e) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        const rect = el.getBoundingClientRect();
-        const cursorY = e.clientY - rect.top;
-        updateReadingPosition(cursorY);
-        customFocalYRef.current = cursorY;
-
-        const delta = -e.deltaY;
-        const deltaZoom = delta * 0.15;
-        setZoom((prev) => Math.min(300, Math.max(40, Math.round(prev + deltaZoom))));
-      }
-    };
-
-    el.addEventListener('wheel', handleWheel, { passive: false });
-    return () => el.removeEventListener('wheel', handleWheel);
-  }, [setZoom, updateReadingPosition]);
+  // 8. Pinch Trackpad (Ctrl/Cmd + Wheel) — jalur yang sama dengan pinch dua jari
+  useWheelPinchZoom({
+    containerRef,
+    pageStackRef,
+    zoom,
+    setZoom,
+    updateReadingPosition,
+    currentViewRef,
+    pinchAnchorRef,
+  });
 
   // 9. Loncat ke Halaman Tertentu (Target Scroll Page)
   useEffect(() => {

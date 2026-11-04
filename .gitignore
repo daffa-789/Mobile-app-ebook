@@ -92,3 +92,5 @@ __pycache__/
 # State lokal Supabase CLI (project ref, versi layanan, URL pooler).
 # Bukan bagian proyek; URL pooler jangan sampai masuk repo publik.
 supabase/.temp/
+
+.agents/

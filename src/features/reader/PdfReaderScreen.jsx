@@ -6,13 +6,12 @@
  * @module src/features/reader/PdfReaderScreen
  */
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useApp } from '@context/AppContext';
 import { apiJson, apiRequest, authHeaders } from '@lib/api';
-import { sanitizeHtml } from '@lib/sanitizeHtml';
-import { ContinuousPdfViewer } from './ContinuousPdfViewer';
-import { useAnchoredPinchZoom } from './useAnchoredPinchZoom';
-
+import { PdfDocumentViewer } from './PdfDocumentViewer';
+import { DocxDocumentViewer } from './DocxDocumentViewer';
+import { TextDocViewer } from './TextDocViewer';
 import { ReaderTopBar } from './ReaderTopBar';
 import {
   BookNotFoundState,
@@ -21,8 +20,6 @@ import {
   DocumentLoadingState,
   DocumentEmptyState,
 } from './ReaderContentStates';
-import { HtmlDocViewer } from './HtmlDocViewer';
-import { TextDocViewer } from './TextDocViewer';
 
 const TEXT_TYPES = new Set(['txt', 'md', 'csv', 'rtf']);
 const PDF_TYPES = new Set(['pdf']);
@@ -41,8 +38,8 @@ const getExtension = (book) =>
 export const PdfReaderScreen = () => {
   const { activeBook, navigateTo } = useApp();
   const [textContent, setTextContent] = useState('');
-  const [docHtml, setDocHtml] = useState('');
   const [pdfBlob, setPdfBlob] = useState(null);
+  const [docxBlob, setDocxBlob] = useState(null);
   const [contentStatus, setContentStatus] = useState('idle');
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -99,24 +96,16 @@ export const PdfReaderScreen = () => {
     });
   }, []);
 
-  const readingSurfaceRef = useRef(null);
-  const readingPreviewRef = useRef(null);
-  const pinchZoomHandlers = useAnchoredPinchZoom({
-    containerRef: readingSurfaceRef,
-    previewRef: readingPreviewRef,
-    zoom,
-    setZoom: setClampedZoom,
-  });
+  const adjustZoom = useCallback(
+    (delta) => {
+      setClampedZoom((prev) => prev + delta);
+    },
+    [setClampedZoom],
+  );
 
-  const adjustZoom = (delta) => {
-    pinchZoomHandlers.prepareZoom();
-    setClampedZoom((prev) => prev + delta);
-  };
-
-  const resetZoom = () => {
-    pinchZoomHandlers.prepareZoom();
+  const resetZoom = useCallback(() => {
     setClampedZoom(100);
-  };
+  }, [setClampedZoom]);
 
   // Toggle Layar Penuh
   const toggleFullscreen = () => {
@@ -156,8 +145,8 @@ export const PdfReaderScreen = () => {
   useEffect(() => {
     let cancelled = false;
     setTextContent('');
-    setDocHtml('');
     setPdfBlob(null);
+    setDocxBlob(null);
 
     if (!activeBook?.id) {
       setContentStatus('idle');
@@ -180,15 +169,50 @@ export const PdfReaderScreen = () => {
 
     setContentStatus('loading');
 
-    if (isDoc || isText) {
+    const contentUrl =
+      activeBook.contentUrl ||
+      (activeBook.id ? `/api/books/${encodeURIComponent(activeBook.id)}/content` : null);
+
+    if (isDoc && contentUrl) {
+      apiRequest(contentUrl, { headers: authHeaders() })
+        .then(async (response) => {
+          if (response.status === 403) throw new Error('PRO_LOCKED');
+          if (!response.ok) throw new Error('FETCH_FAILED');
+          return response.blob();
+        })
+        .then((blob) => {
+          if (cancelled) return;
+          setDocxBlob(blob);
+          setContentStatus('ready');
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setContentStatus(err.message === 'PRO_LOCKED' ? 'locked' : 'error');
+          }
+        });
+    } else if (isPdf && contentUrl) {
+      apiRequest(contentUrl, { headers: authHeaders() })
+        .then(async (response) => {
+          if (response.status === 403) throw new Error('PRO_LOCKED');
+          if (!response.ok) throw new Error('FETCH_FAILED');
+          return response.blob();
+        })
+        .then((blob) => {
+          if (cancelled) return;
+          setPdfBlob(blob);
+          setContentStatus('ready');
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setContentStatus(err.message === 'PRO_LOCKED' ? 'locked' : 'error');
+          }
+        });
+    } else if (isText) {
       apiJson(`/api/books/${encodeURIComponent(activeBook.id)}/html`, { headers: authHeaders() })
         .then((res) => {
           if (cancelled) return;
-          if (res?.html) {
-            setDocHtml(sanitizeHtml(res.html));
-            setContentStatus('ready');
-          } else if (res?.text) {
-            setTextContent(res.text);
+          if (res?.text || res?.html) {
+            setTextContent(res.text || res.html);
             setContentStatus('ready');
           } else {
             setContentStatus('error');
@@ -206,21 +230,6 @@ export const PdfReaderScreen = () => {
           } else {
             setContentStatus('error');
           }
-        });
-    } else if (isPdf && activeBook?.contentUrl) {
-      apiRequest(activeBook.contentUrl, { headers: authHeaders() })
-        .then(async (response) => {
-          if (response.status === 403) throw new Error('PRO_LOCKED');
-          if (!response.ok) throw new Error('FETCH_FAILED');
-          return response.blob();
-        })
-        .then((blob) => {
-          if (cancelled) return;
-          setPdfBlob(blob);
-          setContentStatus('ready');
-        })
-        .catch((err) => {
-          if (!cancelled) setContentStatus(err.message === 'PRO_LOCKED' ? 'locked' : 'error');
         });
     } else if (activeBook?.samplePages && activeBook.samplePages.length > 0) {
       setContentStatus('ready');
@@ -261,42 +270,26 @@ export const PdfReaderScreen = () => {
           <DocumentErrorState onRetry={retryLoadContent} />
         ) : contentStatus === 'loading' ? (
           <DocumentLoadingState />
-        ) : (docHtml || DOCX_TYPES.has(extension)) && docHtml ? (
-          <HtmlDocViewer
-            docHtml={docHtml}
-            zoom={zoom}
-            surfaceRef={readingSurfaceRef}
-            previewRef={readingPreviewRef}
-            pinchHandlers={pinchZoomHandlers}
-          />
+        ) : DOCX_TYPES.has(extension) && docxBlob ? (
+          <DocxDocumentViewer docxBlob={docxBlob} zoom={zoom} />
         ) : PDF_TYPES.has(extension) && pdfBlob ? (
-          <ContinuousPdfViewer
+          <PdfDocumentViewer
             pdfBlob={pdfBlob}
             zoom={zoom}
-            setZoom={setClampedZoom}
             currentPage={currentPage}
             onPageChange={handlePageChange}
             targetScrollPage={targetScrollPage}
             onTargetScrollHandled={() => setTargetScrollPage(null)}
-            bookId={activeBook.id}
           />
-        ) : TEXT_TYPES.has(extension) && (textContent || docHtml) ? (
-          <TextDocViewer
-            textContent={textContent}
-            zoom={zoom}
-            surfaceRef={readingSurfaceRef}
-            previewRef={readingPreviewRef}
-            pinchHandlers={pinchZoomHandlers}
-          />
+        ) : TEXT_TYPES.has(extension) && textContent ? (
+          <TextDocViewer textContent={textContent} zoom={zoom} pinchHandlers={{}} />
         ) : totalPages > 0 && samplePages.length > 0 ? (
           <TextDocViewer
             samplePages={samplePages}
             currentPage={currentPage}
             totalPages={totalPages}
             zoom={zoom}
-            surfaceRef={readingSurfaceRef}
-            previewRef={readingPreviewRef}
-            pinchHandlers={pinchZoomHandlers}
+            pinchHandlers={{}}
           />
         ) : (
           <DocumentEmptyState contentName={activeBook.contentName} />

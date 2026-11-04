@@ -1,11 +1,6 @@
 @import 'tailwindcss';
 @config "../tailwind.config.js";
 
-/* Aplikasi React Native memakai StyleSheet, bukan kelas CSS. Tanpa baris ini
- * pemindai otomatis Tailwind v4 ikut membaca mobile/ dan bisa menyuntik kelas
- * yang tidak pernah dipakai ke dalam CSS web. */
-@source not "../mobile";
-
 :root {
   font-family:
     'Plus Jakarta Sans',

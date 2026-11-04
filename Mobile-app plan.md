@@ -1,6 +1,7 @@
 # Rencana Aplikasi Mobile — `mobile/` (React Native + Expo)
 
 **Status dokumen:** spesifikasi pengerjaan. Keputusan dan alasannya dicatat di `Master_Memory_Workflow.md` **§16.2** — berkas ini tidak mengulang alasan, hanya menerjemahkannya menjadi rancangan yang bisa dikerjakan tanpa menebak.
+**Cakupan:** §1–16 lapisan produk & data (kontrak API, offline, proteksi, desain), §17–20 lapisan Android (config `app.json`, signing & versi, perilaku perangkat, akun & unduhan). Baca §17–20 sebelum menyentuh kode: di situlah build pertama biasanya gagal, bukan di logikanya.
 **Tanggal:** 4 November 2026. Semua rujukan baris mengacu pada kondisi kode hari itu; kalau kode berubah, perbarui berkas ini (aturan yang sama dengan berkas induk).
 
 ---
@@ -35,7 +36,9 @@
 | P2 | Keputusan M1: pulihkan tanda air + blokir klik kanan di reader **web**, atau turunkan klaim | Pemilik proyek | Menentukan apakah reader mobile harus ikut membangun tanda air (lihat §8.4). Kalau web memulihkan, mobile harus meniru atau penguji menemukan dua perilaku berbeda. |
 | P3 | Perbaikan `remote.origin.fetch` single-branch, atau disiplin tidak pakai `git pull` | Pemilik proyek memutuskan | Dijelaskan di `Master_Memory_Workflow.md` §16.2 (bagian Jebakan Git). Branch lain tidak punya ref lacakan, `git pull` di branch mobile bisa berulah. |
 | P4 | Izin `create-expo-app` (±1–2 GB `node_modules`) | Pemilik proyek | Satu-satunya langkah yang tidak bisa di-undo murah di mesin 16 GB. |
-| P5 | Satu **HP Android nyata** untuk tes | Pemilik proyek | Dua risiko terbesar (OTA pada APK sideload, `FLAG_SECURE` di atas native view) tidak bisa dibuktikan di emulator saja. |
+| P5 | **Dua HP Android nyata dari merek berbeda** (mis. Xiaomi + Samsung) | Pemilik proyek | Dua risiko terbesar (OTA pada APK sideload, `FLAG_SECURE` di atas native view) tidak bisa dibuktikan di emulator, dan perilaku `FLAG_SECURE`/hardware-overlay justru berbeda antar ROM (§10, §19). |
+| P6 | Keystore release dibuat dan dibackup **dua tempat**, di luar repo | Pemilik proyek | Satu-satunya bagian yang tidak bisa dipulihkan. Kehilangan keystore = tidak bisa upgrade install = semua penguji uninstall = buku terunduh mereka hilang (§18). |
+| P7 | Keputusan default §20 (logout tidak menghapus unduhan, buku terikat `user_id`, tenggang offline 30 hari) disahkan atau diganti | Pemilik proyek | Ini keputusan produk, bukan teknis, dan mengubah skema manifest sejak awal — lebih murah diputuskan sekarang daripada dibongkar setelah layar unduhan jadi. |
 
 ---
 
@@ -132,7 +135,7 @@ Fakta yang sudah diverifikasi terhadap kode (per 4 Nov 2026):
 
 - Semua rute di bawah **`/api`** (`server/routes/index.js:14-27`).
 - Web memakai path **relatif** (`src/lib/api.js:157`) — tidak ada `VITE_API_URL` sama sekali. Karena RN tidak punya origin, **mobile wajib mengkonfigurasi URL absolut** di `mobile/src/config.js`:
-  - development: `http://<IP-LAN-mesin-kamu>:5000/api` (HP dan laptop harus di WiFi yang sama; `localhost` di HP bukan laptopmu — ini kesalahan paling klasik dan akan memakan 30 menit kalau tidak ditulis sekarang).
+  - development: `http://<IP-LAN-mesin-kamu>:5000/api` (HP dan laptop harus di WiFi yang sama; `localhost` di HP bukan laptopmu — ini kesalahan paling klasik dan akan memakan 30 menit kalau tidak ditulis sekarang). **Dan HTTP polos ditolak Android secara bawaan:** tanpa `usesCleartextTraffic` di build dev (§17), yang kamu dapat bukan 404 melainkan kegagalan koneksi yang tidak menjelaskan apa pun.
   - preview/production: URL Vercel.
 - **CORS tidak menghalangi mobile.** Kebijakan server menerima permintaan **tanpa header `Origin`**: `if (!origin || ALLOWED_ORIGINS.includes(origin))` di `server/middleware/security.js:26-31`. Jangan pernah membuang waktu menyelidiki CORS untuk RN.
 - `FRONTEND_ORIGIN` hanya dipakai untuk redirect OAuth (`server/lib/origin.js`), **tidak** menjaring panggilan API.
@@ -205,7 +208,7 @@ Hasil pemindaian `src/lib` + `src/context`:
 |---|---|---|
 | `src/lib/normalizers.js` | murni | **Salin** `normalizeBook` (:81), `normalizeUser` (:46) |
 | `src/lib/phone.js` | murni | **Salin** (`normalizePhone` memaksa prefiks `62`, `isValidPhone`) |
-| `src/lib/date.js`, `formatUtils.js` | murni (dayjs, Intl) | **Salin** |
+| `src/lib/date.js`, `formatUtils.js` | murni (dayjs, Intl) | **Salin dengan koreksi:** `formatUtils.js:1` membuat `new Intl.NumberFormat('id-ID')` di level modul dan ada 11 titik `toLocale*` di `src/` — `Intl` di Hermes hanya sebagian. Ganti dengan formatter manual, lihat §19 |
 | `src/lib/api.js` | fetch murni **tapi** menyentuh `window.localStorage/sessionStorage/location` (:14,:31,:53,:78,:95) | **Tulis ulang** `client.js`: same logic, storage diganti SecureStore/kv, base URL absolut dari config |
 | `src/lib/styles.js` | string kelas Tailwind | **Tidak disalin** — diambil **nilainya** saja ke `theme.js` (§11) |
 | `src/lib/sanitizeHtml.js` | DOMPurify butuh `window` | **Tidak dipakai** — HTML sudah disanitasi server sebelum dikirim |
@@ -337,15 +340,18 @@ Aturannya juga: **unduhan dimulai segera setelah URL diambil** (TTL 300 detik), 
 
 ```
 tabel unduhan
-  book_id            TEXT PRIMARY KEY
-  title              TEXT
-  file_uri           TEXT
-  bytes              INTEGER
-  pages              INTEGER
-  content_extension  TEXT
-  book_updated_at    TEXT     -- pembanding basi
-  last_read_page     INTEGER  -- dipindah dari localStorage web
-  downloaded_at      TEXT
+  user_id                 TEXT NOT NULL   -- pemilik unduhan (lihat §20)
+  book_id                 TEXT NOT NULL
+  title                   TEXT
+  file_uri                TEXT
+  bytes                   INTEGER
+  pages                   INTEGER          -- hasil hitungan server (R85), bukan ketikan admin
+  content_extension       TEXT
+  book_updated_at         TEXT             -- pembanding basi
+  last_read_page          INTEGER          -- dipindah dari localStorage web
+  downloaded_at           TEXT
+  terakhir_terverifikasi  TEXT             -- untuk masa tenggang offline 30 hari (§20)
+  PRIMARY KEY (user_id, book_id)
 ```
 
 - **Deteksi basi:** admin bisa mengganti naskah (`content_url` berubah), jadi `book_updated_at` dibanding dengan katalog saat pengguna online; kalau beda, tandai "ada versi baru" di layar Unduhan — jangan diam-diam menimpa (kuota pengguna).
@@ -424,22 +430,23 @@ Setiap langkah punya "titik bukti" — kalau belum lewat, jangan lanjut ke langk
 
 | # | Pekerjaan | Titik bukti | Estimasi |
 |---|---|---|---|
-| 0 | Prasyarat P1–P5 | HP nyata terhubung ke laptop; `npm run health` 7/7 | — |
-| 1 | Scaffold Expo + `mobile/` berdiri, dua penjaga build sudah ada (`.prettierignore`, `@source not`) | Metro start, layar kosong ter-render di **perangkat**, `npm run check` tetap hijau | 0,5 hari |
+| 0 | Prasyarat P1–P7 (termasuk keystore + backup, dua HP beda merek, keputusan §20) | Keystore ada di luar repo dan bisa dibuka; dua HP terdeteksi `adb devices`; `npm run health` 7/7 | — |
+| 1 | Scaffold Expo + `mobile/` berdiri + **`app.json` §17 lengkap** (package, cleartext dev, ikon, adaptive icon, permission) + penjaga build sudah ada | Metro start, layar kosong ter-render di **perangkat**, `npm run check` tetap hijau, ikon terlihat di launcher | 1 hari |
 | 2 | **Probe A:** `/api/books/:id/content` — header/redirect/download (lihat §9.2) | Satu PDF nyata dari DB tersimpan di folder privat dan terbuka | 0,5 hari |
-| 3 | **Probe B:** `FLAG_SECURE` di atas native PDF view, di HP nyata | Screenshot diblokir **dan** isi naskah tetap terlihat (bukan hitam) | 0,5 hari |
+| 3 | **Probe B:** `FLAG_SECURE` di atas native PDF view, di **dua** HP nyata | Screenshot diblokir **dan** isi naskah tetap terlihat (bukan hitam) | 0,5 hari |
 | 4 | `client.js` + SecureStore + `AuthContext` | Login, restore sesi saat buka aplikasi, 401 → logout bersih | 1 hari |
 | 5 | AuthScreen (Masuk/Daftar/Verifikasi OTP) | Daftar → 202 → OTP (pakai `EXPOSE_DEV_OTP=1`) → 201 → masuk | 1 hari |
 | 6 | Katalog + kartu + sampul + status offline | Katalog tampil saat pesawat-mode dari cache; PRO badge benar | 1 hari |
-| 7 | Reader PDF (berkas lokal) + progres + kunci 403 | Buku terbaca; keluar/masuk apliksi melanjutkan halaman; buku terkunci tidak terbuka | 1,5 hari |
+| 7 | Reader PDF (berkas lokal) + progres + kunci 403 | Buku terbaca; keluar/masuk aplikasi melanjutkan halaman; buku terkunci tidak terbuka | 1,5 hari |
 | 8 | DOCX/TXT via WebView | Satu DOCX nyata tampil benar, teks tidak bisa disalin | 1 hari |
-| 9 | Unduhan + manifest SQLite + deteksi basi + hapus | Unduh, matikan jaringan, buka; ganti naskah di admin → "ada versi baru" | 1 hari |
+| 9 | Unduhan + manifest SQLite (kunci `(user_id, book_id)`) + deteksi basi + hapus + tenggang 30 hari | Unduh, matikan jaringan, buka; ganti naskah di admin → "ada versi baru"; akun lain di HP yang sama tidak melihat unduhanmu | 1,5 hari |
 | 10 | Profil/Pengaturan/Unduhan, hatch screenshot, banner offline | Semua keputusan UX di berkas ini punya wujud | 1 hari |
-| 11 | Build APK `preview` lalu `production`; distribusi QR ke penguji | `adb install` sukses; nomor versi terlihat di layar Pengaturan | 0,5 hari |
+| 11 | **Lapisan perilaku perangkat (§19):** back handler reader melepas `FLAG_SECURE`, safe area, keyboard, `rupiah.js`/`tanggalWib.js` tanpa `Intl`, `accessibilityLabel` | Back dari reader tidak keluar aplikasi dan screenshot di layar lain kembali normal; "Rp 25.000" tampil benar di HP; form login tidak tertutup keyboard | 1 hari |
+| 12 | Build APK `preview` (debug keystore) lalu `production` (release keystore); distribusi QR ke penguji | Install **upgrade** di atas versi sebelumnya berhasil tanpa uninstall (bukti `versionCode` & signing benar); nomor versi terlihat di Pengaturan | 0,5 hari |
 | — | (opsional) OTA + tombol update | lihat §13 | 1–2 hari |
 | — | (opsional) Halaman unduh | lihat `Master_Memory_Workflow.md` §16.2 | 1 hari |
 
-Total v1 tanpa opsi: **±10,5 hari kerja.** Angka ini bukan janji — kalau Probe A jatuh ke kasus (3), tambahkan ±0,5 hari untuk endpoint `content-url` di server.
+Total v1 tanpa opsi: **±12 hari kerja** (naik ±1,5 hari dari perkiraan awal, karena langkah 1, 9, dan 11 tadi belum terhitung). Angka ini bukan janji — kalau Probe A jatuh ke kasus (3), tambahkan ±0,5 hari untuk endpoint `content-url` di server.
 
 ---
 
@@ -456,6 +463,11 @@ Total v1 tanpa opsi: **±10,5 hari kerja.** Angka ini bukan janji — kalau Prob
 | Token JWT 12 jam tanpa refresh | Pengguna terlempar ke login di tengah membaca | Sambut dengan pesan baik-baik, simpan halaman terakhir sebelum logout, pulihkan setelah masuk lagi. Jangan menulis refresh token "diam-diam" — server tidak punya endpointnya |
 | Token di AsyncStorage | Pencurian sesi di perangkat root | `expo-secure-store` di §6, dan itu alasan kenapa `client.js` tidak boleh disalin apa adanya dari web |
 | Progres baca tidak sinkron | Ditanyakan penguji/pengguna | Keputusan sadar §12, ditulis sebagai batasan |
+| Keystore release hilang | Tidak ada jalur untuk memasang versi baru di atas versi lama; semua penguji harus uninstall dan kehilangan buku terunduh | Backup dua tempat, di luar repo, **sebelum** build pertama (§18). Ini satu-satunya kejadian tak terpulihkan di proyek ini |
+| HTTP polos ditolak Android saat development | Semua request gagal dengan pesan yang tidak menjelaskan, dan waktu habis menyelidiki jaringan | `usesCleartextTraffic: true` khusus build dev/preview (§17); `false` di production |
+| `Intl` Hermes jatuh ke locale `en-US` | "Rp 25.000" tampil sebagai "25,000" hanya di HP — tidak kelihatan saat dites di Node maupun web | Formatter manual `rupiah.js`/`tanggalWib.js` (§19); jangan port `formatUtils.js` apa adanya |
+| Back fisik keluar aplikasi dari reader | `FLAG_SECURE` tertinggal menyala, atau halaman terakhir tidak sempat tersimpan | `BackHandler` dengan urutan simpan → lepas flag → pop (§19); dibuktikan di langkah 11 |
+| Satu HP dipakai beberapa akun | Buku terunduh milik A terbuka untuk B | Manifest berkunci `(user_id, book_id)` + verifikasi ulang tiap 30 hari (§20) |
 
 ---
 
@@ -469,10 +481,94 @@ Total v1 tanpa opsi: **±10,5 hari kerja.** Angka ini bukan janji — kalau Prob
 6. Tidak ada satu pun kode `src/` web yang disentuh; `npm run build` dan `npm run check` web tetap hijau setelah seluruh pekerjaan mobile masuk.
 7. Berkas ini dan `Master_Memory_Workflow.md` §16.2 sudah mencerminkan apa yang benar-benar terjadi, termasuk hal yang gagal.
 8. Batas-batas (§8.3, §10, §12) tertulis di Bab IV sebagai batasan, bukan sebagai keberhasilan.
+9. APK baru bisa **upgrade install** di atas APK lama tanpa uninstall dan tanpa kehilangan buku terunduh — bukti bahwa keystore dan `versionCode` dikelola dengan benar.
+10. Tombol back fisik dari reader tidak keluar aplikasi, melepas `FLAG_SECURE`, dan halaman terakhir tersimpan.
+11. Format rupiah dan tanggal WIB benar **di perangkat**, bukan hanya di Node (`Intl` tidak dipercaya, §19).
+12. Buku terunduh tidak bisa dibuka akun lain di HP yang sama, dan logout tidak menghapusnya tanpa persetujuan (§20).
 
 ---
 
-## 17. Daftar "jangan lakukan" (ditarik dari kesalahan yang paling mungkin)
+## 17. Konfigurasi Android & `app.json`
+
+Lapisan ini tidak menyentuh logika aplikasi, tapi menentukan apakah aplikasinya bisa dipasang dan apakah request dev-mu sampai sama sekali.
+
+```json
+{
+  "expo": {
+    "name": "Wahidiyah Book",
+    "slug": "wahidiyah-book",
+    "scheme": "wahidiyahbook",
+    "version": "1.0",
+    "orientation": "portrait",
+    "assetBundlePatterns": ["**/*"],
+    "android": {
+      "package": "id.wahidiyah.book",
+      "versionCode": 1,
+      "minSdkVersion": 24,
+      "usesCleartextTraffic": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon-foreground.png",
+        "backgroundColor": "#FBF8F3"
+      },
+      "permissions": ["android.permission.INTERNET"]
+    }
+  }
+}
+```
+
+| Butir | Aturan | Kenapa |
+|---|---|---|
+| `android.package` | **Dipilih sekali, tidak pernah berubah.** | Upgrade install menolak APK dengan `applicationId` berbeda — berubah berarti semua penguji harus uninstall dan kehilangan buku terunduhnya. Catatan: domain `wahidiyah.org` bukan milik proyek ini, jadi pakai `id.wahidiyah.book` (reverse-DNS id negara + nama) dan jangan klaim domain orang. |
+| `usesCleartextTraffic` | Hanya boleh `true` di build `development`/`preview`. Production harus `false`. | **Ini jebakan №1 sesi pertama.** Android menolak HTTP polos sejak `targetSdk` 28, sementara rencana dev di §5.1 memakai `http://<IP-LAN>:5000/api`. Tanpa flag ini, semua request gagal dengan pesan yang tidak menjelaskan apa pun. Kalau versi SDK yang terpasang tidak mengekspos kunci ini, jangan mengarang — pakai config plugin `networkSecurityConfig`, dan cek dokumentasi SDK yang sedang terpasang. |
+| `minSdkVersion` | 24 | Menutup hampir semua HP Android yang dipakai jamaah hari ini; di bawah itu tidak ada penguji. |
+| `permissions` | Hanya `INTERNET`. `REQUEST_INSTALL_PACKAGES` **tidak dipasang** kecuali self-update APK (§13) jadi dikerjakan. | Meminta izin yang tidak dipakai menaikkan curiga penguji dan tidak memberi manfaat. |
+| `scheme` | `wahidiyahbook` | Belum ada yang memakai (QRIS + polling tidak butuh deep link, Google OAuth ditunda). Ditetapkan sekarang supaya tidak berubah nanti. |
+| Ikon & splash | `assets/` + `adaptiveIcon` wajib diisi | APK tanpa ikon terlihat seperti build gagal. Adaptive icon Android punya jebakan sendiri: foreground 108dp dengan 66dp aman di tengah, kalau tidak ikon terpotong bulat. |
+
+## 18. Signing & kebijakan versi
+
+**Ini satu-satunya bagian proyek yang tidak bisa dipulihkan kalau hilang.** Simpan dulu, baru bangun.
+
+1. **Buat keystore release sekali, di luar repo:**
+   ```
+   keytool -genkeypair -v -keystore E:/keystore/wahidiyah-release.keystore \
+     -alias wahidiyah -keyalg RSA -keysize 2048 -validity 10000
+   ```
+   `keytool` ikut JDK yang dipasang Android Studio. Jangan menaruhnya di `mobile/` — repo ini **public**; sebagai penjaga kedua, tambahkan `*.keystore` dan `mobile/**/*.keystore` ke `.gitignore`.
+2. **Backup dua tempat** (mis. E: + cloud pribadi), dan sandi di password manager. Konsekuensi kehilangan keystore: tidak bisa lagi memasang versi baru di atas versi lama → setiap penguji harus uninstall → **semua buku terunduh hilang dari perangkat mereka**. Tidak ada jalur lain.
+3. **Build debug memakai `~/.android/debug.keystore`** (dibuat otomatis) untuk probe awal; **jangan pernah distribute APK debug** ke penguji, karena berpindah dari debug ke release juga menuntut uninstall.
+4. **`versionCode` naik +1 setiap APK yang dibagikan**, `versionName` mengikuti versi manusia. Android menolak install kalau `versionCode` lebih rendah, jadi tanpa aturan ini "coba versi baru" akan gagal diam-diam dan disalahpahami sebagai bug aplikasi.
+5. Tampilkan keduanya di layar Setting (`expo-application` / `Constants.expoConfig`) — tanpa itu kamu tidak akan tahu versi mana yang terpasang di HP penguji saat mereka melapor.
+
+## 19. Perilaku perangkat yang tidak muncul di emulator default
+
+| Aspek | Aturan |
+|---|---|
+| **Tombol back fisik** | Di `ReaderScreen`, `BackHandler` wajib: (1) simpan halaman terakhir, (2) **lepas `FLAG_SECURE`** lewat cleanup `usePreventScreenCapture`, (3) baru `navigation.pop()`. Kalau back keluar aplikasi tanpa unmount, flag bisa tertinggal menyala di layar berikutnya — dan screenshot debug-mu sendiri ikut terblokir, yang persis masalah yang sedang kita hindari di §10. |
+| **Safe area** | Bottom tab, top bar reader, dan modal harus dibungkus `react-native-safe-area-context` (`useSafeAreaInsets`). Paketnya sudah ikut dipasang bersama React Navigation, jadi ini pemakaian, bukan dependensi baru. Tanpa itu, HP berponi menutupi tombol. |
+| **Keyboard** | Form login/daftar pakai `KeyboardAvoidingView` dengan `behavior="padding"` di Android; `android:windowSoftInputMode="adjustResize"` (Expo mengatur ini, tapi verifikasi — kalau tidak, tombol "Masuk" tersembunyi di belakang keyboard dan itu terlihat seperti aplikasi rusak). |
+| **`Intl` di Hermes hanya sebagian** | **Terverifikasi di kode ini:** `src/lib/formatUtils.js:1` membuat `new Intl.NumberFormat('id-ID')` di level modul, dan ada **11 titik `toLocale*`** di `src/`. Rencana §6 menyebut modul itu "murni, salin" — koreksi: jangan mengandalkan `Intl` untuk angka rupiah & tanggal WIB di Hermes, karena locale data bisa jatuh ke format `en-US` (`25,000` alih-alih `Rp 25.000`). Tulis `mobile/src/lib/rupiah.js` (pengelompokan ribuan manual dengan titik) dan `tanggalWib.js` (geser +7 jam, pola yang sama dipakai `server/lib/midtrans.js` untuk `jakartaOrderTime`). Kalau tetap ingin memakai `Intl`, buktikan lebih dulu di perangkat nyata, bukan di Node. |
+| **Aksesibilitas** | Ikon-only button (bottom tab, toolbar reader) wajib `accessibilityLabel`; pakai `accessibilityRole` yang benar (button/link/image); target sentuh minimal 44dp. Ini bukan hiasan: dokumen induk (§4, §9) mengklaim 17 pasangan kontras WCAG AA, dan kalau Bab IV menyebut aksesibilitas, RN harus membayarnya sendiri — kelas kontras tidak ikut ter-porting dari CSS. |
+| **Orientasi & status bar** | Portrait saja (sudah di `app.json`). Jangan biarkan zoom PDF memaksa landscape. |
+| **Muat font sebelum render pertama** | `expo-font.loadAsync` di entry, tampilkan splash sampai selesai; tanpa itu teks berubah mendadak setelah 300 ms dan terlihat seperti bug. |
+
+## 20. Akun, unduhan, dan perangkat yang dipakai bersama
+
+Keputusan default di bawah **bisa diubah pemilik proyek**; yang penting jangan dibiarkan muncul sebagai bug di ruang sidang.
+
+| Situasi | Perilaku yang direncanakan | Alasan |
+|---|---|---|
+| Pengguna **keluar (logout)** | Hapus token dari SecureStore + kosongkan state. **Buku terunduh TIDAK dihapus**, tapi terkunci ke `user_id` yang mengunduhnya. | Menghapus saat keluar menghukum kasus nyata di lapangan: satu HP dipakai beberapa jamaah, dan kuota mereka yang menanggung unduh ulang. Mengikat ke akun membuat pengguna lain di HP yang sama tidak bisa membuka naskah orang lain lewat aplikasi. |
+| Membuka buku terkunci yang sudah terunduh, dalam keadaan offline | Boleh, dengan masa tenggang **30 hari** sejak `terakhir_terverifikasi` (kolom baru di manifest), lalu wajib online untuk verifikasi ulang `is_pro`. | Tanpa tenggang, fitur offline tidak ada artinya; tanpa batas, satu unduhan jadi langganan Pro seumur hidup. |
+| Pro **kedaluwarsa** setelah buku terunduh | Tetap bisa dibaca; layar Unduhan menampilkan status "Pro berakhir". Jangan hapus diam-diam. | Konsisten dengan §5.5 dan tidak merusak janji offline. |
+| Buku **dihapus admin** | Katalog mengembalikan 404 → kartu ditandai "tidak tersedia" + tawaran hapus berkas. Jangan pernah menghapus tanpa persetujuan. | Berkas lokal adalah salinan satu-satunya yang dimiliki pengguna saat offline; menghilangkannya tanpa kabar terasa seperti aplikasi rusak. |
+| Dua akun di satu HP | Manifest unduhan **berkunci (user_id, book_id)**, bukan book_id saja. | Ini mengubah skema §9.3 — lihat catatan di bawah tabel itu. |
+
+**Konsekuensi skema:** kolom `user_id` harus ikut di `tabel unduhan`, dan kunci utamanya jadi `(user_id, book_id)`. Tanpa ini, satu baris "sudah diunduh" berlaku untuk semua akun di perangkat itu.
+
+**Batas yang harus diterima apa adanya:** semua ini tidak melindungi dari perangkat di-root atau berkas yang disalin lewat aplikasi pengelola file berwenang — folder privat aplikasi hanya tertutup bagi aplikasi lain, bukan bagi pemilik perangkat. Bab IV menuliskannya sebagai batas, bukan sebagai keberhasilan.
+
+## 21. Daftar "jangan lakukan" (ditarik dari kesalahan yang paling mungkin)
 
 1. **Jangan** mem-porting kelas Tailwind atau mengimpor `src/lib/styles.js`. Salin nilainya ke `theme.js`.
 2. **Jangan** menaruh `mobile/` di branch jangka panjang tanpa merge; folder itu sudah mengisolasi, branch hanya membuat kerjaan tidak ter-deploy.
@@ -488,10 +584,16 @@ Total v1 tanpa opsi: **±10,5 hari kerja.** Angka ini bukan janji — kalau Prob
 12. **Jangan** mengimpor apa pun dari `src/` atau `server/` ke `mobile/`.
 13. **Jangan** mengaktifkan `preventScreenCaptureAsync()` di seluruh aplikasi — kamu akan kehilangan screenshot debug dan gambar skripsi.
 14. **Jangan** mengabaikan Probe A dan B dengan alasan "nanti juga jalan"; keduanya menentukan bentuk layar unduh dan reader, dan itu yang paling mahal dibongkar kalau telat.
+15. **Jangan** menaruh `.keystore` di dalam repo — repo ini public, dan kehilangan keystore berarti semua penguji harus uninstall lalu kehilangan buku terunduhnya.
+16. **Jangan** mengubah `android.package` setelah APK pertama dibagikan.
+17. **Jangan** memakai `usesCleartextTraffic: true` di build production.
+18. **Jangan** mengandalkan `Intl` Hermes untuk format rupiah/tanggal — lihat §19, ini sudah terverifikasi sebagai risiko nyata pada kode yang mau diport.
+19. **Jangan** melepas `FLAG_SECURE` lewat jalan pintas (mis. flag global) saat screenshot Bab IV dibutuhkan — pakai build `preview`, supaya yang terpasang di HP penguji tetap terkunci.
+20. **Jangan** menghapus buku terunduh saat logout atau saat Pro kedaluwarsa tanpa persetujuan pengguna — lihat §20.
 
 ---
 
-## 18. Rujukan silang
+## 22. Rujukan silang
 
 - Keputusan dan alasan: `Master_Memory_Workflow.md` §16.2 (keputusan & alasan)
 - Batasan penelitian sandbox + kalimat siap pakai Bab V: §11.4

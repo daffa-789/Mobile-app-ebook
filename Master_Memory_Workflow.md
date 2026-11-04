@@ -1237,6 +1237,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R72–R82 | 31 Okt – 3 Nov 2026: perapian Prettier & service layer, quality gate `check:full`, standardisasi JSDoc, dekomposisi layar utama dan service layer menjadi paket `auth/` + `payment/`, penghapusan 13 klaster duplikasi, penyatuan layar autentikasi menjadi satu kartu, layar auth dibuat datar. Subbagian riwayat rounds ini **dipangkas 4 Nov 2026** — `git log` yang menyimpan detailnya. Satu pelajaran ditahan di sini karena masih berlaku: nilai penghapusan duplikasi (R80) bukan pada baris yang hilang (21.920 → 21.935, praktis tetap), melainkan pada **satu tempat untuk mengubah kontrak**. |
 | R83 | Konsolidasi rencana mobile 4 Nov 2026: keputusan React Native/Expo, branch `mobile-app`, penjaga build, dan koreksi status M1 — lihat 15.13. |
 | R84 | Penjaga konfigurasi Midtrans + pemantik rekonsiliasi 4 Nov 2026: flag vs prefix kunci, health check membaca lingkungan dari kunci, `POST /api/payments/qris/reconcile`, plus temuan `override: true` pada `server/env.js` — lihat 15.14. |
+| R89 | Zoom PDF model transform 4 Nov 2026: zoom tidak lagi mengubah ukuran kotak halaman, hanya skala + resolusi bitmap — menghapus kedip dan lompatan posisi — lihat 15.19. |
 | R88 | Zoom trackpad 4 Nov 2026: pinch trackpad pindah ke jalur transform-GPU + commit sekali seperti pinch dua jari, `deltaMode` mouse dibedakan, `customFocalYRef` mati dihapus — lihat 15.18. |
 | R87 | Toolchain mobile 4 Nov 2026: scaffold SDK 53 ditemukan di branch `mobile-app`, `main` digabung ke sana, dan Expo SDK 58 ditetapkan dengan fallback resmi 57 — lihat 15.17. |
 | R86 | Pemangkasan & penyesuaian dokumen 4 Nov 2026: §16.2 diringkas 163 → 31 baris (spesifikasi tinggal di `Mobile-app plan.md`), riwayat R40–R71 dirapatkan, delapan drift dokumen dikoreksi di tempatnya, dan rujukan mati hasil pemangkasan disambungkan — lihat 15.16. |
@@ -1261,6 +1262,34 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `server/services/auth/password_reset_service.js:103`.
 
+### 15.19 Zoom PDF Model Transform R89 (4 November 2026)
+
+**Keluhan pemilik proyek:** zoom di desktop "kaya kedip" dan posisi huruf berubah-ubah, lalu hilang saat dilepas; di HP (PWA) mulus. Permintaan: seperti zoom Acrobat/WPS — konten hanya diskala, tidak mengubah posisi.
+
+**Akar masalah, terbukti dengan pengukuran (bukan dugaan):** model lama membuat `displayPageWidth = baseFitWidth × zoom/100`, jadi **setiap perubahan zoom mengubah ukuran kotak halaman** → reflow → posisi teks bergeser; dan bitmap kanvas masih berskala lama sementara kotaknya sudah baru → peramban **merentangkan gambar**. Bukti angkanya: halaman terlihat punya `canvas.width 2280` untuk kotak yang membutuhkan `991 × dpr 1,25 ≈ 1239`, rasio **184% = 300 ÷ 163** — persis rasio zoom lama terhadap zoom baru. Renderer menunda 60 ms lalu meraster **bergiliran satu per satu**, jadi jendela "rentang lalu klik" itu terlihat sebagai kedip yang merambat.
+
+**Perubahan model:**
+
+| Sebelum | Sesudah |
+|---|---|
+| Kotak halaman ikut berubah ukuran saat zoom | Kotak **tetap** (`sheetWidth` dari `baseFitWidth`); zoom hanya `transform: scale()` pada tumpukan halaman |
+| Preview transform saat gestur, commit di akhir (dua mekanisme berbeda untuk sentuh vs trackpad) | Satu mekanisme: `setZoom` = satu properti gaya, murah, jadi gestur cukup menulis zoom per frame |
+| Jangkar heuristik: ukur `getBoundingClientRect()` halaman aktif + rasio, lalu set `scrollTop` | Koreksi proporsional satu baris: `titik = (scrollTop + focalY) / skalaLama`, lalu `scrollTop = titik × skalaBaru − focalY` |
+| Bitmap dirender pada ukuran kotak | Bitmap dirender pada `baseFitWidth × skala × dpr` sementara kotak CSS tetap — jadi raster hanya **mempertajam**, tidak pernah mengubah geometri |
+
+`usePdfPinchGesture` dan `useWheelPinchZoom` disederhanakan (tidak lagi menulis transform/`will-change`/`removeProperty` secara imperatif), `PdfPageSheet` menerima `sheetWidth`/`sheetHeight` dan kanvasnya mengisi 100%, dan pembungkus tumpukan berukuran hasil-kali agar wilayah gulir tetap benar. `getPinchZoom` tetap dipakai jalur DOCX/HTML (`useAnchoredPinchZoom`) yang memang mengubah ukuran teks — itu model lain dan sengaja tidak disentuh.
+
+**Bukti di browser nyata** (viewport 632×570, dpr 1,25, buku 62 halaman, zoom 100 → 201 lewat 14 event trackpad):
+
+- `kotakTetapSama: true` — `style.width` lembar tetap `608px` padahal zoom naik 2×; `transform` tumpukan menjadi `matrix(2.01, ...)`.
+- Titik tengah layar tetap berada di **halaman 5, 30% → 31%** — posisi tidak melompat.
+- **0 frame jatuh**, median dan terburuk sama-sama **17 ms** selama gestur.
+- Halaman yang terlihat: `canvas.width 1490` vs `1189 CSS × dpr 1,25` → rasio **100%**, tidak ada bitmap yang direntangkan.
+
+**Yang harus diketahui supaya tidak disalahpahami sebagai bug:** halaman di luar layar memang tetap menyimpan bitmap lama sampai ia masuk viewport (render malas, `rootMargin` 400 px) — mengukur rasio pada halaman tak terlihat memberi angka 50% yang benar tapi tidak berarti apa pun. Dan di zoom ekstrem desktop (300%), penjaga memori `MAX_CANVAS_PIXELS = 12 juta piksel` menekan resolusi bitmap ±9% sehingga sedikit lebih lembut: itu guard yang sudah ada, bukan regresi.
+
+**Kenapa tidak memakai library:** viewer yang bersandar pada PDF viewer bawaan peramban (`<embed>`/`<object>`) atau pembungkus Snap.js menghapus canvas tertutup, tanda air, dan penonaktifan toolbar — yaitu persis yang menjadi klaim "Pembaca PDF Terproteksi" di judul skripsi. Pola yang diminta (skala murni + pertajaman menyusul) justru sederhana dan sekarang sudah menjadi model internalnya.
+
 ### 15.18 Zoom Trackpad R88 (4 November 2026)
 
 **Keluhan pemilik proyek:** zoom dengan trackpad di laptop tidak semulus pinch di HP (PWA). Keduanya aplikasi yang sama — jadi penyebabnya ada di jalur input, bukan platform.
@@ -1269,7 +1298,7 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 |---|---|
 | Akar masalah | `ContinuousPdfViewer.jsx` §8 memanggil `setZoom` **pada setiap event `wheel`**. Satu `setZoom` memicu render ulang canvas per halaman lewat `usePdfCanvasRenderer`, dan satu gestur trackpad mengirim puluhan event. Pinch dua jari tidak mengalami ini karena `usePdfPinchGesture` hanya mengubah transform CSS selama gestur dan meng-commit zoom satu kali saat jari diangkat. |
 | Cacat kedua | `Math.round(prev + delta * 0.15)` membuat delta trackpad kecil (di bawah ±7 unit) menghasilkan **nol perubahan** — dead zone, lalu lompatan mendadak saat ambangnya terlampaui. |
-| Perbaikan | Hook baru `src/features/reader/useWheelPinchZoom.js`: skala kumulatif per gestur → transform GPU di `requestAnimationFrame` → **commit sekali** setelah 120 ms tanpa event. `zoomUtils.js` mendapat `getWheelScale` dan `clampZoom`; `getPinchZoom` kini memakai `clampZoom` yang sama, jadi kedua jalur meng-commit dengan aturan identik. |
+| Perbaikan | Hook baru `src/features/reader/useWheelPinchZoom.js`: skala kumulatif per gestur → transform GPU di `requestAnimationFrame` → **commit sekali** setelah 120 ms tanpa event. `zoomUtils.js` mendapat `getWheelScale` dan `clampZoom`; `getPinchZoom` kini memakai `clampZoom` yang sama, jadi kedua jalur meng-commit dengan aturan identik. **(Digantikan hari yang sama oleh 15.19 — model "preview lalu commit" tidak diperlukan lagi begitu zoom menjadi transform murni; yang bertahan dari tahap ini hanya `getWheelScale`, `clampZoom`, dan pembedaan `deltaMode`.)** |
 | Mouse wheel ikut dibedakan | `deltaMode === 1` (per-baris) memakai langkah diskrit 1,2× per notch, bukan rumus kontinu — kalau tidak, satu klik roda mouse melompat puluhan persen. |
 | Batas per event | Faktor dibatasi 1,35× per event, karena trackpad mengirim delta sangat besar pada detik terakhir gestur (momentum release). |
 | State mati yang dibersihkan | `customFocalYRef` sudah tidak ada yang mengisi setelah handler lama dihapus, jadi deklarasi dan cabangnya dihapus — bukan dibiarkan sebagai kode yang selalu `null`. |

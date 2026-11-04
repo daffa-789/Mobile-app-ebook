@@ -51,7 +51,7 @@ export const ContinuousPdfViewer = ({
 
   // Pelacak posisi bacaan aktif secara riil ({ page: nomor halaman, ratio: offset vertikal dalam halaman })
   const currentViewRef = useRef({ page: currentPage || 1, ratio: 0 });
-  const prevZoomRef = useRef(zoom);
+  const prevScaleRef = useRef(zoom / 100);
   const pinchAnchorRef = useRef(null);
 
   // Callback dari induk sering berubah identitas (mis. saat total halaman diketahui),
@@ -125,7 +125,7 @@ export const ContinuousPdfViewer = ({
     return () => ro.disconnect();
   }, []);
 
-  // 3. Hitung Dimensi Halaman Kanvas Tetap (Fixed Canvas Dimensions)
+  // 3. Hitung Dimensi Lembar — TETAP, zoom tidak menyentuh tata letak
   const isMobile = containerWidth < 640;
   const basePdfWidth = pageDimensions.width || 595.28;
   const basePdfHeight = pageDimensions.height || 841.89;
@@ -135,8 +135,17 @@ export const ContinuousPdfViewer = ({
     ? Math.max(280, containerWidth - 16)
     : Math.min(Math.max(480, containerWidth - 48), 850);
 
-  const displayPageWidth = Math.round(baseFitWidth * (zoom / 100));
-  const displayPageHeight = Math.round(displayPageWidth * naturalAspect);
+  /* Zoom = skala visual belaka (seperti memperbesar gambar). Kotak lembar
+     tidak pernah berubah ukuran, jadi posisi teks tidak bisa melompat.
+     `rasterWidth` adalah resolusi bitmap yang diminta ke pdf.js — satu-satunya
+     hal yang berubah saat zoom, dan itu hanya affects ketajaman. */
+  const scale = zoom / 100;
+  const sheetWidth = Math.round(baseFitWidth);
+  const sheetHeight = Math.round(sheetWidth * naturalAspect);
+  const rasterWidth = Math.round(baseFitWidth * scale);
+  const GAP_SHEET = 16;
+  const stackHeight =
+    totalPages > 0 ? totalPages * sheetHeight + (totalPages - 1) * GAP_SHEET : sheetHeight;
 
   // 4. Deteksi Posisi Bacaan Terkini saat Menggulir (Scroll-Spy & Anchor Tracker)
   const updateReadingPosition = useCallback(
@@ -198,42 +207,27 @@ export const ContinuousPdfViewer = ({
     return () => el.removeEventListener('scroll', onScroll);
   }, [updateReadingPosition]);
 
-  // 5. Kunci Posisi Fokus Membaca saat Zoom Berubah (Reading Anchor Lock)
+  /* 5. Jangkar Zoom — titik dokumen di bawah fokus tetap di layar.
+     Karena zoom kini murni skala, koreksinya perkalian murni: tanpa pengukuran
+     ulang per halaman, tanpa pelepasan transform, tanpa lompatan posisi.
+     Rumus: titikDokumen = (scrollTop + focalY) / skalaLama, lalu
+     scrollTop baru = titikDokumen * skalaBaru - focalY.
+  */
   useLayoutEffect(() => {
     const container = containerRef.current;
-    if (!container || prevZoomRef.current === zoom) {
-      prevZoomRef.current = zoom;
-      return;
-    }
+    const skalaSebelum = prevScaleRef.current;
+    prevScaleRef.current = scale;
+    if (!container || skalaSebelum === scale) return;
 
-    const anchor = pinchAnchorRef.current;
-    const { page, ratio } = anchor || currentViewRef.current;
-    const eyelineY = anchor?.focalY ?? container.clientHeight * 0.35;
-
-    pageStackRef.current?.style.removeProperty('transform');
-    pageStackRef.current?.style.removeProperty('transform-origin');
-    pageStackRef.current?.style.removeProperty('will-change');
-
-    if (page >= 1 && page <= totalPages) {
-      const GAP = 16;
-      const pageElement = pageContainerRefs.current[page];
-      const targetYInDoc = pageElement
-        ? pageElement.getBoundingClientRect().top -
-          container.getBoundingClientRect().top +
-          container.scrollTop +
-          ratio * pageElement.clientHeight
-        : (page - 1) * (displayPageHeight + GAP) + ratio * displayPageHeight;
-      container.scrollTop = Math.max(0, targetYInDoc - eyelineY);
-    }
-
+    const focalY = pinchAnchorRef.current?.focalY ?? container.clientHeight * 0.35;
+    const titikDokumen = (container.scrollTop + focalY) / skalaSebelum;
+    container.scrollTop = Math.max(0, titikDokumen * scale - focalY);
     pinchAnchorRef.current = null;
-    prevZoomRef.current = zoom;
-  }, [zoom, displayPageHeight, totalPages]);
+  }, [scale]);
 
   // 6. Integrasi Gesture Multi-Touch Pinch
   const { handleTouchStart, handleTouchEnd } = usePdfPinchGesture({
     containerRef,
-    pageStackRef,
     zoom,
     setZoom,
     updateReadingPosition,
@@ -241,11 +235,11 @@ export const ContinuousPdfViewer = ({
     pinchAnchorRef,
   });
 
-  // 7. Integrasi Renderer Canvas PDF.js
+  // 7. Integrasi Renderer Canvas PDF.js — bitmap mengikuti skala, kotak tidak
   usePdfCanvasRenderer({
     pdfDoc,
     totalPages,
-    displayPageWidth,
+    displayPageWidth: rasterWidth,
     containerRef,
     pageContainerRefs,
     canvasRefs,
@@ -257,7 +251,6 @@ export const ContinuousPdfViewer = ({
   // 8. Pinch Trackpad (Ctrl/Cmd + Wheel) — jalur yang sama dengan pinch dua jari
   useWheelPinchZoom({
     containerRef,
-    pageStackRef,
     zoom,
     setZoom,
     updateReadingPosition,
@@ -306,24 +299,38 @@ export const ContinuousPdfViewer = ({
         overflowAnchor: 'none',
       }}
     >
+      {/* Pembungkus berukuran hasil-kali (sheet × skala) supaya wilayah gulir
+          tetap benar, sementara isinya diskala murni dengan transform. Tidak ada
+          perubahan ukuran kotak di dalam stack, jadi tidak ada reflow saat zoom. */}
       <div
-        ref={pageStackRef}
-        className="mx-auto flex flex-col items-center gap-4"
+        className="relative mx-auto"
         style={{
-          width: `${displayPageWidth}px`,
+          width: `${sheetWidth * scale}px`,
+          height: `${stackHeight * scale}px`,
         }}
       >
-        {pageNumbers.map((pageNum) => (
-          <PdfPageSheet
-            key={pageNum}
-            pageNum={pageNum}
-            totalPages={totalPages}
-            displayPageWidth={displayPageWidth}
-            displayPageHeight={displayPageHeight}
-            registerContainer={(el) => (pageContainerRefs.current[pageNum] = el)}
-            registerCanvas={(el) => (canvasRefs.current[pageNum] = el)}
-          />
-        ))}
+        <div
+          ref={pageStackRef}
+          className="absolute top-0 left-0 flex flex-col items-center gap-4"
+          style={{
+            width: `${sheetWidth}px`,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            willChange: 'transform',
+          }}
+        >
+          {pageNumbers.map((pageNum) => (
+            <PdfPageSheet
+              key={pageNum}
+              pageNum={pageNum}
+              totalPages={totalPages}
+              sheetWidth={sheetWidth}
+              sheetHeight={sheetHeight}
+              registerContainer={(el) => (pageContainerRefs.current[pageNum] = el)}
+              registerCanvas={(el) => (canvasRefs.current[pageNum] = el)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

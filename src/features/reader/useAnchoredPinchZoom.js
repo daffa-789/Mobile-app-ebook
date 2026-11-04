@@ -29,7 +29,7 @@ const clearPreviewTransform = (preview) => {
   preview.style.removeProperty('will-change');
 };
 
-/** Applies pinch movement on the compositor, then reflows once when the gesture ends. */
+/** Menerapkan gerak pinch di compositor, lalu satu reflow saat gestur selesai. */
 export const useAnchoredPinchZoom = ({ containerRef, previewRef, zoom, setZoom }) => {
   const startDistanceRef = useRef(0);
   const startZoomRef = useRef(zoom);

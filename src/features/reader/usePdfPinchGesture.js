@@ -1,25 +1,28 @@
 /**
  * Custom hook untuk menangani gesture multi-touch 2 jari (Pinch-to-zoom) pada ContinuousPdfViewer.
- * Menggunakan akselerasi transform GPU selama gesture berlangsung, dan menerapkan zoom akhir
- * saat jari dilepaskan demi performa rendering 60 FPS tanpa jank.
+ *
+ * Zoom kini murni `transform: scale()` pada tumpukan halaman (lihat
+ * `ContinuousPdfViewer`), jadi tidak ada lagi "preview transform" yang harus
+ * dibuang saat jari diangkat: mengubah zoom berarti mengubah satu properti
+ * gaya, dan itu murah. Yang tersisa di sini hanyalah menerjemahkan jarak dua
+ * jari menjadi level zoom, dijatah satu pembaruan per frame.
  *
  * @module src/features/reader/usePdfPinchGesture
  */
 
 import { useRef, useEffect } from 'react';
-import { getPinchScale, getPinchZoom } from './zoomUtils';
+import { clampZoom, getPinchScale } from './zoomUtils';
 
 /**
  * Hook gesture pinch-to-zoom lembar PDF.
  *
  * @param {object} params - Konfigurasi hook
  * @param {import('react').RefObject<HTMLDivElement>} params.containerRef - Ref elemen pembungkus scroll
- * @param {import('react').RefObject<HTMLDivElement>} params.pageStackRef - Ref tumpukan halaman PDF
  * @param {number} params.zoom - Level zoom saat ini (persentase)
  * @param {(newZoom: number) => void} params.setZoom - Setter level zoom
  * @param {(focalY?: number) => void} params.updateReadingPosition - Callback penanda posisi baca
- * @param {import('react').MutableRefObject<{page: number, ratio: number}>} params.currentViewRef - Ref posisi halaman
- * @param {import('react').MutableRefObject<any>} params.pinchAnchorRef - Ref titik jangkar pinch
+ * @param {import('react').MutableRefObject<{page: number, ratio: number}>} params.currentViewRef - Ref posisi baca
+ * @param {import('react').MutableRefObject<any>} params.pinchAnchorRef - Ref titik jangkar gestur
  * @returns {{
  *   handleTouchStart: (e: import('react').TouchEvent) => void,
  *   handleTouchEnd: (e: import('react').TouchEvent) => void,
@@ -28,129 +31,100 @@ import { getPinchScale, getPinchZoom } from './zoomUtils';
  */
 export function usePdfPinchGesture({
   containerRef,
-  pageStackRef,
   zoom,
   setZoom,
   updateReadingPosition,
   currentViewRef,
   pinchAnchorRef,
 }) {
-  const touchStartDistRef = useRef(0);
-  const initialPinchZoomRef = useRef(100);
-  const lastPinchDistRef = useRef(0);
-  const pinchOriginRef = useRef({ x: 0, y: 0, clientX: 0, clientY: 0 });
+  const zoomRef = useRef(zoom);
+  const jarakAwalRef = useRef(0);
+  const jarakTerakhirRef = useRef(0);
+  const zoomAwalRef = useRef(100);
   const isPinchingRef = useRef(false);
-  const pinchRafRef = useRef(null);
-  const touchMoveHandlerRef = useRef(null);
+  const rafRef = useRef(null);
+  const moveHandlerRef = useRef(null);
+
+  useEffect(() => {
+    zoomRef.current = zoom;
+  }, [zoom]);
+
+  const jarakDuaJari = (a, b) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+
+  const terapkanZoom = (jarak) => {
+    if (jarakAwalRef.current <= 10) return;
+    const skala = getPinchScale(zoomAwalRef.current, jarakAwalRef.current, jarak);
+    setZoom(clampZoom(zoomAwalRef.current * skala));
+  };
 
   const handleTouchStart = (e) => {
     if (e.touches.length !== 2) return;
 
-    const [firstTouch, secondTouch] = e.touches;
-    const distance = Math.hypot(
-      firstTouch.clientX - secondTouch.clientX,
-      firstTouch.clientY - secondTouch.clientY,
-    );
-    const midpointX = (firstTouch.clientX + secondTouch.clientX) / 2;
-    const midpointY = (firstTouch.clientY + secondTouch.clientY) / 2;
     const container = containerRef.current;
-    const pageStack = pageStackRef.current;
-    if (!container || !pageStack) return;
+    if (!container) return;
 
-    const containerRect = container.getBoundingClientRect();
-    const pageStackRect = pageStack.getBoundingClientRect();
-    const focalY = midpointY - containerRect.top;
+    const [pertama, kedua] = e.touches;
+    const jarak = jarakDuaJari(pertama, kedua);
+    const focalY = (pertama.clientY + kedua.clientY) / 2 - container.getBoundingClientRect().top;
+
     updateReadingPosition(focalY);
-
-    touchStartDistRef.current = distance;
-    lastPinchDistRef.current = distance;
-    initialPinchZoomRef.current = zoom;
-    pinchOriginRef.current = {
-      x: midpointX - pageStackRect.left,
-      y: midpointY - pageStackRect.top,
-      clientX: midpointX,
-      clientY: midpointY,
-    };
+    jarakAwalRef.current = jarak;
+    jarakTerakhirRef.current = jarak;
+    zoomAwalRef.current = zoomRef.current;
     pinchAnchorRef.current = { ...currentViewRef.current, focalY };
     isPinchingRef.current = true;
-    pageStack.style.willChange = 'transform';
   };
 
   const handleTouchMove = (e) => {
     if (!isPinchingRef.current || e.touches.length !== 2) return;
     if (e.cancelable) e.preventDefault();
 
-    const [firstTouch, secondTouch] = e.touches;
-    const currentDist = Math.hypot(
-      firstTouch.clientX - secondTouch.clientX,
-      firstTouch.clientY - secondTouch.clientY,
-    );
-    const midpointX = (firstTouch.clientX + secondTouch.clientX) / 2;
-    const midpointY = (firstTouch.clientY + secondTouch.clientY) / 2;
-    lastPinchDistRef.current = currentDist;
-
     const container = containerRef.current;
-    if (container) {
-      pinchAnchorRef.current = {
-        ...currentViewRef.current,
-        focalY: midpointY - container.getBoundingClientRect().top,
-      };
-    }
+    if (!container || jarakAwalRef.current <= 10) return;
 
-    if (pinchRafRef.current) cancelAnimationFrame(pinchRafRef.current);
-    pinchRafRef.current = requestAnimationFrame(() => {
-      const pageStack = pageStackRef.current;
-      if (!pageStack || touchStartDistRef.current <= 10) {
-        pinchRafRef.current = null;
-        return;
-      }
+    const [pertama, kedua] = e.touches;
+    const jarak = jarakDuaJari(pertama, kedua);
+    jarakTerakhirRef.current = jarak;
+    pinchAnchorRef.current = {
+      ...currentViewRef.current,
+      focalY: (pertama.clientY + kedua.clientY) / 2 - container.getBoundingClientRect().top,
+    };
 
-      const scale = getPinchScale(
-        initialPinchZoomRef.current,
-        touchStartDistRef.current,
-        currentDist,
-      );
-      const origin = pinchOriginRef.current;
-      pageStack.style.transformOrigin = `${origin.x}px ${origin.y}px`;
-      pageStack.style.transform = `translate(${midpointX - origin.clientX}px, ${midpointY - origin.clientY}px) scale(${scale})`;
-      pinchRafRef.current = null;
+    /* Dijatah satu pembaruan per frame, bukan per event sentuhan. */
+    if (rafRef.current) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      terapkanZoom(jarak);
     });
   };
 
-  touchMoveHandlerRef.current = handleTouchMove;
+  moveHandlerRef.current = handleTouchMove;
 
   const handleTouchEnd = (e) => {
     if (!isPinchingRef.current || e.touches.length >= 2) return;
 
     isPinchingRef.current = false;
-    if (pinchRafRef.current) cancelAnimationFrame(pinchRafRef.current);
-    pinchRafRef.current = null;
-
-    const targetZoom = getPinchZoom(
-      initialPinchZoomRef.current,
-      touchStartDistRef.current,
-      lastPinchDistRef.current,
-    );
-    touchStartDistRef.current = 0;
-
-    if (targetZoom === zoom) {
-      pageStackRef.current?.style.removeProperty('transform');
-      pageStackRef.current?.style.removeProperty('transform-origin');
-      pageStackRef.current?.style.removeProperty('will-change');
-      pinchAnchorRef.current = null;
-      return;
+    if (rafRef.current) {
+      // Frame terakhir belum sempat jalan: terapkan sekarang supaya hasil
+      // gestur tidak hilang setengah jalan.
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      terapkanZoom(jarakTerakhirRef.current);
     }
-
-    setZoom(targetZoom);
+    jarakAwalRef.current = 0;
   };
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return undefined;
 
-    const handleNativeTouchMove = (event) => touchMoveHandlerRef.current?.(event);
+    const handleNativeTouchMove = (event) => moveHandlerRef.current?.(event);
     container.addEventListener('touchmove', handleNativeTouchMove, { passive: false });
-    return () => container.removeEventListener('touchmove', handleNativeTouchMove);
+
+    return () => {
+      container.removeEventListener('touchmove', handleNativeTouchMove);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, [containerRef]);
 
   return {

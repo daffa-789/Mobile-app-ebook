@@ -1,0 +1,42 @@
+{
+  "name": "wahidiyah-book-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "check": "node --check index.js && node --check src/theme.js && node --check src/config.js && node --check src/lib/normalizeBook.js && node --check src/lib/normalizeUser.js && node --check src/lib/phone.js && node --check src/lib/rupiah.js && node --check src/lib/tanggalWib.js && node --check src/lib/format.js && node --check src/api/client.js && node --check src/api/auth.js && node --check src/api/books.js && node --check src/api/subscriptions.js && node --check src/storage/secureStore.js && node --check src/storage/kv.js && node --check src/storage/downloads.js && node --check src/storage/downloadContent.js && echo 'JSX perlu build Metro (node --check tidak mendukung JSX)'"
+  },
+  "dependencies": {
+    "expo": "~53.0.27",
+    "expo-status-bar": "~2.2.3",
+    "expo-secure-store": "~14.2.3",
+    "expo-file-system": "~18.1.11",
+    "expo-sqlite": "~15.2.14",
+    "expo-screen-capture": "~8.0.10",
+    "expo-font": "~13.3.2",
+    "expo-application": "~6.0.1",
+    "expo-constants": "~17.1.8",
+    "@react-navigation/native": "^7.1.6",
+    "@react-navigation/native-stack": "^7.3.10",
+    "@react-navigation/bottom-tabs": "^7.4.0",
+    "react": "19.0.0",
+    "react-native": "0.79.2",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "~4.10.0",
+    "@react-native-async-storage/async-storage": "2.1.0",
+    "@react-native-community/netinfo": "^11.3.1",
+    "react-native-webview": "13.13.5",
+    "react-native-pdf": "^6.7.7",
+    "react-native-svg": "15.11.2",
+    "@expo/vector-icons": "^14.1.0",
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.1",
+    "@expo-google-fonts/fraunces": "^0.4.1",
+    "@expo-google-fonts/amiri": "^0.4.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.2"
+  }
+}

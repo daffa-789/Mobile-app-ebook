@@ -1208,6 +1208,8 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R73 | Pemeliharaan sistem 1 Nov 2026: Pemeriksaan kesehatan 7/7, script quality gate, dan optimasi aksesibilitas — lihat 15.3. |
 | R74 | Peningkatan tooling 2 Nov 2026: Quality gate `check:full`, standardisasi JSDoc rute/layanan, dan penguatan pembaca PDF — lihat 15.4. |
 | R75 | Dokumentasi arsitektur terpadu 3 Nov 2026: Standardisasi JSDoc menyeluruh pada modul client, lib server, service layer, dan runner — lihat 15.5. |
+| R83 | Konsolidasi rencana mobile 4 Nov 2026: keputusan React Native/Expo, branch `mobile-app`, penjaga build, dan koreksi status M1 — lihat 15.13. |
+| R82 | Penyatuan alur autentikasi 3 Nov 2026: Unified Auth Screen, lima subkomponen, smart email prefill, dan bump service worker ke v22 — lihat 15.12. |
 | R81 | Tindak lanjut code review 3 Nov 2026: sitasi bagian usang, header controller usang, dead export, satu duplikasi Web Push terakhir, dan layar autentikasi dibuat datar — lihat 15.11. |
 | R80 | Penghapusan duplikasi kode 3 Nov 2026: 13 klaster (rakitan API, runner port, gerbang beli, boilerplate JSON, kolom kwitansi, dll.) — lihat 15.10. |
 | R79 | Dekomposisi service layer 3 Nov 2026: `auth_service.js` dan `payment_service.js` menjadi paket `auth/` + `payment/`, serta pemisahan subsystem Web Push — lihat 15.9. |
@@ -1239,6 +1241,23 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `server/services/auth/password_reset_service.js:103`.
+
+### 15.13 Konsolidasi Rencana Mobile R83 (4 November 2026)
+
+Semua keputusan jalur mobile dari sesi 4 November dirapikan ke **16.2** (satu-satunya acuan). Yang tercatat di sini supaya sesi berikutnya tidak mencari ulang:
+
+| Item | Hasil |
+|---|---|
+| Bentuk aplikasi | **Full React Native + Expo** di folder `mobile/` — bukan WebView shell, bukan PWA-saja. Alasan penentu: shell WebView tidak memenuhi "dibuka offline". |
+| Cakupan | Login, katalog, reader, unduh-offline, Setting + tombol Update. **Admin, pembayaran, dan dashboard tetap web.** |
+| Distribusi | Sideload APK lewat GitHub Releases, **tanpa Play Store**. iOS ditunda (build bisa dari cloud Expo, tapi pemasangan ke iPhone butuh Apple Developer $99/tahun). |
+| Branch | `mobile-app` dibuat dan di-push ke `origin` (`b8057af`). Vercel tidak ikut deploy karena build hanya dari `main`. |
+| Penjaga build | `mobile/` masuk `.prettierignore` dan `@source not "../mobile"` di `src/index.css`. Terverifikasi: build 15,77 s, `prettier --check .` bersih, `npm run health` 7/7. |
+| Anti-screenshot | `expo-screen-capture` (`FLAG_SECURE`) **hanya selama jendela buku terbuka**, untuk semua buku. Konsekuensi: reader tidak bisa di-screenshot untuk Bab IV, jadi hatch build `preview` dibutuhkan. |
+| Fakta storage | Naskah sudah di Supabase Storage (`storage://buku/naskah/...`, signed URL 300 detik, maks 50 MB) — bukan data URL base64 di kolom. Ini yang membuat offline layak dikerjakan. |
+| **Koreksi M1** | Klaim lama "✅ 100% SELESAI" **tidak benar**: tanda air di kanvas dan blokir klik kanan tidak ada di kode; hanya `select-none` yang tersisa. Relevan langsung ke judul skripsi dan Bab IV — keputusan pemulihan atau penurunan klaim belum diambil. |
+| Jebakan Git | Repo ini clone **single-branch** (`remote.origin.fetch` hanya `main`), sehingga branch lain tidak punya ref lacakan dan `git pull` di branch mobile berisiko. Perbaikan menunggu persetujuan. |
+| Belum dikerjakan | Scaffold Expo (menunggu izin, ±1–2 GB `node_modules`), dan **bukti OTA pada APK sideload** — asumsi paling berisiko, sengaja ditaruh paling awal. |
 
 ### 15.12 Pemeliharaan R82 (3 November 2026)
 
@@ -1403,19 +1422,148 @@ Fitur inti web sudah tersedia, tetapi kelulusan build, verifikasi manual, UAT, d
 
 ---
 
-### 16.2. Cetak Biru Pengembangan Aplikasi Mobile Native (React Native / Expo) — Fase Pasca-Skripsi
+### 16.2. Cetak Biru Pengembangan Aplikasi Mobile Native (React Native / Expo)
 
-Rencana pengembangan aplikasi mobile mandiri difokuskan khusus pada keamanan naskah digital menggunakan ekosistem **React Native + Expo** (*Milestones* M1–M3):
+Status berubah pada 4 November 2026: dari "rencana pasca-skripsi" menjadi **jalur kerja aktif** di branch `mobile-app`. Bagian ini adalah satu-satunya acuan rencana mobile; keputusan, angka, dan batas teknisnya sudah diverifikasi terhadap kode dan dokumentasi resmi Expo, bukan asumsi.
 
-1. **M1 — Proteksi Hak Cipta Konten (Web Layer) [✅ 100% SELESAI]:**
-   - Tanda air dinamis identitas pembaca (nama pengguna & ID transaksi) dibakar langsung di kanvas.
-   - Penonaktifan menu klik kanan (`onContextMenu preventDefault`) dan seleksi teks (`select-none`).
-2. **M2 — Mobile Hardening & Anti-Screenshot / Screen Recording [⏳ Rencana Pasca-Skripsi]:**
-   - **Android:** Mengaktifkan proteksi `FLAG_SECURE` via modul native Expo (`expo-screen-capture`) atau konfigurasi native Android (`getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)`). Langkah ini memblokir tangkapan layar (screenshot), perekaman layar (screen recorder), dan menyamarkan tampilan aplikasi pada menu Recent Apps.
-   - **iOS:** Menyembunyikan kanvas naskah saat aplikasi beralih ke background atau multitasking view guna mencegah pencurian konten.
-3. **M3 — Native Document Viewer & Cache Terenkripsi Offline [⏳ Rencana Pasca-Skripsi]:**
-   - **Penyimpanan Offline Terenkripsi:** Menggunakan `expo-file-system` dan `expo-secure-store` / SQLCipher dengan enkripsi simetris AES-256. Naskah kitab berbayar yang diunduh disimpan dalam bentuk byte terenkripsi yang hanya dapat didekripsi di dalam memori saat sesi aktif pengguna terverifikasi.
-   - **Isolasi Naskah:** Menghindari penyimpanan PDF polos di galeri/file manager publik Android (`/Download` atau `/Documents`).
+#### 16.2.1 Keputusan yang sudah dikunci
+
+| Aspek | Keputusan | Alasan |
+|---|---|---|
+| Bentuk | **Full React Native (Expo)**, bukan WebView shell, bukan PWA-saja | Shell WebView tidak memenuhi permintaan utama ("dibuka offline"): cache service worker di WebView Android terpisah dan sering dibersihkan. Tambahan untuk skripsi, shell mudah disimpulkan penguji sebagai "browser dibungkus". |
+| Lokasi kode | Folder `mobile/` dengan `package.json` sendiri | `vite build` hanya memuat dari `index.html` → `src/`, jadi web tidak pernah melihat kode RN. Branch `mobile-app` sudah di-push (`b8057af`); Vercel tidak ikut men-deploy karena build hanya dari `main`. |
+| Cakupan aplikasi | Login, katalog, reader, unduh-untuk-offline, layar Setting berisi tombol pembaruan | Sengaja dibatasi; bukan porting seluruh aplikasi. |
+| Tetap di web | **Panel admin, pembayaran, dashboard** | Sudah terpisah (`src/features/admin`, 21 berkas / 2.766 baris) dan pemakai admin bekerja di desktop. Ini pola normal, bukan kompromi. |
+| Distribusi | **Sideload APK lewat GitHub Releases, TANPA Play Store** | Dibatasi ukuran Vercel (100 MB Hobby) dan AUP-nya; GitHub Releases 2 GiB per aset tanpa batas bandwidth. |
+| iOS | **Ditunda** | Build iOS sebenarnya BISA dari Windows (Expo mengompilasi di Mac cloud; paket gratis 15 build Android + 15 build iOS per bulan, plus simulator iOS cloud). Yang tidak bisa tanpa bayar: memasangnya ke iPhone — butuh Apple Developer Program $99/tahun. Expo tidak mengunci keputusan ini, jadi `eas build -p ios` tetap terbuka nanti. |
+
+#### 16.2.2 Realitas penggunaan ulang kode (angka terukur)
+
+`src/` per 4 November 2026: **119 berkas / 13.468 baris**.
+
+| Bagian | Baris | Bisa dipakai di RN |
+|---|---|---|
+| `src/lib` + `src/context` (logika, API, state) | 2.477 | Sebagian besar, sebagai acuan desain |
+| Sisanya — JSX + Tailwind (`div`, `className`) | ±10.991 | **Tidak** — RN memakai `View` + `StyleSheet` |
+| `src/features/reader` (12 berkas) | 1.674 | **Tidak** — `pdfjs-dist` butuh canvas DOM, diganti viewer PDF native |
+| Server Express + Supabase + Midtrans | — | Tidak berubah sama sekali |
+
+Kesimpulan yang tidak boleh dibelokkan: ini **bukan konversi**, melainkan aplikasi baru yang berbagi backend. Perkiraan pekerjaan 1.500–2.500 baris baru untuk cakupan di 16.2.1.
+
+#### 16.2.3 Sumber naskah dan mekanisme offline
+
+Naskah **sudah tidak lagi** berupa data URL base64 di kolom `books.content_url`. Model aktif sekarang (lihat `server/lib/storage.js`): berkas disimpan di Supabase Storage bucket `buku` sebagai referensi `storage://buku/naskah/...`, dibaca lewat signed URL berumur **300 detik**, maksimal **50 MB** per berkas.
+
+Ini menyederhanakan offline secara nyata: ambil signed URL → simpan ke **folder privat aplikasi** → buka lokal. Tidak ada arsitektur baru yang perlu dibongkar. Catatan: signed URL 300 detik berarti unduhan harus segera dimulai setelah URL diambil; tidak masalah untuk satu berkas, tapi jangan simpan URL-nya sebagai aset tahan lama.
+
+#### 16.2.4 M1 — Proteksi hak cipta di layer web: KOREKSI STATUS
+
+Versi dokumen ini sebelumnya menyatakan M1 "✅ 100% SELESAI" dengan tiga klaim. Diperiksa terhadap kode pada 4 November 2026:
+
+| Klaim | Kenyataan di kode |
+|---|---|
+| Tanda air dinamis (nama pengguna & ID transaksi) dibakar di kanvas | **Tidak ada.** Tidak ada satu pun `fillText`/rotasi tanda air di `src/features/reader/`, dan kata `watermark`/`cetak air`/`tanda air` tidak muncul di `src/` maupun `server/`. |
+| Penonaktifan menu klik kanan (`onContextMenu preventDefault`) | **Tidak ada.** Tidak ada `onContextMenu` di reader; `preventDefault` yang tersisa hanya untuk submit form dan carousel. |
+| Penonaktifan seleksi teks (`select-none`) | **Ada**, di dua tempat: `src/features/reader/PdfReaderScreen.jsx:241` dan `src/features/reader/TextDocViewer.jsx:49`. |
+
+Jadi status jujur M1 = **1 dari 3 butir**, dan yang tersisa hanya CSS (`select-none` mudah dilewati lewat devtools). Kemungkinan besar tanda air dan blokir klik kanan hilang saat dekomposisi `ContinuousPdfViewer` (R76–R78) tanpa pernah dipindah.
+
+**Kenapa ini serius:** judul skripsi (bagian 17) berbunyi "…Pembaca PDF Terproteksi…" dan Bab IV direncanakan memuat "evaluasi proteksi hak cipta konten e-reader PDF". Bab IV tidak boleh mengklaim proteksi yang tidak ada di build yang diuji. Dua pilihan: pulihkan tanda air + blokir klik kanan di reader web sebelum UAT, atau turunkan klaimnya di naskah. Keputusan ini milik pemilik proyek dan belum diambil.
+
+#### 16.2.5 M2 — Anti-screenshot (Android, hanya selama buku terbuka)
+
+Keputusan 4 November 2026: **semua buku, tanpa pengecualian, tapi hanya aktif saat jendela buku terbuka** — bukan proteksi seluruh aplikasi.
+
+- Modul resmi **`expo-screen-capture`** (`preventScreenCaptureAsync()` = `FLAG_SECURE` pada window), dipasang lewat hook `usePreventScreenCapture()` di komponen reader saja: menyala saat layar ter-mount, mati saat keluar.
+- Yang diblokir: tangkapan layar, **rekaman layar**, dan thumbnail aplikasi di Recent Apps jadi blank otomatis. Perlu dicatat: thumbnail blank sering disalahpahami pengguna sebagai aplikasi error.
+- Izin: memblokir **tidak butuh permission** di Android 14+. Untuk **mendeteksi** screenshot di Android 13 ke bawah diperlukan `READ_MEDIA_IMAGES` — di Play Store ini merugikan, tapi karena distribusi sideload, kerugian itu tidak berlaku. Deteksi lewat `useScreenshotListener()` opsional; hasilnya bisa jadi log "siapa mencoba" di dashboard admin.
+- iOS: tidak relevan sekarang (jalur iPhone tetap PWA).
+
+**Konsekuensi yang belum diputuskan pemilik proyek:** `FLAG_SECURE` juga memblokir screenshot-mu sendiri. Halaman reader akan keluar **hitam** di tangkapan layar, padahal Bab IV dan bahan pendukung butuh gambar reader. Rencananya: flag menyala di build `production`, mati otomatis di build `preview`/dev. Kalau diputuskan terkunci total, screenshot reader harus diambil dari rekaman emulator.
+
+**Batas nyata proteksi ini** (wajib ditulis apa adanya di Bab IV, jangan lebih):
+
+1. Hanya menjaga jendela aplikasi ini. Berkas buku yang sudah terunduh offline bisa dibuka di aplikasi lain dan di-screenshot di sana.
+2. Memotret layar dengan HP lain tidak bisa dicegah mekanisme apa pun.
+3. Kalau viewer menampilkan teks (hasil konversi DOCX/TXT), blok teks dan menyalin tetap bisa dilakukan; PDF yang di-render jadi gambar menutup jalur ini.
+4. Perangkat di-root, dan screen reader, berada di luar jangkauan.
+
+Artinya: **biaya menyalin secara santai naik, penyalinan yang sungguh-sungguh tidak dicegah.** Untuk buku keagamaan, blokir screenshot juga mematikan jalur penyebaran paling sehat — pembaca mengutip satu halaman untuk dibagikan. Bila kedua hal itu diinginkan sekaligus, jawabannya bukan melepas flag tapi menambah pembangkit gambar kutipan di dalam aplikasi (teks + sumber + sampul), dan flag tetap menyala.
+
+Catatan pengujian: dokumentasi `expo-screen-capture` tidak menjelaskan perilaku di atas **native view** (viewer PDF adalah permukaan native), dan sebagian ROM lama pernah menampilkan hitam pada permukaan hardware-overlay. Wajib dites di HP nyata, bukan hanya emulator.
+
+#### 16.2.6 M3 — Penyimpanan offline dan batas realistis proteksi
+
+Spesifikasi lama menyebut `expo-secure-store` / SQLCipher dengan enkripsi AES-256. Diturunkan porsinya:
+
+- **Wajib dan cukup:** simpan berkas di **folder privat aplikasi** (`expo-file-system`, document directory), bukan `/Download` atau `/Documents` yang terbuka untuk file manager dan aplikasi lain. Ini menahan sebagian besar penyalinan santai dengan biaya hampir nol.
+- **Opsional, jangan dijual sebagai keamanan:** enkripsi berkas di perangkat sendiri tidak menambah proteksi terhadap screenshot atau pembagian dari dalam aplikasi, karena aplikasi tetap harus mendekripsinya untuk menampilkannya. Ancaman nyata ada di luar berkas (rekaman layar, HP lain), dan keduanya tidak dimitigasi AES-256.
+- `expo-secure-store` tetap dipakai untuk fungsinya yang benar: menyimpan **token sesi**, bukan isi kitab.
+- Ketegangan yang harus diterima, bukan direkayasa habis: **offline ↔ proteksi ↔ usaha pengerjaan** membentuk segitiga. proteksi paling kuat adalah jangan menaruh seluruh naskah di perangkat (render per halaman dari server), dan konsekuensinya buku itu tidak bisa offline.
+
+#### 16.2.7 M4 — Pembaruan dalam aplikasi (tombol "Update" di Setting)
+
+Karena tidak ada Play Store, tidak ada auto-update dari store — tombol ini bukan pajangan, tapi satu-satunya jalur pembaruan.
+
+**Mekanisme utama: OTA via `expo-updates` / EAS Update**
+
+- Mengganti **bundel JS + aset** (layar, logika, styling, copy, gambar & font bawaan, nilai konfigurasi yang dibaca JS) **tanpa instal ulang**; data pemakai dan buku terunduh aman.
+- **Tidak bisa** mengubah modul native, permission, versi SDK, ikon, splash — semuanya butuh APK baru.
+- `runtimeVersion` harus **cocok persis**: klien menolak update yang runtime-nya berbeda. Setiap APK baru membuka "generasi" sendiri.
+- Perilaku bawaan: periksa saat cold launch → unduh di background → **dipakai pada launch berikutnya**. Tombol "Update" yang langsung tampak berubah karena itu TIDAK terjadi secara default; API-nya tersedia: `checkForUpdateAsync` + `fetchUpdateAsync` + `reloadAsync()`.
+- Klien juga perlu API `Updates` untuk foreground/background check dan reload terjadwal.
+- Kuota paket gratis: **1.000 pemakai aktif-per-bulan** untuk update. Jumlah penguji puluhan — ruang masih besar. SDK 55 sudah mendukung bundle diffing (±75% lebih kecil).
+- **Tidak ada flag "update wajib" bawaan.** Kalau versi minimum harus dipaksakan, itu gerbang versi di sisi Express (dibandingkan `runtimeVersion`/versi aplikasi dari klien).
+- Code signing end-to-end hanya di paket Production/Enterprise — tidak dipakai di sini.
+
+**Mekanisme cadangan: APK baru dari dalam aplikasi.** Kalau server menyatakan generasi native tertinggal, unduh APK terbaru dari GitHub Releases lalu buka installer (`REQUEST_INSTALL_PACKAGES`).
+
+**ASUMSI YANG BELUM TERBUKTI — taruh di urutan pengerjaan pertama:** dokumentasi OTA Expo tidak membahas distribusi APK di luar store. Protokolnya publik dan bisa di-self-host, jadi seharusnya jalan pada APK sideload, tapi itu baru akan nyata setelah satu update sungguhan mendarat di satu perangkat sungguhan. Desain layar Setting menunggu hasil tes ini.
+
+#### 16.2.8 M5 — Halaman unduh (rencana, sengaja sesudah APK pertama)
+
+Empat dari isinya tidak bisa ditulis benar sebelum ada build nyata: URL aset, versi, ukuran berkas, tanggal rilis. Tombol "unduh aplikasi" yang mengembalikan 404 lebih merugikan demo skripsi daripada tidak ada halaman sama sekali.
+
+- Bentuknya **rute publik di aplikasi web yang ada** (pola sama dengan `/about`), bukan situs terpisah.
+- Isi wajib: QR ke URL halaman (pembaca lansia tidak akan mengetik alamat `github.com/...`), versi + ukuran + tanggal build, langkah "izinkan sumber tidak dikenal" **per merek** (Xiaomi/Samsung/Advan menamai menunya berbeda — di sinilah orang menyerah), Android minimum, satu baris eksplisit untuk pengguna iPhone ("buka lewat browser → Pasang"), dan cakupan offline yang jujur.
+- Jangan hardcode URL rilis, tapi jangan juga fetch per-render: API GitHub dibatasi **60 req/jam per IP** dan IP Vercel dipakai bersama. Simpan nilainya dan refresh dari cron `daily-maintenance` yang sudah ada di `vercel.json`.
+- Konsekuensi yang diterima: setiap rilis berikutnya membawa kewajiban menjaga halaman ini tetap akurat. Link APK basi lebih buruk dari tidak ada link.
+
+#### 16.2.9 Penjaga build yang sudah dipasang dan terverifikasi
+
+Kode RN di `mobile/` tidak boleh tersentuh tooling web. Dua penjaga sudah dipasang dan **dibuktikan jalan**, bukan diasumsikan:
+
+| Penjaga | Berkas | Fungsi |
+|---|---|---|
+| `mobile/` dikecualikan | `.prettierignore` | `npm run check` menjalankan `prettier --check .` yang memindai seluruh repo |
+| `@source not "../mobile"` | `src/index.css` (setelah `@config`) | Tailwind v4 mendeteksi sumber otomatis dari folder proyek; tanpa ini kelas di `mobile/` bisa ikut tersuntik ke CSS web |
+
+Verifikasi: `vite build` sukses 15,77 s, direktif `@source not` benar-benar diparse (tidak tersisa di CSS hasil build), `prettier --check .` bersih, `npm run health` 7/7. Struktur direktori di bagian 14 **sengaja belum** mencantumkan `mobile/` karena folder itu belum ada — aturan bagian pembuka berkas: kode aktif yang jadi acuan.
+
+#### 16.2.10 Jebakan Git: repositori ini di-clone single-branch
+
+`remote.origin.fetch` repo ini bernilai `+refs/heads/main:refs/remotes/origin/main` (bukan bawaan `+refs/heads/*:refs/remotes/origin/*`; jejak `branch.main.vscode-merge-base` menunjukkan clone dibuat editor). Akibat, terverifikasi:
+
+- `git push -u origin mobile-app` berhasil membuat branch di GitHub (`b8057af`), **tetapi** ref lacakan `refs/remotes/origin/mobile-app` tidak pernah bisa disimpan di lokal.
+- `git status` tidak menampilkan ahead/behind untuk branch apa pun selain `main`; `git branch -vv` tidak menunjukkan tracking untuk `mobile-app`.
+- `git fetch` buta terhadap branch baru. `git pull` di branch ini berisiko error atau diam-diam menyelesaikan dari `main`.
+
+Perbaikan (menunggu persetujuan pemilik proyek, karena mengubah `.git/config`): `git config --add remote.origin.fetch "+refs/heads/mobile-app:refs/remotes/origin/mobile-app"` lalu `git fetch origin`. Alternatif: lebarkan ke semua branch. Jalan tanpa mengubah config: selalu pakai `git merge origin/main` eksplisit, jangan `git pull`.
+
+#### 16.2.11 Urutan pengerjaan dan status per 4 November 2026
+
+| # | Langkah | Status |
+|---|---|---|
+| 1 | Branch `mobile-app` + dua penjaga build | ✅ Selesai, ter-push `b8057af` |
+| 2 | Perbaikan refspec Git single-branch | ⏳ Menunggu persetujuan (menyentuh `.git/config`) |
+| 3 | Scaffold Expo di `mobile/` (`create-expo-app` + install ±1–2 GB) | ⏳ Menunggu persetujuan (bebannya di mesin 16 GB) |
+| 4 | **Buktikan OTA bekerja pada APK sideload** | ⏳ Belum — asumsi paling berisiko, harus paling awal |
+| 5 | Hatch screenshot untuk build `preview` (kebutuhan Bab IV) | ⏳ Belum — keputusan terkunci |
+| 6 | Katalog + reader + unduh offline ke folder privat | ⏳ Belum |
+| 7 | Layar Setting + tombol Update (OTA → fallback APK) | ⏳ Belum, desainnya menunggu langkah 4 |
+| 8 | Rilis APK #1 ke GitHub Releases | ⏳ Belum |
+| 9 | Halaman unduh (M5) | ⏳ Sesudah langkah 8, karena isinya bergantung padanya |
+| — | Pulihkan tanda air + blokir klik kanan di reader **web**, atau turunkan klaim Bab IV | ⚠️ Belum diputuskan, akibat koreksi di 16.2.4 |
 
 ---
 

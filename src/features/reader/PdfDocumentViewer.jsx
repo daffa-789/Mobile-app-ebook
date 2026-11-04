@@ -7,10 +7,9 @@
  * @module src/features/reader/PdfDocumentViewer
  */
 
-import { useEffect, useRef } from 'react';
-import * as pdfjsViewer from 'pdfjs-dist/web/pdf_viewer.mjs';
+import { useEffect, useRef, useState } from 'react';
 import 'pdfjs-dist/web/pdf_viewer.css';
-import { pdfjsLib } from './pdfWorkerSetup';
+import { pdfjsLib, getPdfjsViewer } from './pdfWorkerSetup';
 
 /**
  * Komponen pembaca dokumen PDF terenkapsulasi.
@@ -38,6 +37,7 @@ export const PdfDocumentViewer = ({
   const linkServiceRef = useRef(null);
   const loadingTaskRef = useRef(null);
   const pdfDocRef = useRef(null);
+  const [isViewerReady, setIsViewerReady] = useState(false);
 
   const onPageChangeRef = useRef(onPageChange);
   onPageChangeRef.current = onPageChange;
@@ -55,46 +55,71 @@ export const PdfDocumentViewer = ({
   useEffect(() => {
     if (!containerRef.current || !viewerRef.current) return;
 
+    let cancelled = false;
     const abortController = new AbortController();
-    const eventBus = new pdfjsViewer.EventBus();
-    const linkService = new pdfjsViewer.PDFLinkService({ eventBus });
+    let currentEventBus = null;
+    let handlePageChanging = null;
+    let handlePagesInit = null;
 
-    const viewer = new pdfjsViewer.PDFViewer({
-      container: containerRef.current,
-      viewer: viewerRef.current,
-      eventBus,
-      linkService,
-      removePageBorders: false,
-      abortSignal: abortController.signal,
-    });
+    getPdfjsViewer()
+      .then((pdfjsViewer) => {
+        if (cancelled || !containerRef.current || !viewerRef.current) return;
 
-    linkService.setViewer(viewer);
-    pdfViewerRef.current = viewer;
-    linkServiceRef.current = linkService;
+        const eventBus = new pdfjsViewer.EventBus();
+        const linkService = new pdfjsViewer.PDFLinkService({ eventBus });
 
-    const handlePageChanging = (evt) => {
-      onPageChangeRef.current?.(evt.pageNumber, viewer.pagesCount);
-    };
+        const viewer = new pdfjsViewer.PDFViewer({
+          container: containerRef.current,
+          viewer: viewerRef.current,
+          eventBus,
+          linkService,
+          removePageBorders: false,
+          abortSignal: abortController.signal,
+        });
 
-    const handlePagesInit = () => {
-      viewer.currentScale = zoomRef.current / 100;
-      if (targetScrollPageRef.current) {
-        viewer.scrollPageIntoView({ pageNumber: targetScrollPageRef.current });
-        onTargetScrollHandledRef.current?.();
-      }
-    };
+        linkService.setViewer(viewer);
+        pdfViewerRef.current = viewer;
+        linkServiceRef.current = linkService;
+        currentEventBus = eventBus;
 
-    eventBus.on('pagechanging', handlePageChanging);
-    eventBus.on('pagesinit', handlePagesInit);
+        handlePageChanging = (evt) => {
+          onPageChangeRef.current?.(evt.pageNumber, viewer.pagesCount);
+        };
+
+        handlePagesInit = () => {
+          viewer.currentScale = zoomRef.current / 100;
+          if (targetScrollPageRef.current) {
+            viewer.scrollPageIntoView({ pageNumber: targetScrollPageRef.current });
+            onTargetScrollHandledRef.current?.();
+          }
+        };
+
+        eventBus.on('pagechanging', handlePageChanging);
+        eventBus.on('pagesinit', handlePagesInit);
+
+        setIsViewerReady(true);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('[PdfDocumentViewer] Gagal menginisialisasi PDFViewer:', err);
+        }
+      });
 
     return () => {
+      cancelled = true;
       abortController.abort();
+      setIsViewerReady(false);
       try {
-        eventBus.off('pagechanging', handlePageChanging);
-        eventBus.off('pagesinit', handlePagesInit);
-        viewer._cancelRendering?.();
-        viewer.cleanup();
-        viewer.setDocument(null);
+        if (currentEventBus) {
+          if (handlePageChanging) currentEventBus.off('pagechanging', handlePageChanging);
+          if (handlePagesInit) currentEventBus.off('pagesinit', handlePagesInit);
+        }
+        const viewer = pdfViewerRef.current;
+        if (viewer) {
+          viewer._cancelRendering?.();
+          viewer.cleanup();
+          viewer.setDocument(null);
+        }
       } catch (e) {
         console.warn('[PdfDocumentViewer] Kesalahan saat membersihkan viewer:', e);
       }
@@ -105,7 +130,7 @@ export const PdfDocumentViewer = ({
 
   // 2. Muat dokumen PDF dari Blob
   useEffect(() => {
-    if (!pdfBlob || !pdfViewerRef.current) return;
+    if (!isViewerReady || !pdfBlob || !pdfViewerRef.current) return;
     let cancelled = false;
 
     (async () => {
@@ -168,7 +193,7 @@ export const PdfDocumentViewer = ({
         pdfDocRef.current = null;
       }
     };
-  }, [pdfBlob]);
+  }, [isViewerReady, pdfBlob]);
 
   // 3. Penerapan Zoom Dinamis
   useEffect(() => {

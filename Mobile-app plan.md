@@ -33,7 +33,7 @@
 |---|---|---|---|
 | P1 | Kunci sandbox Midtrans (`SB-Mid-…`) masuk `.env` | Pemilik proyek | Tanpa ini alur bayar tidak bisa diuji sama sekali. Tidak wajib untuk v1 mobile (pembayaran di luar scope), tapi wajib sebelum Bab IV mengklaim hasil uji. |
 | P2 | Keputusan M1: pulihkan tanda air + blokir klik kanan di reader **web**, atau turunkan klaim | Pemilik proyek | Menentukan apakah reader mobile harus ikut membangun tanda air (lihat §8.4). Kalau web memulihkan, mobile harus meniru atau penguji menemukan dua perilaku berbeda. |
-| P3 | Perbaikan `remote.origin.fetch` single-branch, atau disiplin tidak pakai `git pull` | Pemilik proyek memutuskan | Dijelaskan di `Master_Memory_Workflow.md` §16.2.10. Branch lain tidak punya ref lacakan, `git pull` di branch mobile bisa berulah. |
+| P3 | Perbaikan `remote.origin.fetch` single-branch, atau disiplin tidak pakai `git pull` | Pemilik proyek memutuskan | Dijelaskan di `Master_Memory_Workflow.md` §16.2 (bagian Jebakan Git). Branch lain tidak punya ref lacakan, `git pull` di branch mobile bisa berulah. |
 | P4 | Izin `create-expo-app` (±1–2 GB `node_modules`) | Pemilik proyek | Satu-satunya langkah yang tidak bisa di-undo murah di mesin 16 GB. |
 | P5 | Satu **HP Android nyata** untuk tes | Pemilik proyek | Dua risiko terbesar (OTA pada APK sideload, `FLAG_SECURE` di atas native view) tidak bisa dibuktikan di emulator saja. |
 
@@ -44,7 +44,7 @@
 - **Expo** (bukan bare RN CLI), proyek di folder `mobile/` dengan `package.json` sendiri.
 - **JavaScript, bukan TypeScript** — mengikuti keputusan repo induk; tidak ada `tsconfig` di `src/` web, dan memaksa TS di RN akan menambah satu lapisan kesalahan baru.
 - Distribusi: **APK sideload** lewat GitHub Releases. Tidak ada Play Store.
-- Update: OTA (`expo-updates`) **ditandai opsional** — lihat §13 dan `Master_Memory_Workflow.md` §16.2.12.
+- Update: OTA (`expo-updates`) **ditandai opsional** — lihat §13 dan `Master_Memory_Workflow.md` §16.2 (bagian Yang dibatalkan).
 
 ### Struktur folder
 
@@ -319,7 +319,7 @@ documentDirectory/                    # privat aplikasi; TIDAK terlihat file man
   reader.db                           # SQLite: tabel `unduhan`
 ```
 
-**Aturan keras:** jangan pernah menulis ke `/Download`, `/Documents` publik, atau galeri. Alasannya ada di `Master_Memory_Workflow.md` §16.2.6. Folder privat aplikasi juga otomatis hilang saat aplikasi dicabut, yang justru diinginkan untuk naskah terproteksi.
+**Aturan keras:** jangan pernah menulis ke `/Download`, `/Documents` publik, atau galeri. Alasannya ada di `Master_Memory_Workflow.md` §16.2 dan §10 berkas ini. Folder privat aplikasi juga otomatis hilang saat aplikasi dicabut, yang justru diinginkan untuk naskah terproteksi.
 
 ### 9.2 Mekanisme unduh (dan satu hal yang wajib di-probe lebih dulu)
 
@@ -407,7 +407,7 @@ Tiga pilihan, priced:
 
 ## 13. Pembaruan aplikasi (opsional — menunggu keputusan)
 
-Ditandai opsional di `Master_Memory_Workflow.md` §16.2.7/§16.2.12. Kalau jadi dikerjakan, urutan kerjanya begini:
+Ditandai opsional di `Master_Memory_Workflow.md` §16.2 (baris OTA & halaman unduh, plus daftar yang dibatalkan). Kalau jadi dikerjakan, urutan kerjanya begini:
 
 1. Buktikan lebih dulu bahwa **OTA bekerja pada APK sideload** — dokumentasi Expo tidak membahas distribusi di luar store, jadi ini asumsi, bukan fakta. Tes = satu APK dipasang, satu perubahan teks di-publish lewat branch update, lalu lihat apakah klien mendapatkannya.
 2. Kalau terbukti: layar Pengaturan memuat tombol "Cek pembaruan" yang memanggil `checkForUpdateAsync()` → `fetchUpdateAsync()` → `reloadAsync()` (perilaku bawaan hanya menerapkan update pada launch berikutnya, jadi tombol tanpa `reloadAsync` akan terlihat bohong).
@@ -437,7 +437,7 @@ Setiap langkah punya "titik bukti" — kalau belum lewat, jangan lanjut ke langk
 | 10 | Profil/Pengaturan/Unduhan, hatch screenshot, banner offline | Semua keputusan UX di berkas ini punya wujud | 1 hari |
 | 11 | Build APK `preview` lalu `production`; distribusi QR ke penguji | `adb install` sukses; nomor versi terlihat di layar Pengaturan | 0,5 hari |
 | — | (opsional) OTA + tombol update | lihat §13 | 1–2 hari |
-| — | (opsional) Halaman unduh | lihat `Master_Memory_Workflow.md` §16.2.8 | 1 hari |
+| — | (opsional) Halaman unduh | lihat `Master_Memory_Workflow.md` §16.2 | 1 hari |
 
 Total v1 tanpa opsi: **±10,5 hari kerja.** Angka ini bukan janji — kalau Probe A jatuh ke kasus (3), tambahkan ±0,5 hari untuk endpoint `content-url` di server.
 
@@ -493,7 +493,7 @@ Total v1 tanpa opsi: **±10,5 hari kerja.** Angka ini bukan janji — kalau Prob
 
 ## 18. Rujukan silang
 
-- Keputusan dan alasan: `Master_Memory_Workflow.md` §16.2.1–§16.2.12
+- Keputusan dan alasan: `Master_Memory_Workflow.md` §16.2 (keputusan & alasan)
 - Batasan penelitian sandbox + kalimat siap pakai Bab V: §11.4
 - Riwayat R83: §15.13
 - Batas distribusi APK: `reference-apk-distribution-limits` (GitHub Releases, bukan Vercel)

@@ -15,6 +15,7 @@ import { safeContentMime } from '../lib/http.js';
 import { createServiceError } from '../lib/errors.js';
 import { toDataUrl, toWebp } from '../lib/images.js';
 import { matchesContentExtension, sniffImageMime } from '../lib/sniff.js';
+import { PDF_PAGE_PROBE_MAX_BYTES, countPdfPages } from '../lib/pdfPages.js';
 import { BOOK_FIELDS, CONTENT_EXTENSIONS } from '../lib/constants.js';
 import { bookInputSchema, parseBooleanFlag } from '../lib/validate.js';
 import { sanitizeHtml } from '../lib/sanitizeHtml.js';
@@ -80,12 +81,23 @@ const storedContentFields = async (contentPath, originalName) => {
       { statusCode: 415 },
     );
   }
-  return {
+  const fields = {
     content_url: contentRef(contentPath),
     content_name: String(originalName || path.basename(contentPath)),
     content_extension: extension.replace(/^\./, ''),
     content_size: size,
   };
+
+  /* Jumlah halaman dibaca dari berkasnya, bukan dari angka yang diketik di
+   * formulir. Hanya PDF yang bisa dihitung tanpa konversi; DOCX/TXT memakai
+   * angka input apa adanya karena "halaman" di sana bergantung tata letak.
+   */
+  if (extension === '.pdf' && size <= PDF_PAGE_PROBE_MAX_BYTES) {
+    const counted = await countPdfPages(await readContentBuffer(fields.content_url));
+    if (counted) fields.pages = counted;
+  }
+
+  return fields;
 };
 
 const toBookResponse = (book) => ({
@@ -368,6 +380,15 @@ export async function updateBook({
     const current = await loadBookRow(id, 'content_url');
     previousContentUrl = current?.content_url || null;
     Object.assign(updatePayload, storedFields);
+  } else {
+    /* Berkas tidak diganti. Untuk PDF, jumlah halaman adalah milik berkas —
+     * bukan milik formulir. Tanpa penjaga ini, menyunting judul saja akan
+     * menimpa angka hasil hitungan dengan angka ketikan manusia.
+     */
+    const existing = await loadBookRow(id, 'content_extension');
+    if (String(existing?.content_extension || '').toLowerCase() === 'pdf') {
+      delete updatePayload.pages;
+    }
   }
 
   const { error } = await supabaseServer.from('books').update(updatePayload).eq('id', id);

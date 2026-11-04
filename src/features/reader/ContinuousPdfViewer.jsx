@@ -137,12 +137,22 @@ export const ContinuousPdfViewer = ({
 
   /* Zoom = skala visual belaka (seperti memperbesar gambar). Kotak lembar
      tidak pernah berubah ukuran, jadi posisi teks tidak bisa melompat.
-     `rasterWidth` adalah resolusi bitmap yang diminta ke pdf.js — satu-satunya
-     hal yang berubah saat zoom, dan itu hanya affects ketajaman. */
+
+     Resolusi bitmap dirender per TINGKAT (bucket), bukan mengikuti tiap persen
+     zoom. Selama zoom masih di bucket yang sama, kanvas tidak disentuh sama
+     sekali — gestur kecil menjadi murni transform, tanpa re-raster, tanpa swap
+     bitmap, tanpa kedip. Bucket 1,5× juga membuat tampilan 100% lebih tajam. */
   const scale = zoom / 100;
   const sheetWidth = Math.round(baseFitWidth);
   const sheetHeight = Math.round(sheetWidth * naturalAspect);
-  const rasterWidth = Math.round(baseFitWidth * scale);
+  const RASTER_STEP = 0.5;
+  const RASTER_MIN = 1.5;
+  const RASTER_MAX = 3;
+  const rasterScale = Math.min(
+    RASTER_MAX,
+    Math.max(RASTER_MIN, Math.ceil(scale / RASTER_STEP) * RASTER_STEP),
+  );
+  const rasterWidth = Math.round(baseFitWidth * rasterScale);
   const GAP_SHEET = 16;
   const stackHeight =
     totalPages > 0 ? totalPages * sheetHeight + (totalPages - 1) * GAP_SHEET : sheetHeight;
@@ -235,7 +245,7 @@ export const ContinuousPdfViewer = ({
     pinchAnchorRef,
   });
 
-  // 7. Integrasi Renderer Canvas PDF.js — bitmap mengikuti skala, kotak tidak
+  // 7. Integrasi Renderer Canvas PDF.js — bitmap mengikuti bucket resolusi, kotak tidak
   usePdfCanvasRenderer({
     pdfDoc,
     totalPages,
@@ -245,7 +255,6 @@ export const ContinuousPdfViewer = ({
     canvasRefs,
     currentViewRef,
     currentPage,
-    zoom,
   });
 
   // 8. Pinch Trackpad (Ctrl/Cmd + Wheel) — jalur yang sama dengan pinch dua jari

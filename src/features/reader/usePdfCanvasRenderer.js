@@ -36,7 +36,6 @@ const MAX_DPR = 2;
  * @param {import('react').MutableRefObject<Record<number, HTMLCanvasElement>>} params.canvasRefs - Ref dictionary elemen canvas
  * @param {import('react').MutableRefObject<{page: number, ratio: number}>} params.currentViewRef - Ref posisi halaman aktif
  * @param {number} params.currentPage - Nomor halaman aktif
- * @param {number} params.zoom - Nilai zoom persentase
  * @returns {{
  *   renderPageCanvas: (pageNumber: number) => Promise<void>
  * }}
@@ -50,7 +49,6 @@ export function usePdfCanvasRenderer({
   canvasRefs,
   currentViewRef,
   currentPage,
-  zoom,
 }) {
   const renderTasksRef = useRef({});
   // Ukuran yang sudah tergambar per halaman, supaya permintaan ulang yang sama diabaikan.
@@ -180,7 +178,13 @@ export function usePdfCanvasRenderer({
     return () => observer.disconnect();
   }, [pdfDoc, totalPages, renderPageCanvas, containerRef, pageContainerRefs]);
 
-  // 3. Render ulang saat zoom berubah: yang sedang terlihat dulu, lalu sekitar halaman aktif
+  /* 3. Render ulang saat resolusi bucket berubah: yang sedang terlihat dulu,
+     lalu sekitar halaman aktif. Zoom yang tidak melewati batas bucket tidak
+     menyentuh kanvas sama sekali — itulah yang membuat zoom kecil bebas kedip.
+
+     Jeda 180 ms memastikan swap bitmap tidak terjadi di tengah gestur trackpad
+     yang punya celah antar-event: selama jari masih bergerak, gambar lama tetap
+     tampil (hanya diskala), dan penggantian tajamnya menunggu gestur tenang. */
   useEffect(() => {
     if (!pdfDoc || totalPages === 0) return undefined;
 
@@ -193,10 +197,10 @@ export function usePdfCanvasRenderer({
         .filter((p) => p >= 1 && p <= totalPages)
         .sort((a, b) => Math.abs(a - aktif) - Math.abs(b - aktif))
         .forEach((p) => renderPageCanvas(p));
-    }, 60);
+    }, 180);
 
     return () => clearTimeout(timer);
-  }, [zoom, displayPageWidth, pdfDoc, totalPages, currentPage, renderPageCanvas, currentViewRef]);
+  }, [displayPageWidth, pdfDoc, totalPages, currentPage, renderPageCanvas, currentViewRef]);
 
   return { renderPageCanvas };
 }

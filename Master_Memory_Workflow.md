@@ -1237,6 +1237,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R72–R82 | 31 Okt – 3 Nov 2026: perapian Prettier & service layer, quality gate `check:full`, standardisasi JSDoc, dekomposisi layar utama dan service layer menjadi paket `auth/` + `payment/`, penghapusan 13 klaster duplikasi, penyatuan layar autentikasi menjadi satu kartu, layar auth dibuat datar. Subbagian riwayat rounds ini **dipangkas 4 Nov 2026** — `git log` yang menyimpan detailnya. Satu pelajaran ditahan di sini karena masih berlaku: nilai penghapusan duplikasi (R80) bukan pada baris yang hilang (21.920 → 21.935, praktis tetap), melainkan pada **satu tempat untuk mengubah kontrak**. |
 | R83 | Konsolidasi rencana mobile 4 Nov 2026: keputusan React Native/Expo, branch `mobile-app`, penjaga build, dan koreksi status M1 — lihat 15.13. |
 | R84 | Penjaga konfigurasi Midtrans + pemantik rekonsiliasi 4 Nov 2026: flag vs prefix kunci, health check membaca lingkungan dari kunci, `POST /api/payments/qris/reconcile`, plus temuan `override: true` pada `server/env.js` — lihat 15.14. |
+| R90 | Zoom per bucket resolusi 4 Nov 2026: bitmap dirender per tingkat 0,5× (lantai 1,5×), renderer berhenti berlangganan zoom — zoom kecil tidak menyentuh kanvas sama sekali — lihat 15.20. |
 | R89 | Zoom PDF model transform 4 Nov 2026: zoom tidak lagi mengubah ukuran kotak halaman, hanya skala + resolusi bitmap — menghapus kedip dan lompatan posisi — lihat 15.19. |
 | R88 | Zoom trackpad 4 Nov 2026: pinch trackpad pindah ke jalur transform-GPU + commit sekali seperti pinch dua jari, `deltaMode` mouse dibedakan, `customFocalYRef` mati dihapus — lihat 15.18. |
 | R87 | Toolchain mobile 4 Nov 2026: scaffold SDK 53 ditemukan di branch `mobile-app`, `main` digabung ke sana, dan Expo SDK 58 ditetapkan dengan fallback resmi 57 — lihat 15.17. |
@@ -1261,6 +1262,31 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `server/services/auth/password_reset_service.js:103`.
+
+### 15.20 Zoom per Bucket Resolusi R90 (4 November 2026)
+
+**Keluhan pemilik proyek:** "pas zoom sedikit dia kedip brutal, buat seamless" — diuji setelah model transform R89 terpasang di lokal.
+
+**Bukti dulu, bukan dugaan.** Aplikasi dijalankan di Chrome headless dengan GPU asli (ANGLE D3D11, Intel Iris Xe, `--enable-gpu`), reader 62 halaman, viewport 900×1000 dpr 1. Gestur `ctrl+wheel` dikirim lewat CDP `Input.dispatchMouseEvent` sambil merekam (a) setiap frame compositor (`Page.startScreencast`) dan (b) state per `requestAnimationFrame`: `transform`, `scrollTop`, `canvas.width`, dan piksel tengah kanvas.
+
+- Model R89 **tidak mengosongkan kanvas**: 53 frame saat zoom kontinu 100→143%, ukuran frame 70–91 KB stabil, nol frame kecil/putih, alpha kanvas 255 sepanjang gestur.
+- Yang tersisa adalah **churn bitmap**: setiap persen zoom mengubah `rasterWidth` → efek renderer menyala → 60 ms kemudian meraster lalu menukar kanvas. Pada gestur trackpad yang punya celah antar-event, swap ini bisa jatuh di tengah gestur — itulah kedip yang masih terasa.
+
+**Perubahan:**
+
+| Sebelum (R89) | Sesudah (R90) |
+|---|---|
+| `rasterWidth = baseFitWidth × skala` — berubah tiap 1% zoom | `rasterScale` dibulatkan ke bucket 0,5× dengan lantai **1,5×**: `[1,5; 2,0; 2,5; 3,0]` |
+| Renderer ikut berlangganan `zoom` | Renderer hanya berlangganan `displayPageWidth` (bucket); zoom kecil tidak menyentuh kanvas sama sekali |
+| Jeda re-raster 60 ms | 180 ms, supaya swap tidak jatuh di tengah gestur trackpad |
+
+Lantai 1,5× memberi cadangan 50% di atas zoom 100% — cukup untuk seluruh gestur "zoom sedikit" — sekaligus membuat tampilan 100% lebih tajam (bitmap diperkecil, bukan direntangkan). Biayanya piksel awal 2,25×; penjaga `MAX_CANVAS_PIXELS` tetap berlaku sehingga puncaknya tidak berubah.
+
+**Bukti sesudah (harness yang sama):**
+
+- Zoom kecil 100→104%: `canvas.width` tetap **1275** (850 × 1,5 × dpr 1) sepanjang 2,8 detik; satu-satunya perubahan state adalah `transform` dan `scrollTop`.
+- Kontinu 104→149% (24 event): `canvas.width` tetap **1275**; nol frame kosong; ukuran frame compositor 82–106 KB.
+- Melewati batas 150% (→173%): kanvas baru ditukar **±135 ms setelah gestur berakhir** (1275→1700), tanpa frame kosong — pertajaman menyusul, bukan kedip.
 
 ### 15.19 Zoom PDF Model Transform R89 (4 November 2026)
 
@@ -1305,7 +1331,7 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 
 **Bukti yang bisa diukur:** 20 event trackpad kecil (−3) kini menghasilkan **111%** (sebelumnya 100% — persis dead zone itu), 3 notch mouse → 173%, delta tunggal −400 teredam ke 135%, batas 40–300 tetap dihormati, dan regresi pinch tidak berubah (100% × rasio 1,5 → **136**). `vite build` ✓ 14,68 s, Prettier bersih.
 
-**Yang tidak bisa saya buktikan dari mesin ini:** rasa mulus itu sendiri — itu hanya bisa dinilai tanganmu di trackpad. Kalau masih terasa berbeda dari HP, yang diubah adalah dua angka, bukan strukturnya: `WHEEL_RESPONSE` (0.005 di `zoomUtils.js`) untuk kepekaan, dan `SETTLE_MS` (120 di `useWheelPinchZoom.js`) untuk kapan commit terjadi.
+**Yang tidak bisa saya buktikan dari mesin ini:** rasa mulus itu sendiri — itu hanya bisa dinilai tanganmu di trackpad. Kalau masih terasa berbeda dari HP, yang diubah adalah dua angka, bukan strukturnya: `WHEEL_RESPONSE` (0.005 di `zoomUtils.js`) untuk kepekaan, dan `GESTUR_SELESAI_MS` (1000 di `useWheelPinchZoom.js`) untuk kapan akumulasi skala gestur direset.
 
 ### 15.17 Toolchain Mobile R87 (4 November 2026)
 

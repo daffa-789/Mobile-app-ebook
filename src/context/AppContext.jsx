@@ -173,6 +173,29 @@ export const AppProvider = ({ children, initialScreen }) => {
     [nav],
   );
 
+  /* Order QRIS yang masih pending ditagih ulang saat sesi aktif dan saat
+   * pengguna kembali ke tab — dua momen di mana pembayaran yang terjadi di luar
+   * aplikasi baru mungkin sudah mendarat. Sengaja tidak ikut interval 15 detik
+   * di bawah: interval itu hanya membaca ulang data pengguna, tidak pernah
+   * bertanya ke gateway. */
+  useEffect(() => {
+    if (!isLoggedIn || !sessionToken) return;
+
+    const reconcile = async () => {
+      const hasil = await payment.reconcilePendingPayments();
+      if (hasil?.settled) await syncUserFromBackend({ silent: true });
+    };
+
+    reconcile();
+
+    const handleReconcile = () => {
+      if (typeof document === 'undefined' || !document.hidden) reconcile();
+    };
+    window.addEventListener('focus', handleReconcile);
+
+    return () => window.removeEventListener('focus', handleReconcile);
+  }, [isLoggedIn, sessionToken, payment.reconcilePendingPayments, syncUserFromBackend]);
+
   useEffect(() => {
     if (!isLoggedIn || !sessionToken) return;
 

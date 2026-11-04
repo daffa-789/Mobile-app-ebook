@@ -18,6 +18,7 @@ import {
   getQrImage,
   getQrisStatus,
   midtransNotification,
+  reconcileQris,
 } from '../controllers/payment_controller.js';
 
 export const paymentsRouter = Router();
@@ -40,6 +41,9 @@ paymentsRouter.get(
   qrisStatusRateLimiter,
   wrap(getQrisStatus),
 );
+
+// POST /api/qris/reconcile — Tagih ulang order pending milik sendiri (pemulih sesi)
+paymentsRouter.post('/qris/reconcile', requireAuth, qrisStatusRateLimiter, wrap(reconcileQris));
 
 // POST /api/qris/:orderId/cancel — Batalkan tagihan QRIS yang belum dibayar
 paymentsRouter.post('/qris/:orderId/cancel', paymentRateLimiter, requireAuth, wrap(cancelQris));

@@ -20,7 +20,11 @@ import {
 import { fetchQrImage } from '../lib/midtrans.js';
 import { logger } from '../logger.js';
 import { loadTransactionForViewer, createQrisOrder } from '../services/payment/order_service.js';
-import { cancelQrisForUser, resolveQrisStatus } from '../services/payment/status_service.js';
+import {
+  cancelQrisForUser,
+  reconcilePendingQris,
+  resolveQrisStatus,
+} from '../services/payment/status_service.js';
 import { handleMidtransNotification } from '../services/payment/notification_service.js';
 import { TRANSACTION_PENDING_STATUS } from '../auth.js';
 
@@ -99,6 +103,12 @@ export async function getQrisStatus(req, res) {
     status,
     isPaid,
   });
+}
+
+/** POST /api/payments/qris/reconcile — tagih ulang order pending milik sendiri */
+export async function reconcileQris(req, res) {
+  const hasil = await reconcilePendingQris({ userId: req.user.id });
+  return res.json({ success: true, ...hasil });
 }
 
 /** POST /api/payments/qris/:orderId/cancel */

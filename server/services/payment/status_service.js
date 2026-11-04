@@ -11,6 +11,7 @@
 
 import { supabaseServer } from '../../db.js';
 import { TRANSACTION_PENDING_STATUS } from '../../auth.js';
+import { MIDTRANS_PAYMENT_METHOD_LABEL } from '../../config.js';
 import {
   cancelQrisTransaction,
   expireQrisTransaction,
@@ -19,7 +20,7 @@ import {
   isVoidAcknowledged,
 } from '../../lib/midtrans.js';
 import { logger } from '../../logger.js';
-import { FAILED_MIDTRANS_STATUSES } from './constants.js';
+import { FAILED_MIDTRANS_STATUSES, TRANSACTION_COLUMNS } from './constants.js';
 import { rejectTransaction, settleTransaction } from './settlement_service.js';
 
 const isExpired = (transaction, now = Date.now()) =>
@@ -67,6 +68,53 @@ export async function resolveQrisStatus({ transaction }) {
     logger.warn('MIDTRANS', 'Gagal memeriksa status ke Midtrans', { pesan: error.message });
     return { status: 'pending', isPaid: false };
   }
+}
+
+/**
+ * Menagih ulang order QRIS milik sendiri yang masih `pending`.
+ *
+ * Polling biasa hidup hanya selama layar bayar terbuka. Pembayaran yang datang
+ * setelah pengguna menutup layar — atau setelmen yang disimulasikan setelah itu
+ * — tidak pernah ditanyakan lagi, dan tidak ada cron yang melakukannya, sehingga
+ * Pro tidak pernah aktif tanpa galat yang terlihat. Fungsi ini memakai jalur
+ * transisi yang sudah ada (`resolveQrisStatus`), bukan logika baru, dan hanya
+ * menyentuh order milik pemanggil.
+ *
+ * Order yang ternyata sudah lewat masa berlaku ikut ditutup oleh jalur yang sama
+ * (`rejectTransaction`), jadi daftar pending tidak menumpuk selamanya.
+ */
+export async function reconcilePendingQris({ userId, limit = 5 }) {
+  const { data: rows, error } = await supabaseServer
+    .from('transactions')
+    .select(TRANSACTION_COLUMNS)
+    .eq('user_id', userId)
+    .eq('status', TRANSACTION_PENDING_STATUS)
+    .eq('payment_method', MIDTRANS_PAYMENT_METHOD_LABEL)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+
+  const hasil = { checked: 0, settled: 0, closed: 0 };
+  for (const transaction of rows || []) {
+    hasil.checked += 1;
+    try {
+      const { status, isPaid } = await resolveQrisStatus({ transaction });
+      if (isPaid) hasil.settled += 1;
+      else if (status !== 'pending') hasil.closed += 1;
+    } catch (error) {
+      logger.warn('MIDTRANS', 'Rekonsiliasi satu order pending gagal', {
+        orderId: transaction.id,
+        pesan: error.message,
+      });
+    }
+  }
+
+  if (hasil.checked) {
+    logger.info('MIDTRANS', 'Order pending ditagih ulang saat sesi dipulihkan', hasil);
+  }
+
+  return hasil;
 }
 
 /**

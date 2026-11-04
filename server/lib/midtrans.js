@@ -7,6 +7,7 @@ import {
   MIDTRANS_QRIS_EXPIRY_MINUTES,
   MIDTRANS_SERVER_KEY,
 } from '../config.js';
+import { environmentMismatch, mismatchRemediation } from './midtransKeys.js';
 
 const DEFAULT_QRIS_EXPIRY_MINUTES = 15;
 
@@ -21,6 +22,23 @@ function getCoreApi() {
         '(kunci sandbox: SB-Mid-server-… / SB-Mid-client-… dari dashboard.sandbox.midtrans.com).',
     );
     error.code = 'MIDTRANS_NOT_CONFIGURED';
+    throw error;
+  }
+
+  /* Flag yang bertentangan dengan prefix kunci membuat permintaan charge ke
+   * endpoint yang salah dan Midtrans menjawab 401 tanpa keterangan — galatnya
+   * baru muncul setelah pengguna menekan Bayar. Diperiksa di sini supaya
+   * penyebabnya terbaca, bukan disimpulkan dari log transaksi.
+   */
+  const mismatch = environmentMismatch({
+    isProduction: MIDTRANS_IS_PRODUCTION,
+    serverKey: MIDTRANS_SERVER_KEY,
+  });
+  if (mismatch) {
+    const error = new Error(
+      `Konfigurasi Midtrans tidak konsisten: ${mismatch}. Perbaikan: ${mismatchRemediation(MIDTRANS_IS_PRODUCTION)}.`,
+    );
+    error.code = 'MIDTRANS_ENV_MISMATCH';
     throw error;
   }
 

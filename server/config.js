@@ -1,5 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { isProductionFlag } from './lib/midtransKeys.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
@@ -105,12 +106,7 @@ export const MIDTRANS_SERVER_KEY = (process.env.MIDTRANS_SERVER_KEY || '').trim(
 
 export const MIDTRANS_CLIENT_KEY = (process.env.MIDTRANS_CLIENT_KEY || '').trim();
 
-const isTrueFlag = (value) =>
-  String(value ?? 'false')
-    .trim()
-    .toLowerCase() === 'true';
-
-export const MIDTRANS_IS_PRODUCTION = isTrueFlag(process.env.MIDTRANS_IS_PRODUCTION);
+export const MIDTRANS_IS_PRODUCTION = isProductionFlag(process.env.MIDTRANS_IS_PRODUCTION);
 
 export const MIDTRANS_QRIS_ACQUIRER = (process.env.MIDTRANS_QRIS_ACQUIRER || 'gopay').trim();
 

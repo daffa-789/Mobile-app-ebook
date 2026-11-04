@@ -64,7 +64,7 @@ Aplikasi **Wahidiyah Book** dibangun menggunakan arsitektur **Modular Layered Mo
 - **Universal Document Reader (PDF & Word DOCX):**
   - **Dukungan Berkas PDF Continuous Vertical Scroll:** Dirender interaktif via Mozilla PDF.js Canvas dengan gulir vertikal mulus (*continuous scroll*), auto scroll-spy sinkronisasi halaman, kanvas berasio aspek tetap (*fixed-aspect ratio*), pelacak zoom persentase real-time, dan titik jangkar baca (*reading anchor*) yang menjaga posisi teks tidak melompat saat zoom in/out. Tombol kontrol zoom diletakkan ringkas berdampingan dengan tombol layar penuh (*fullscreen*).
   - **Dukungan Naskah Word DOCX:** Dikonversi langsung di sisi server via pustaka `mammoth` menjadi HTML semantik (`GET /api/books/:id/html`) dengan sanitasi anti-XSS (`DOMPurify`), disajikan secara responsif di peramban tanpa memerlukan Microsoft Word fisik.
-  - **Proteksi Hak Cipta:** Tanda air (*watermark*) identitas dinamis (nama pembaca & ID transaksi) dibakar di kanvas, proteksi klik kanan (`onContextMenu preventDefault`), larangan seleksi teks (`select-none`), dan pengiriman konten via HTTP header `inline` berotorisasi JWT.
+  - **Proteksi Hak Cipta:** Larangan seleksi teks (`select-none` di `PdfReaderScreen.jsx:241` dan `TextDocViewer.jsx:49`) dan pengiriman konten via HTTP header `inline` berotorisasi JWT. Tanda air identitas di kanvas dan pemblokiran klik kanan **tidak ada di kode** — memulihkannya atau menurunkan klaimnya adalah keputusan terbuka (lihat 15.15), dan judul skripsi menyebut "Pembaca PDF Terproteksi", jadi ini harus diputuskan sebelum Bab IV dikunci.
 - **Last Read Tracker (Ingat Posisi Terakhir):** Otomatis menyimpan posisi halaman baca pengguna ke `localStorage` peramban (tanpa beban latensi database) dan menampilkan dialog resume *"Lanjut membaca dari Halaman X?"*.
 - **Mode Tema Pembaca:** Pilihan latar belakang **Terang**, **Sepia (Hangat Lembut)**, dan **Malam (Gelap Elegan)** untuk kenyamanan membaca dalam waktu lama.
 
@@ -82,7 +82,7 @@ Aplikasi **Wahidiyah Book** dibangun menggunakan arsitektur **Modular Layered Mo
 
 ### 2.3. Sistem Keanggotaan Pro & Pembayaran Real Midtrans QRIS
 - **Paket Pro Tunggal Terstandarisasi:** Skema keanggotaan Pro tunggal `monthly` dengan tarif Rp 25.000/bulan ditambah biaya administrasi Rp 3.000 (`server/lib/constants.js`), sehingga total tagihan Rp 28.000.
-- **Integrasi Midtrans Core API Sandbox Eksklusif:** Charge QRIS dibuat langsung dari backend server dengan payload EMVCo dinamis (bebas dari manipulasi harga di sisi klien). Seluruh metode manual non-QRIS telah dieliminasi demi otomasi 100%.
+- **Integrasi Midtrans Core API Sandbox Eksklusif:** Charge QRIS dibuat langsung dari backend server dengan payload EMVCo dinamis (bebas dari manipulasi harga di sisi klien). QRIS adalah jalur otomatis utama; **metode transfer manual masih tersedia dan masih terpasang** (`src/features/payment/ManualPaymentForm.jsx` dirender di `PaymentConfirmScreen.jsx:217`, `POST /api/transactions`) — ia hanya tidak berautomasi, bukan dihapus.
 - **Bantuan Pengujian Sandbox:** Kotak *"Simulator QRIS Midtrans"* menyediakan tautan QR yang dapat disalin (`qrMidtransUrl` pada sandbox, atau URL proxy gambar) untuk ditempel ke kolom **"QR Code Image Url"** simulator. Tidak ada tautan keluar otomatis maupun tombol pembayaran simulasi di aplikasi.
 - **Simpan QRIS ke Galeri Ponsel:** Gambar QR (SVG/PNG) digambar ulang ke `<canvas>` berukuran 320 px dengan kop hijau dan keterangan e-wallet, lalu diunduh sebagai PNG agar dapat dipindai dari galeri (DANA, GoPay, BCA, OVO, ShopeePay).
 - **Batalkan & Buat Ulang:** Tombol batal memanggil `POST /api/payments/qris/:orderId/cancel`, mematikan order di Midtrans bila didukung (QRIS sering menolak dengan 412), lalu membuat order baru. Bila Midtrans menolak, server menjelaskan bahwa QR lama masih berlaku sampai kedaluwarsa.
@@ -104,7 +104,7 @@ Aplikasi **Wahidiyah Book** dibangun menggunakan arsitektur **Modular Layered Mo
 - **Ekspor Laporan 1-Klik:** Unduh riwayat transaksi, data pengguna, dan katalog buku langsung ke format Microsoft Excel (`.xlsx`) via library `exceljs` yang dimuat secara dinamis.
 
 ### 2.5. Antarmuka Pengguna & Navigasi Terpadu (Mobile, Tablet, Desktop)
-- **Cupertino Inset Grouped Profile Hub:** Halaman profil (`EditProfileScreen.jsx`) didesain ulang dengan gaya modern iOS/Cupertino inset grouped card. Bagian **Data Akun** ditempatkan di paling atas dengan kartu profil taktil yang elegan, tombol ubah kata sandi, dan toggle mode gelap/terang dalam bentuk switch slider.
+- **Cupertino Inset Grouped Profile Hub:** Halaman profil (`EditProfileScreen.jsx`) didesain ulang dengan gaya modern iOS/Cupertino inset grouped card. Bagian **Data Akun** ditempatkan di paling atas dengan kartu profil taktil yang elegan dan tombol ubah kata sandi. Toggle mode gelap/terang **tidak ada** — aplikasi satu tema terang (lihat 15.15).
 - **Konsolidasi Halaman Sekunder:** Halaman Tentang Aplikasi (`/about`), Pusat Bantuan (`/help`), dan Riwayat Langganan (`/riwayat`) disatukan ke dalam Hub Akun Profil. Sidebar desktop dibersihkan dari menu redundan dan tombol badge EB yang mengganggu telah dihilangkan.
 - **Universal Sticky Back Button Header (`DeviceFrame.jsx`):**
   - Hadir seragam di **Desktop, Tablet, dan Ponsel Mobile** untuk seluruh sub-halaman (`/about`, `/help`, `/riwayat`, `/profile`).
@@ -113,7 +113,7 @@ Aplikasi **Wahidiyah Book** dibangun menggunakan arsitektur **Modular Layered Mo
 - **Tampilan Bersih & Minimalis:**
   - Halaman Pusat Bantuan dibersihkan dari judul dan ikon ganda yang redundan.
   - Halaman Tentang Aplikasi dibersihkan dari logo besar yang mengganggu agar fokus pada teks informasi.
-- **Tema Tampilan Menyeluruh (Terang & Malam):** Seluruh antarmuka mendukung palet gelap sadar-tema dengan CSS variable Tailwind berstandar 3 Color Key (60-30-10) dan 17 pasangan kontras WCAG AA $\ge 4.5:1$.
+- **Tema Tampilan Menyeluruh (Satu Terang):** Seluruh antarmuka memakai satu palet terang sadar-tema dengan CSS variable Tailwind berstandar 3 Color Key (60-30-10) dan 17 pasangan kontras WCAG AA $\ge 4.5:1$. Mode malam dan toggle-nya dihapus 3 November 2026 — lihat butir "Satu Tema Terang" di §4 dan catatan 15.15.
 - **Progressive Web App (PWA):** Terintegrasi Web App Manifest & Service Worker untuk instalasi ke Layar Utama (*Home Screen*).
 
 ---
@@ -294,7 +294,7 @@ Permukaan yang memang gelap secara desain (sidebar admin) memakai token `semanti
    - Kanvas berasio aspek tetap (*fixed-aspect*) dan *reading anchor* penahan posisi teks saat perbesaran zoom in/out.
    - Tombol kontrol zoom diletakkan ringkas berdampingan dengan tombol layar penuh (*fullscreen*).
    - Pembaca Word DOCX berbasis HTML semantik terproteksi via Mammoth engine dan sanitasi anti-XSS (`DOMPurify`).
-   - Proteksi hak cipta: tanda air dinamis identitas pembaca, pelarangan klik kanan (`contextmenu`), dan larangan seleksi teks (`select-none`).
+   - Proteksi hak cipta: larangan seleksi teks (`select-none`). Tanda air dinamis identitas pembaca dan pelarangan klik kanan (`contextmenu`) **belum ada di kode** — statusnya keputusan terbuka (15.15).
 3. **Membership Pro & Real Midtrans QRIS:**
    - Paket Pro tunggal terstandarisasi Rp 25.000/bulan + biaya administrasi Rp 3.000.
    - Tampilan QRIS: gambar QR resmi Midtrans yang diproksikan `GET /api/payments/qris/:orderId/qr.png`, fallback `QRCodeSVG` dari `qrString` bila gambar gagal dimuat. Timer 15 menit, tombol simpan PNG, tombol **Salin Kode QR** (menyalin tautan gambar untuk kolom *QR Code Image Url* simulator), dan tombol **Batalkan & Buat Kode Baru**.
@@ -339,12 +339,12 @@ Permukaan yang memang gelap secara desain (sidebar admin) memakai token `semanti
 * **Otentikasi:** Header `Authorization: Bearer <JWT_TOKEN>` untuk rute terproteksi. Rute admin menambah `requireAdmin` (verifikasi role langsung ke database).
 * **Kegagalan service:** `createServiceError(pesan, { statusCode, code })` di `server/lib/errors.js`; `fail()` di `server/lib/http.js` menerjemahkan `statusCode` menjadi respons HTTP.
 
-**Ringkasan 54 endpoint aktif:**
+**Ringkasan 55 endpoint aktif:**
 
 | Modul | Jumlah | Modul | Jumlah |
 |---|---:|---|---:|
 | Auth | 10 | Books | 10 |
-| Payments | 5 | Users | 6 |
+| Payments | 6 | Users | 6 |
 | Transactions | 3 | Subscriptions | 1 |
 | Events | 5 | Carousel | 6 |
 | Notifications | 4 | Health & Stats | 2 |
@@ -487,7 +487,7 @@ Mengambil data profil pengguna yang sedang login.
 | GET | `/books/:id/thumbnail` | Publik | Data URL WebP atau `302` ke Storage |
 | GET | `/books/:id/html` | Bearer | HTML DOCX ter-sanitasi; paywall Pro berlaku |
 | GET | `/books/:id/content` | Bearer | PDF inline / DOCX-TXT attachment; Pro wajib untuk `is_locked` |
-| POST | `/books` | Admin | Metadata saja `{ title, pages, is_locked, cover_url }` |
+| POST | `/books` | Admin | Metadata saja. **Body wajib memuat `author` dan `category`** karena `bookInputSchema` (`server/lib/validate.js:52-56`) menuntut keduanya non-kosong — nilainya lalu dibuang, sebab tabel `books` tidak punya kolom itu. Payload tanpa keduanya dijawab 400 (lihat 15.15). |
 | POST | `/books/upload-intent` | Admin | Tanda unggah sekali-pakai ke bucket `buku` |
 | POST | `/books/upload` | Admin | Multipart: metadata + `content_path` + `thumbnail` (≤5 MB) |
 | PUT | `/books/:id` | Admin | Perbarui metadata / sampul / naskah |
@@ -503,9 +503,10 @@ Mengambil daftar buku (terbuka untuk publik).
       {
         "id": "buku-123",
         "title": "Buku Wahidiyah",
-        "author": "Penyusun",
-        "category": "Umum",
         "pages": 120,
+        "content_name": "buku.pdf",
+        "content_extension": "pdf",
+        "content_size": 1048576,
         "is_locked": true,
         "has_thumbnail": true,
         "has_content": true
@@ -528,6 +529,7 @@ Mencatat buku baru setelah naskahnya ada di penyimpanan.
 * **Fields:** `title`, `pages`, `is_locked`, `content_path` (hasil intent), `content_name` (nama asli untuk tampilan)
 * **Files:** `thumbnail` saja (gambar max 5 MB, dikompres ke WebP 600 px dan disimpan sebagai data URL)
 * **Pemeriksaan:** path harus cocok `naskah/<id>/<berkas>`, ukuran dibaca dari penyimpanan (maks 50 MB), dan beberapa byte pertama diuji magic byte terhadap ekstensinya (VULN-11).
+* **`pages` untuk PDF diabaikan:** jumlah halaman dihitung dari berkasnya lewat `server/lib/pdfPages.js` (pdfjs di sisi server) dan nilai itulah yang disimpan; angka dari formulir hanya dipakai untuk non-PDF (DOCX/TXT tidak punya halaman yang bisa dibaca tanpa tata letak). Pada `PUT /books/:id`, bila berkas tidak diganti dan ekstensinya PDF, `pages` dari klien **tidak ditulis sama sekali** — menyunting judul tidak boleh menimpa hasil hitungan. Berkas di atas 25 MB tidak di-probe (dibatasi agar tidak menelan memori function), dan kegagalan hitungan hanya dicatat di log, tidak menolak unggahan.
 * **Response (201 Created):** `{ "success": true, "message": "Buku berhasil diunggah", "bookId": "buku-..." }`
 
 #### `GET /api/books/:id/content`
@@ -544,6 +546,7 @@ Membaca/mengunduh isi buku.
 |---|---|---|---|
 | POST | `/qris/charge` | Bearer | 20 / 5 menit |
 | GET | `/qris/:orderId/status` | Bearer | 150 / 5 menit per akun |
+| POST | `/qris/reconcile` | Bearer | 150 / 5 menit per akun |
 | POST | `/qris/:orderId/cancel` | Bearer | 20 / 5 menit |
 | GET | `/qris/:orderId/qr.png` | Bearer | 60 / menit |
 | POST | `/midtrans/notification` | Publik | Verifikasi signature SHA512 |
@@ -585,6 +588,14 @@ Mengecek status pembayaran (polling berkala tiap 3 detik).
     "expiredAt": "2026-10-07T22:30:00.000Z"
   }
   ```
+
+#### `POST /api/payments/qris/reconcile`
+Menagih ulang maksimal 5 order QRIS `pending` **milik pemanggil sendiri** — penutup celah "bayar setelah polling berhenti". Dipanggil klien saat sesi dipulihkan dan saat tab kembali fokus, bukan dari cron.
+* **Header:** `Authorization: Bearer <TOKEN>`
+* **Response (200 OK):** `{ "success": true, "checked": 2, "settled": 1, "closed": 1 }`
+* Transisi status tetap lewat `settlement_service` (jalur yang sama dengan polling dan webhook), jadi tidak ada logika settle kedua.
+* Order yang ternyata lewat masa berlaku ikut ditutup ke `rejected` oleh jalur yang sama.
+* Kegagalan satu order tidak membatalkan sisanya; klien sengaja diam terhadap galat endpoint ini.
 
 #### `POST /api/payments/qris/:orderId/cancel`
 Membatalkan order aktif di Midtrans (expire lalu cancel) dan menandai baris lokal. Bila Midtrans menolak pembatalan QRIS, server hanya menghentikan order lokal dan mengembalikan `warning` agar pengguna tidak membayar QR lama.
@@ -804,7 +815,7 @@ Setup mendefinisikan **7 tabel aplikasi, 1 tabel Web Push, dan 1 tabel pembatas 
 | Tabel | Fungsi & Peran |
 |---|---|
 | `users` | Akun pengguna (email, nomor WhatsApp `phone`, password hash bcrypt, role `user`/`admin`, `is_pro`, masa aktif `subscription_expires_at`). Tidak ada kolom `avatar`. |
-| `books` | Katalog buku (termasuk `category`), metadata berkas, dan status akses Pro. |
+| `books` | Katalog buku, metadata berkas, dan status akses Pro. Tidak ada kolom `category` maupun `author` di tabel ini — keduanya hanya ada di skema validasi input (lihat 15.15). |
 | `events` | Jadwal agenda & mujahadah Wahidiyah (judul, waktu WIB, lokasi, deskripsi). |
 | `subscriptions` | Riwayat langganan keanggotaan Pro pengguna (`plan_name` seragam: `"Pro"`). |
 | `transactions` | Transaksi pembayaran resmi (`midtrans_transaction_id`, `midtrans_qr_string`, `midtrans_qr_url`, status idempoten). |
@@ -862,7 +873,7 @@ Sistem telah diaudit dan mengimplementasikan **30 Indikator Standar Kualitas Per
 | 5 | **Rate Limiting Anti-Bruteforce** | `express-rate-limit` hanya pada pemicu charge pembayaran, status QRIS, gambar QR, dan langganan push. Endpoint auth sengaja tidak dibatasi atas keputusan pemilik proyek. | ⚠️ Auth tanpa pembatas |
 | 6 | **HTTP Header Hardening** | `helmet` aktif untuk proteksi XSS, Clickjacking, dan MIME-sniffing. | ✅ Lulus |
 | 7 | **Fail-Closed Webhook Guard** | Webhook menolak transaksi tanpa tanda tangan SHA512 yang valid dari Midtrans. | ✅ Lulus |
-| 8 | **Proteksi Hak Cipta PDF** | Canvas PDF.js murni, `#toolbar=0`, `select-none`, larangan klik kanan, inline streaming JWT. | ✅ Lulus |
+| 8 | **Proteksi Hak Cipta PDF** | Canvas PDF.js murni, `select-none`, inline streaming JWT berotorisasi. | ⚠️ Sebagian — `#toolbar=0` dan larangan klik kanan tidak ada di kode, tanda air juga belum (15.15) |
 | 9 | **Paywall Buku Pro Server-Side** | PDF buku berstatus Pro mewajibkan validasi `is_pro` aktif sebelum di-stream. | ✅ Lulus |
 | 10 | **Anti-SSRF pada Proxy Gambar** | Whitelist domain `*.midtrans.com` dan protokol HTTPS pada fetching gambar QR. | ✅ Lulus |
 | 11 | **Idempotensi Transaksi & Webhook** | Klaim `pending` bersyarat mencegah aktivasi ganda; pemulihan status adalah kompensasi best-effort, belum satu transaksi PostgreSQL. | ⚠️ Belum atomik |
@@ -874,7 +885,7 @@ Sistem telah diaudit dan mengimplementasikan **30 Indikator Standar Kualitas Per
 | 17 | **CORS Whitelist Terbatas** | Hanya domain resmi / localhost terdaftar yang diizinkan melakukan request. | ✅ Lulus |
 | 18 | **Penanganan Error Terpagar** | Detail stack trace internal hanya ditampilkan pada mode `development`. | ✅ Lulus |
 | 19 | **Redaksi Kredensial Sensitif** | `.env` dilindungi `.gitignore` dan pembersihan riwayat git berisiko. | ✅ Lulus |
-| 20 | **Audit Dependensi Rutin** | Pemeriksaan berkala via `npm audit --ignore-scripts --audit-level=high` (0 vulnerability). | ✅ Lulus |
+| 20 | **Audit Dependensi Rutin** | Pemeriksaan berkala via `npm run audit:security` (= `npm audit --audit-level=high`; tidak ada `--ignore-scripts` di repo ini). | ⚠️ Manual |
 | 21 | **Proteksi Self-Demotion Admin** | Mencegah administrator mencabut peran admin miliknya sendiri secara sengaja/tidak sengaja. | ✅ Lulus |
 | 22 | **Sanitasi Anti-XSS Reader** | Sanitasi ketat naskah HTML Word hasil konversi Mammoth sebelum dirender di layar baca. | ✅ Lulus |
 | 23 | **Validasi Kompleksitas Password** | Validasi ketat sandi akun baru dan reset password via skema Zod terpusat. | ✅ Lulus |
@@ -883,7 +894,7 @@ Sistem telah diaudit dan mengimplementasikan **30 Indikator Standar Kualitas Per
 | 26 | **Service Layer Murni** | Logika autentikasi, pembayaran, membership, parsing Midtrans, dan sanitasi berada di service layer tanpa objek `req`/`res`. Verifikasi dilakukan manual karena suite unit test sudah dihapus. | ✅ Lulus (manual) |
 | 27 | **Kwitansi Digital Mandiri (jsPDF)** | Pembuatan berkas PDF kwitansi A4 di sisi klien tanpa latensi backend dan aman dari injection. | ✅ Lulus |
 | 28 | **Single Source of Truth Waktu** | Standarisasi seluruh operasi tanggal/waktu ke zona `Asia/Jakarta` (WIB) via Day.js. | ✅ Lulus |
-| 29 | **3 Color Key & WCAG AA** | Antarmuka memakai token 60-30-10 dan palet terang/malam. Skrip `check-contrast` sudah dihapus, sehingga status ini adalah konvensi terverifikasi manual, bukan guard otomatis. | ⚠️ Manual |
+| 29 | **3 Color Key & WCAG AA** | Antarmuka memakai token 60-30-10 dan satu palet terang — mode malam beserta toggle-nya dihapus 3 November 2026. Skrip `check-contrast` sudah dihapus, sehingga status ini adalah konvensi terverifikasi manual, bukan guard otomatis. | ⚠️ Manual |
 | 30 | **Vercel Serverless Isolation** | Dukungan deployment serverless terisolasi (`api/index.js`) dengan env runtime terkelola. | ✅ Lulus |
 
 ---
@@ -1011,6 +1022,22 @@ zotero-cli export \
   --style apa --format bib
 ```
 
+### 11.4. Batasan Penelitian: Lingkungan Uji Midtrans (ditetapkan 4 November 2026)
+
+Proyek ini berada pada **tahap pengembangan** dan datanya diambil atas nama penelitian di instansi, sehingga akun produksi Midtrans **tidak didaftarkan**. Onboarding produksi menuntut legalisasi lembaga — identitas, rekening penampung untuk settlement — yang tidak sepadan untuk proyek yang bisa saja berhenti setelah lulus.
+
+Konsekuensi yang perlu ditulis apa adanya di naskah:
+
+- Seluruh uji pembayaran berjalan di **Midtrans Sandbox** (`dashboard.sandbox.midtrans.com`). Akun sandbox dibuat dengan email saja, tanpa verifikasi identitas usaha dan tanpa pergerakan uang.
+- Yang diuji tetap **Midtrans Core API yang asli, bukan mock**: `payment_type: 'qris'`, payload EMVCo nyata, dan QR-nya dapat di-scan aplikasi dompet sungguhan. Yang berbeda hanya environment (`isProduction=false`) dan pasangan kunci berprefix `SB-Mid-`.
+- Setelmen disimulasikan lewat **simulator sandbox**: tombol `Salin Kode QR` di `src/features/payment/QrisPaymentCard.jsx` menyalin tautan QR untuk ditempel di kolom "QR Code Image Url" simulator.
+
+Kalimat siap pakai untuk Bab V (Kesimpulan dan Saran):
+
+> Uji coba integrasi pembayaran divalidasi pada lingkungan Midtrans Sandbox karena penelitian berada pada tahap pengembangan, sementara akun produksi memerlukan legalisasi lembaga. Migrasi ke lingkungan produksi hanya menuntut penggantian `MIDTRANS_IS_PRODUCTION` dan pasangan kunci, tanpa perubahan kode.
+
+Catatan istilah, agar tidak salah dibaca penguji: frasa **"Real Midtrans QRIS"** pada judul berkas ini dan nama repositori berarti **API nyata (bukan simulasi di sisi aplikasi)**, BUKAN lingkungan produksi dan BUKAN settlement nyata.
+
 ---
 
 ## 12. Prasyarat & Konfigurasi Lingkungan (.env)
@@ -1035,9 +1062,17 @@ VITE_PORT=3000               # port dev terpadu (Express + middleware Vite)
 # Konfigurasi Midtrans Sandbox
 MIDTRANS_SERVER_KEY=SB-Mid-server-xxxxxxxxxxxxxxxxxxxx
 MIDTRANS_CLIENT_KEY=SB-Mid-client-xxxxxxxxxxxxxxxxxxxx
-MIDTRANS_IS_PRODUCTION=false
+MIDTRANS_IS_PRODUCTION=false        # hanya kata 'true' yang berarti produksi; '1' tidak
 MIDTRANS_QRIS_ACQUIRER=gopay
 MIDTRANS_QRIS_EXPIRY_MINUTES=15
+# Prefix kunci menentukan lingkungan aslinya: SB-Mid- = sandbox, Mid- = produksi.
+# Bila flag dan prefix bertentangan, server mencetak WARN saat boot, `npm run health`
+# gagal pada item Midtrans, dan percobaan bayar melempar MIDTRANS_ENV_MISMATCH
+# (alih-alih 401 tanpa keterangan dari Midtrans). Aturan ini ada di
+# server/lib/midtransKeys.js.
+# CATATAN: server/env.js memuat .env dengan `override: true`, jadi variabel yang
+# di-set dari baris perintah diabaikan di lingkungan lokal — untuk berpindah
+# sandbox/produksi, sunting .env, jangan `MIDTRANS_IS_PRODUCTION=true node server/server.js`.
 
 # Konfigurasi Supabase Cloud
 SUPABASE_URL=https://xxxxxxxxxxxxxxxx.supabase.co
@@ -1126,7 +1161,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 │   ├── dev.js              # Dev satu port :3000 (Express + middleware Vite)
 │   ├── generate-vapid-keys.js
 │   ├── get-gmail-token.js
-│   ├── health-check.js     # 6 pemeriksaan lingkungan & tabel
+│   ├── health-check.js     # 7 pemeriksaan lingkungan & tabel
 │   ├── lib/portProbe.js    # probePort — dipakai tiga runner sekaligus (R80)
 │   └── start.js            # Produksi lokal :5000 (build + serve dist/)
 ├── server/
@@ -1135,7 +1170,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 │   ├── services/           # 5 service datar: books, carousel, events, transactions, users + 2 paket (R79)
 │   │   ├── auth/           # messages, session, registration, password_reset, otp_resend, google_oauth
 │   │   └── payment/        # constants, order, settlement, status, notification
-│   ├── lib/                # 19 helper: errors, http, midtrans, storage, sniff, validate, webpush, pushGuards, pushSubscriptionStore, ...
+│   ├── lib/                # 21 helper: constants, errors, eventReminder, http, images, membership, midtrans, midtransKeys, oneTimeCode, origin, otp, pdfPages, pushEndpoint, pushGuards, pushSubscriptionStore, sanitizeHtml, sniff, storage, time, validate, webpush
 │   ├── middleware/         # errors, requestLog, security, uploads
 │   ├── providers/          # base.js, demo.js, fonnte.js, index.js
 │   ├── app.js              # Rakitan API bersama untuk api/index.js (Vercel) & server.js (R80)
@@ -1152,9 +1187,9 @@ Wahidiyah Book + Real Midtrans Skripsi/
 │   └── sanitizeHtml.js     # Sanitizer dipakai server saat tulis & klien saat render
 ├── src/
 │   ├── components/
-│   │   ├── layout/         # Sidebar, MobileBottomNav, navigationConfig, LogoutConfirmDialog
+│   │   ├── layout/         # SidebarContent, SidebarNavButton, MobileBottomNav, navigationConfig, LogoutConfirmDialog
 │   │   ├── routing/        # RouteGuards (RequireAuth, UserOnly, AdminRoute), RouterBridge
-│   │   └── ui/             # Field, PhoneInput, ThemeToggle, ErrorBoundary, Skeleton, ...
+│   │   └── ui/             # AuthStatus, DeviceFrame, ErrorBoundary, Field, InAppReminders, PhoneInput, ScrollRestoration, ServerStatusBanner, Skeleton
 │   ├── context/
 │   │   ├── AppContext.jsx
 │   │   └── slices/         # useCatalogSlice, useNavigationSlice, usePaymentSlice
@@ -1198,42 +1233,24 @@ Wahidiyah Book + Real Midtrans Skripsi/
 
 | Periode | Perubahan utama |
 |---|---|
-| R40–R54 | Fondasi arsitektur, autentikasi, Midtrans QRIS, tema, dan integrasi Zotero. |
-| R55–R60 | Web Push agenda, panel admin, utilitas bersama, dan pembersihan kode. |
-| R61–R64 | Gateway WhatsApp Fonnte, OTP email, penyederhanaan skema, DOCX reader, dan pemangkasan kode mati. |
-| R65–R67 | PDF reader berkelanjutan, service layer murni, hardening keamanan, serta dukungan Vercel. |
-| R68–R70 | Penyegaran profil/navigasi, kwitansi PDF, dan konsolidasi dokumentasi. |
-| R71 | Pemangkasan besar 30 Okt 2026 — lihat daftar 15.1. |
-| R72 | Perapian 31 Okt 2026: Prettier, service layer 5 modul, dan pemecahan komponen admin — lihat 15.2. |
-| R73 | Pemeliharaan sistem 1 Nov 2026: Pemeriksaan kesehatan 7/7, script quality gate, dan optimasi aksesibilitas — lihat 15.3. |
-| R74 | Peningkatan tooling 2 Nov 2026: Quality gate `check:full`, standardisasi JSDoc rute/layanan, dan penguatan pembaca PDF — lihat 15.4. |
-| R75 | Dokumentasi arsitektur terpadu 3 Nov 2026: Standardisasi JSDoc menyeluruh pada modul client, lib server, service layer, dan runner — lihat 15.5. |
+| R40–R71 | 2026 sampai 30 Okt: fondasi arsitektur berlapis, autentikasi multi-channel, Midtrans QRIS, Web Push agenda, panel admin, reader DOCX & PDF, hardening keamanan, dukungan Vercel, kwitansi PDF, lalu pemangkasan besar R71. Rounds ini **dipangkas 4 Nov 2026** — `git log` menyimpan detailnya. Yang ditahan hanya yang masih melindungi proyek: daftar **15.1**. |
+| R72–R82 | 31 Okt – 3 Nov 2026: perapian Prettier & service layer, quality gate `check:full`, standardisasi JSDoc, dekomposisi layar utama dan service layer menjadi paket `auth/` + `payment/`, penghapusan 13 klaster duplikasi, penyatuan layar autentikasi menjadi satu kartu, layar auth dibuat datar. Subbagian riwayat rounds ini **dipangkas 4 Nov 2026** — `git log` yang menyimpan detailnya. Satu pelajaran ditahan di sini karena masih berlaku: nilai penghapusan duplikasi (R80) bukan pada baris yang hilang (21.920 → 21.935, praktis tetap), melainkan pada **satu tempat untuk mengubah kontrak**. |
 | R83 | Konsolidasi rencana mobile 4 Nov 2026: keputusan React Native/Expo, branch `mobile-app`, penjaga build, dan koreksi status M1 — lihat 15.13. |
-| R82 | Penyatuan alur autentikasi 3 Nov 2026: Unified Auth Screen, lima subkomponen, smart email prefill, dan bump service worker ke v22 — lihat 15.12. |
-| R81 | Tindak lanjut code review 3 Nov 2026: sitasi bagian usang, header controller usang, dead export, satu duplikasi Web Push terakhir, dan layar autentikasi dibuat datar — lihat 15.11. |
-| R80 | Penghapusan duplikasi kode 3 Nov 2026: 13 klaster (rakitan API, runner port, gerbang beli, boilerplate JSON, kolom kwitansi, dll.) — lihat 15.10. |
-| R79 | Dekomposisi service layer 3 Nov 2026: `auth_service.js` dan `payment_service.js` menjadi paket `auth/` + `payment/`, serta pemisahan subsystem Web Push — lihat 15.9. |
-| R78 | Dekomposisi ContinuousPdfViewer, App.jsx, dan VerifyEmailScreen 3 Nov 2026: Ekstraksi custom hook canvas/pinch, routing guards, dan subkomponen OTP — lihat 15.8. |
-| R77 | Dekomposisi modular layar utama 3 Nov 2026: Pemecahan PdfReaderScreen, CalendarScreen, dan EditProfileScreen ke subkomponen terdedikasi — lihat 15.7. |
-| R76 | Dekomposisi modular & pembersihan kode 3 Nov 2026: Pemecahan CarouselTab, PaymentConfirmScreen, ContinuousPdfViewer, dan eliminasi dead import — lihat 15.6. |
+| R84 | Penjaga konfigurasi Midtrans + pemantik rekonsiliasi 4 Nov 2026: flag vs prefix kunci, health check membaca lingkungan dari kunci, `POST /api/payments/qris/reconcile`, plus temuan `override: true` pada `server/env.js` — lihat 15.14. |
+| R86 | Pemangkasan & penyesuaian dokumen 4 Nov 2026: §16.2 diringkas 163 → 31 baris (spesifikasi tinggal di `Mobile-app plan.md`), riwayat R40–R71 dirapatkan, delapan drift dokumen dikoreksi di tempatnya, dan rujukan mati hasil pemangkasan disambungkan — lihat 15.16. |
+| R85 | Koreksi cron & metadata buku 4 Nov 2026: blok `crons` yang struktural selalu gagal dihapus dari `vercel.json` (diputuskan: tidak perlu infra), jumlah halaman PDF dihitung dari berkasnya dan 3 baris katalog diperbaiki, plus audit menyeluruh klaim dokumen vs kode — lihat 15.15. |
 
 ### 15.1 Yang sudah tidak ada lagi (R71, 30 Oktober 2026)
 
-Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali benda-benda ini:
+Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali benda-benda ini. Daftar lengkap dengan alasan per berkas ada di `git log` pemangkasan R71; yang ditahan di sini hanya yang masih menggoda untuk dipasang ulang:
 
-| Yang dibuang | Alasan | Gantinya |
-|---|---|---|
-| `tests/` (8 berkas, 120 uji) + `vitest.config.js` + dependensi `vitest` | Diminta dipangkas; repo tetap ramping | Verifikasi manual + `npm run build` + `npm run health` |
-| `scripts/check-syntax.js`, `check-colors.js`, `check-contrast.js` | Guard konvensi, bukan fungsi aplikasi | Aturan warna/kontras di `DESIGN.md` kini hanya konvensi — tidak ada yang menegakkannya |
-| `scripts/seed-skripsi-data.js` | Masih memakai data URL base64, sudah tertinggal oleh model Supabase Storage (`c84f29b`) | Unggah naskah lewat panel admin |
-| `server/providers/webhook.js`, `wablas.js`, `whacenter.js`, `twilio.js` | Hanya Fonnte yang dipakai | `server/providers/` berisi `base.js`, `demo.js`, `fonnte.js`, `index.js` |
-| `server/lib/supabaseRateLimitStore.js` + wiring `store:` di 4 limiter | `SHARED_RATE_LIMITS` tidak pernah diaktifkan, jadi kode itu mati | Keempat limiter tetap ada dengan MemoryStore bawaan `express-rate-limit` |
-| `Dockerfile`, `docker-compose.yml`, `.dockerignore` | Hosting di Vercel; tidak dirujuk skrip/dokumen mana pun | `vercel.json` + `npm start` lokal |
-| `supabase/.temp/` dari pelacakan Git | State lokal CLI; `pooler-url` memuat endpoint database dan repo ini **public** | Tetap ada di disk, diabaikan lewat `.gitignore` |
-| `public/flags/` (271 SVG, 2,4 MB) | Aplikasi hanya melayani nomor Indonesia, dan Fonnte selalu mengirim `countryCode: '62'` sehingga nomor non-62 tetap tidak terkirim | Nomor Indonesia ditulis langsung, tanpa bendera |
-| `src/lib/countryCodes.js` (2.323 baris) | Dataset 240+ negara + dropdown pemilihan negara tidak ada gunanya untuk pengguna Indonesia | `src/lib/phone.js` — 34 baris: `normalizePhone`, `displayPhone`, `isValidPhone` |
-| `src/components/ui/FlagIcon.jsx` + dependensi `libphonenumber-js` | Mengikuti pemangkasan di atas | Validitas nomor dicek regex Indonesia di `phone.js` |
-| Skrip `npm test`, `test:unit`, `test:watch`, `check`, `check:colors`, `check:contrast` | Filenya sudah tidak ada | `npm run build` dan `npm run health` |
+| Yang dibuang — jangan dihidupkan lagi | Gantinya |
+|---|---|
+| `tests/` (8 berkas, 120 uji) + `vitest` + skrip `npm test`/`test:unit`/`test:watch`/`check`/`check:colors`/`check:contrast` + `scripts/check-syntax.js` | Verifikasi manual + `npm run build` + `npm run health`. Aturan warna & kontras kini **hanya konvensi, tidak ada yang menegakkannya** — itu keputusan sadar, bukan kelalaian. |
+| `Dockerfile`, `docker-compose.yml`, `.dockerignore` | `vercel.json` + `npm start` lokal. |
+| `src/lib/countryCodes.js` (2.323 baris), `public/flags/` (271 SVG, 2,4 MB), `FlagIcon.jsx`, `libphonenumber-js` | `src/lib/phone.js` — 34 baris (`normalizePhone`, `displayPhone`, `isValidPhone`). Aplikasi hanya melayani nomor Indonesia dan Fonnte selalu mengirim `countryCode: '62'`. |
+| Provider `webhook.js`/`wablas.js`/`whacenter.js`/`twilio.js`, `server/lib/supabaseRateLimitStore.js` + wiring `store:` di 4 limiter, `scripts/seed-skripsi-data.js` | Hanya `base/demo/fonnte/index` yang tersisa; limiter jalan dengan MemoryStore bawaan karena `SHARED_RATE_LIMITS` tidak pernah diaktifkan; naskah diunggah lewat panel admin. |
+| `supabase/.temp/` dari pelacakan Git | Tetap ada di disk, diabaikan `.gitignore`. **Jangan pernah dilacak: repo ini public dan folder itu memuat endpoint database.** |
 
 **Yang sengaja DIPERTAHANKAN walau terlihat bisa dibuang:**
 
@@ -1241,6 +1258,78 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `server/services/auth/password_reset_service.js:103`.
+
+### 15.16 Pemangkasan & Penyesuaian Dokumen R86 (4 November 2026)
+
+Berkas turun dari **1.538 → 1.408 baris** pada putaran ini (dari 1.700 di awal hari, total −292).
+
+| Yang dipangkas | Hasil |
+|---|---|
+| §16.2 cetak biru mobile | **163 → 31 baris.** Spesifikasi pengerjaan memang sudah ada di `Mobile-app plan.md` (500 baris); dokumen induk kini menyimpan **keputusan + alasan + daftar yang dibatalkan** saja. Ini juga menghapus duplikasi yang melanggar aturan "satu sumber kebenaran" di pembuka berkas. |
+| Tabel riwayat R40–R71 | Digabung jadi satu baris; detail rounds ada di `git log`. |
+| 15.1 daftar "yang dibuang" | 11 baris → 5 baris. Tiga hal ditahan karena masih melindungi proyek: aturan warna/kontras **tidak ditegakkan oleh apa pun** (keputusan sadar), `supabase/.temp/` **jangan pernah dilacak** (repo public, isinya endpoint database), dan daftar "sengaja DIPERTAHANKAN" dibiarkan utuh — termasuk `shared/sanitizeHtml.js`, yang kalau dianggap kode mati lalu dihapus, membuka stored XSS. |
+
+**Delapan drift dokumen dikoreksi di tempatnya** (sebagian besar ditemukan audit 15.15, tiga di antaranya saya verifikasi ulang sebelum menulis): klaim tema gelap & toggle di §2 dan §9 #29, klaim "metode manual sudah dieliminasi" padahal `ManualPaymentForm` masih terpasang, payload `POST /api/books` yang akan dijawab 400, kolom `books.category` yang tidak ada, contoh respons yang mengarang `author`/`category`, flag `--ignore-scripts` yang tidak ada di repo, `#toolbar=0` + larangan klik kanan yang tidak ada di kode (status §9 #8 diturunkan ke ⚠️ Sebagian), dan inventaris §14 (`ThemeToggle`/`Sidebar` tidak ada; `server/lib/` 21 berkas; health check 7 pemeriksaan). Jumlah endpoint §5 disamakan 54 → 55.
+
+**Rujukan yang ikut dibetulkan:** enam tautan ke sub-bagian `16.2.x` yang hilang akibat pemangkasan — di dokumen ini dan di `Mobile-app plan.md` — dialihkan ke §16.2 dengan penanda bagian yang tepat, supaya tidak ada rujukan mati yang tersisa.
+
+**Peringatan untuk sesi berikutnya:** 15.1 **jangan dipangkas lagi** — tujuannya persis mencegah barang yang sudah dibuang dihidupkan kembali. Dan satu jebakan proses yang nyata terjadi di putaran ini: perintah perbaikan rujukan ditulis dengan backtick di dalam kutip ganda bash, sehingga shell melakukan *command substitution* dan menghapus nama berkas. Hasilnya saya verifikasi baris per baris (file utuh), tapi perintah seperti itu harus ditulis dengan kutip satu.
+
+### 15.15 Perbaikan Cron & Metadata Buku R85 (4 November 2026)
+
+Dua problem yang ditemukan dengan menjalankan kode, bukan dengan membacanya.
+
+| Problem | Perbaikan | Bukti |
+|---|---|---|
+| **A. Pemeliharaan harian tidak pernah jalan di produksi.** `server/routes/cron_routes.js:9-15` menuntut `Authorization: Bearer <CRON_SECRET>`, sedangkan dokumentasi Vercel (16 Sep 2026) menyatakan cron adalah **GET tanpa header kustom** (tandanya `user-agent: vercel-cron/1.0` + `x-vercel-cron-schedule`). | **Diputuskan: tidak diperbaiki dengan infrastruktur.** Konfigurasinya tetap dikoreksi — blok `crons` di `vercel.json` dihapus karena struktural tidak bisa lolos (dead config yang setiap 01:00 menghasilkan 401 di log). Alasannya di bawah. Kalau proyek dilanjutkan setelah lulus, pemicunya tinggal ditambah lagi: workflow GitHub Actions ±40 baris YAML + 2 secrets, tanpa mengubah kode penjaga. | Probe lokal dengan `CRON_SECRET` dummy: GET tanpa header → **401**; GET dengan `x-vercel-cron: 1` → **401**. Jadi setiap 01:00 selalu ditolak sejak cron ini ada. |
+| **B. Kolom `pages` salah untuk 3 dari 3 buku** (16 vs 3, 28 vs 20, 48 vs 62) — angka itu dipakai penampil sebagai dasar progres baca. | Jumlah halaman PDF dihitung **dari berkasnya** saat unggah/perbarui: `server/lib/pdfPages.js` (pdfjs sisi server, impor dinamis, batas probe 25 MB, kegagalan → `null` + log, tidak pernah menolak unggahan). `storedContentFields()` menaruh `pages` hasil hitungan dan spread-nya belakangan, jadi nilai manusia kalah. `updateBook()` juga **mengabaikan `pages` dari formulir** bila berkas PDF tidak diganti, supaya menyunting judul tidak menimpa angka benar. Data lama diperbaiki lewat `scripts/fix-book-pages.js` (bawaan hanya membaca). | Dry-run → 3 BEDA; `--terapkan` → 3 ditulis; dry-run ulang → **0 BEDA, 3 cocok**. Angka 3/20/62 juga dikonfirmasi probe terpisah sebelum perubahan apa pun. |
+
+**Bug yang ketemu selama mengerjakan B, dan kenapa tercatat:** versi pertama `countPdfPages` mengembalikan `null` untuk semua berkas karena pdfjs menolak `Buffer` Node dengan pesan *"Please provide binary data as `Uint8Array`, rather than `Buffer`"* — padahal `Buffer` adalah subclass `Uint8Array`. `catch` yang diam membuat sebabnya tidak terlihat; sekarang normalisasi ke `Uint8Array` biasa dan setiap kegagalan dicatat lewat `logger.warn`.
+
+**Kenapa cron tidak layak diperbaiki di proyek ini** (diperiksa 4 Nov 2026, bukan diasumsikan):
+
+1. `settleExpiredMembership()` **tidak menentukan kebenaran akses**. `hasActivePro()` memeriksa `subscription_expires_at` setiap kali dibaca (`server/auth.js:85-93`), jadi tanpa cron pun langganan basi tidak bisa membuka buku terkunci — yang menjadi basi hanyalah kolom status di tabel.
+2. `sweepDueReminders()` mengirim **Web Push** dan hanya itu — `server/lib/eventReminder.js` tidak memuat satu pun jalur WhatsApp/Fonnte (gerbang `isPushConfigured()` di `:295`; VAPID terisi 3 kunci di `.env`), dan jalur itu **sudah berjalan in-process** selama satu instance hidup — `startReminderScheduler()` dipanggil di `server/server.js:236`.
+3. Web Push sendiri sudah **ditolak pemilik proyek** sebagai fitur pengguna (31 Okt 2026, lihat 15.1/16.1). Lebih dari itu: **tabel `push_subscriptions` tidak ada di database live** — `select` menjawab `Could not find the table 'public.push_subscriptions' in the schema cache` (4 Nov 2026), padahal `full_setup.sql:331` mendefinisikannya. Jadi pengingat berbasis push tidak akan berfungsi di produksi dengan atau tanpa cron; ini kasus nyata skema live yang menyimpang dari `full_setup.sql`.
+
+   Konsekuensinya harus ditulis sebagai batasan, bukan disembunyikan: **fitur pengingat agenda H-1 hari ini tidak bisa mengirim apa pun**, di lokal maupun produksi, karena tidak ada tabel penyimpan pelanggan. Menjadwalkan cron tidak mengubah itu sedikit pun — dan ini alasan utama keputusan di atas, bukan sekadar penghematan.
+
+Menjadwalkan sesuatu yang tidak dipakai = biaya tanpa manfaat. Yang tetap benar setelah keputusan ini: `vercel.json` tidak lagi menyimpan konfigurasi yang selalu gagal, dan endpoint `/api/cron/daily-maintenance` tetap ada serta tetap bisa dipanggil manual dengan `Authorization: Bearer` bila suatu saat dibutuhkan.
+
+**Delapan drift dokumen vs kode hasil audit 4 Nov 2026 — semuanya sudah dikoreksi di tempatnya pada hari yang sama.** Tabel di bawah dibiarkan sebagai catatan apa yang salah dan apa kenyataan di kode; nomor baris yang dikutip mengacu pada dokumen **sebelum** pemangkasan 4 Nov, jadi jangan dicari lagi di posisi itu. Yang HIGH sudah diverifikasi ulang terhadap kode, bukan diterima dari laporan audit.
+
+| # | Klaim dokumen | Kenyataan di kode |
+|---|---|---|
+| 1 | baris 107 & 116 (dan §9 #29 baris 895): tema gelap, "toggle mode gelap/terang", "seluruh antarmuka mendukung palet gelap" | Satu tema terang. `src/theme/themeInjector.js:6` menyatakan begitu, dan `EditProfileScreen.jsx` tidak memuat satu pun referensi tema. Dokumen kontradiktif dengan baris 1207 miliknya sendiri. |
+| 2 | baris 85: "seluruh metode manual non-QRIS telah dieliminasi" | `src/features/payment/ManualPaymentForm.jsx` ada dan dirender di `PaymentConfirmScreen.jsx:217`; `POST /api/transactions` (transfer manual) masih terpasang di `server/routes/transactions_routes.js:54`. |
+| 3 | baris 490: `POST /api/books` = `{ title, pages, is_locked, cover_url }` | `bookInputSchema` (`server/lib/validate.js:52-56`) **mewajibkan** `author` dan `category` (min 1 karakter), jadi payload yang didokumentasikan dijawab 400 — dan kedua nilai itu lalu dibuang karena tabel `books` tidak punya kolomnya. Bawaan `pages` di schema juga **100**, salah satu sumber angka ngawur. |
+| 4 | baris 816: tabel `books` "termasuk `category`" | Tidak ada kolom `category` di `books` (`supabase_database/full_setup.sql:56-68`); `category` milik `events`. |
+| 5 | baris 502-513: contoh respons `GET /api/books` memuat `author` & `category` | `BOOK_FIELDS` tidak pernah memilih keduanya. |
+| 6 | baris 886: `npm audit --ignore-scripts --audit-level=high` | Skrip aslinya `npm audit --audit-level=high` (`package.json`); `--ignore-scripts` tidak ada di repo. |
+| 7 | baris 874 (§9 #8): `#toolbar=0` dan "larangan klik kanan" lulus | `#toolbar=0` tidak ada di `src/`, `onContextMenu` tidak ada di seluruh repo — pengulangan drift M1 di tempat kedua. |
+| 8 | baris 1190/1188/1171/1162 inventaris §14 | `ThemeToggle` dan `Sidebar` tidak ada (yang nyata `SidebarContent.jsx`/`SidebarNavButton.jsx`); `server/lib/` 20 berkas, bukan 19; health check membuat 7 `report()`, bukan "6 pemeriksaan". |
+
+Jumlah endpoint di §5 sudah disamakan hari ini (54 → 55, Payments 5 → 6) karena rute `reconcile` yang ditambahkan R84.
+
+### 15.14 Penjaga Konfigurasi Midtrans & Pemantik Rekonsiliasi R84 (4 November 2026)
+
+Menutup celah "pembayaran gagal tanpa keterangan": `.env` memasang kunci produksi (`Mid-server-…`) bersama `MIDTRANS_IS_PRODUCTION=false`, sehingga klien memanggil endpoint sandbox dengan kunci produksi dan Midtrans menjawab 401 **di tengah alur bayar**, sementara `npm run health` melaporkan "Mode: Sandbox" yang menyesatkan.
+
+| Perubahan | Rincian |
+|---|---|
+| Modul penjaga baru | `server/lib/midtransKeys.js` — murni, tidak membaca `process.env` (sengaja, supaya `scripts/health-check.js` yang memanggil dotenv sendiri bisa mengimpornya tanpa perlombaan urutan impor). Mengekspor `keyEnvironment`, `environmentMismatch`, `mismatchRemediation`, `isProductionFlag`. Nilai kunci tidak pernah ikut dikembalikan, hanya nama lingkungannya — repo ini **public**. |
+| Peringatan saat boot | `server/server.js`: `logger.warn('BOOT', ...)` dengan `akibat` + `perbaikan`, mengikuti pola VULN-09 yang sudah ada. **Sengaja tidak mematikan proses** — kegagalan fatal saat boot akan memblokir pekerjaan yang tidak berhubungan dan menyembunyikan galat hilir. |
+| Galat saat dipakai | `server/lib/midtrans.js`: `getCoreApi()` melempar `MIDTRANS_ENV_MISMATCH` dengan pesan yang menyebut flag, prefix, dan jalan keluarnya. |
+| Health check jujur | `scripts/health-check.js` membaca mode **dari prefix kunci**, bukan dari flag, dan menjatuhkan item Midtrans bila pasangan bertentangan. |
+| Dedup | `server/config.js` tidak lagi mendefinisikan `isTrueFlag` lokal; memakai `isProductionFlag` dari modul baru. Semantics tidak berubah: hanya kata `true` (tanpa peka huruf/spasi) yang berarti produksi — `1` **tidak**. |
+| Temuan sampingan | `server/env.js` memuat `.env` dengan `override: true` (tiga kali), jadi variabel yang di-set dari baris perintah diabaikan secara lokal. Berpindah sandbox/produksi harus lewat penyuntingan `.env`, bukan `MIDTRANS_IS_PRODUCTION=true node server/server.js`. |
+| Pemantik rekonsiliasi (#3) | `reconcilePendingQris()` di `server/services/payment/status_service.js` + rute `POST /api/payments/qris/reconcile` (Bearer, limiter status yang sama). Dipanggil `reconcilePendingPayments()` di `usePaymentSlice.js` dari efek baru di `AppContext.jsx`: sekali saat sesi aktif dan sekali saat tab kembali fokus. **Tidak ada cron baru dan tidak ada logika settle kedua** — transisi tetap lewat `settlement_service`. |
+| Koreksi guard di tengah jalan | Guard pertama memperlakukan prefix client key sebagai kesalahan yang memblokir. Itu salah: dashboard sandbox dapat menampilkan client key tanpa prefiks `SB-`, dan QRIS Core API tidak memakai client key untuk men-charge. Sekarang hanya **server key** yang memblokir; ketidakcocokan client key turun jadi catatan (`clientKeyNotice`). |
+| Sisa di data live | **2 baris `transactions` masih berstatus `pending`** (pemeriksaan baca saja, 4 Nov 2026). Keduanya akan ditutup otomatis oleh pemantik baru ini saat pemiliknya masuk — sengaja tidak ditagih dari tes, karena itu jalur tulis. |
+
+**Bukti verifikasi, bukan asumsi:** kombinasi kunci/flag diuji terhadap `environmentMismatch` dan `clientKeyNotice` — pasangan sandbox dan pasangan produksi lolos, pertentangan flag-vs-server-key tertangkap, bentuk kunci dashboard sandbox (server `SB-Mid-…` + client tanpa prefiks) **tidak diblokir**, dan kunci kosong lolos karena memang ditangani sebagai "belum dikonfigurasi". `npm run health` kini **6/7** dengan baris Midtrans merah beserta pesan perbaikan. Rute baru dibuktikan di port acak milik prosesnya sendiri: `POST /api/payments/qris/reconcile` → **401** tanpa token (terpasang + terlindungi), sedangkan jalur tak dikenal → **404** — setelah percobaan pertama sempat salah membaca hasil karena curl-nya mengenai proses basi dari tes sebelumnya (EADDRINUSE). Pemanggilan service diuji dengan `userId` fiktif sehingga query mengembalikan nol baris: `{ checked: 0, settled: 0, closed: 0 }`, nol tulisan ke data siapa pun. `prettier --write` lalu `npm run check` bersih, `npm run build` ✓ 15,89 s.
+
+**Masih menunggu:** kunci sandbox asli belum dipasang di `.env` (hanya pemilik proyek yang bisa mengambilnya), keputusan M1 (tanda air + blokir klik kanan web) belum diambil, dan perbaikan refspec Git single-branch belum disetujui. Ketiganya tercatat di **§16.2**.
 
 ### 15.13 Konsolidasi Rencana Mobile R83 (4 November 2026)
 
@@ -1258,147 +1347,10 @@ Semua keputusan jalur mobile dari sesi 4 November dirapikan ke **16.2** (satu-sa
 | **Koreksi M1** | Klaim lama "✅ 100% SELESAI" **tidak benar**: tanda air di kanvas dan blokir klik kanan tidak ada di kode; hanya `select-none` yang tersisa. Relevan langsung ke judul skripsi dan Bab IV — keputusan pemulihan atau penurunan klaim belum diambil. |
 | Jebakan Git | Repo ini clone **single-branch** (`remote.origin.fetch` hanya `main`), sehingga branch lain tidak punya ref lacakan dan `git pull` di branch mobile berisiko. Perbaikan menunggu persetujuan. |
 | Belum dikerjakan | Scaffold Expo (menunggu izin, ±1–2 GB `node_modules`), dan **bukti OTA pada APK sideload** — asumsi paling berisiko, sengaja ditaruh paling awal. |
-
-### 15.12 Pemeliharaan R82 (3 November 2026)
-
-Penyatuan dan modularisasi alur autentikasi ke Unified Auth Screen (`AuthScreen`), menggabungkan alur "Masuk" dan "Daftar" dalam satu kartu antarmuka kohesif dengan smart prefill email bersama, transisi tab segmented aksesibel, dan integrasi Google OAuth terpusat.
-
-| Perubahan | Rincian |
-|---|---|
-| Layar Autentikasi Terpadu | `src/features/auth/AuthScreen.jsx` mengorkestrasi alur login dan pendaftaran dalam satu kartu tanpa berpindah halaman, menurunkan beban kognitif pengguna dan mencegah drop-off. |
-| Subkomponen Modular | Dekomposisi layar ke `AuthSegmentedTabs.jsx` (kontrol tab berstatus ARIA), `LoginForm.jsx` (form masuk + link lupa password), `RegisterForm.jsx` (form pendaftaran lengkap + WhatsApp `PhoneInput`), `GoogleAuthButton.jsx` (Google OAuth dengan proteksi bfcache), dan `AuthBrandHeader.jsx` (header judul & deskripsi petunjuk dinamis). |
-| Smart Email Prefill | Email yang diketikkan di tab Masuk otomatis dipertahankan dan terisi saat pengguna berpindah ke tab Daftar (dan sebaliknya), menghindari pengulangan ketik. |
-| Sinkronisasi Rute & Deep Link | Mendukung rute `/login`, `/register`, dan alias baru `/auth`. Transisi tab memperbarui URL browser (`replaceState`) tanpa meremount komponen atau flicker visual. Komponen `LoginScreen.jsx` dan `RegisterScreen.jsx` tetap dipertahankan sebagai wrapper tipis untuk kompatibilitas penuh. |
-| Bump PWA Service Worker | Bump `CACHE_NAME` ke `wahidiyah-app-shell-v22` di `public/sw.js` (§R5.6) untuk membuang app shell lama dan menjamin aset autentikasi baru aktif di seluruh browser klien. |
-
-### 15.11 Pemeliharaan R81 (3 November 2026)
-
-Tindak lanjut dari code review dua-axis (Standards + Spec) atas rentang `323e419..HEAD`.
-
-| Perubahan | Rincian |
-|---|---|
-| Sitasi bagian yang salah | 13 komentar di `server/` merujuk **"§4.1 panduan arsitektur"** padahal §4.1 = *Visual Atmosphere & Design POV*, dan **"§2.1 panduan"** padahal §2.1 = *Katalog Buku*. Aturan yang dimaksud adalah **§3.1** (konvensi 4 lapisan); prinsip klaim idempoten ada di **§6.2**. Salah kutip ini diwarisi dari `auth_service.js`/`payment_service.js` lama dan ikut menyebar saat paket dibuat. |
-| Header controller usang | `auth_controller.js` dan `payment_controller.js` masih menulis "memanggil `auth_service`/`payment_service`" — modul yang dihapus pada R79. Kini menyebut paketnya. |
-| Duplikasi terakhir Web Push | Pasangan `isMissingSchema(e)` + `warnSchemaOnce(e, 'PUSH')` ditulis ulang di **6 tempat** (4 di `eventReminder.js`, 2 di `pushSubscriptionStore.js`). Diganti satu gerbang `noteSchemaMissing(error, scope = 'PUSH')`; `isMissingSchema` dan `warnSchemaOnce` tidak lagi diekspor karena tidak ada pemakai di luar `pushGuards.js`. `eventReminder.js` kembali ke 319 baris. |
-| Dead export yang dibuat R80 | `activeSubscriptionConflict` di `server/lib/membership.js` tetap `export` padahal setelah R80 tidak ada berkas lain yang mengimpornya (konsumennya sudah pindah ke `resolvePurchaseGate` di berkas yang sama) → dikembalikan menjadi fungsi internal. |
-| Komentar berbahasa Inggris | `server/app.js` menyisipkan "produksi diam-diam **behave beda**" → "berperilaku beda" (aturan: komentar Indonesia). |
-| Layar autentikasi dibuat datar | Bayangan kartu `.auth-card` (`0 24px 60px`, kedua tema) dan cahaya `.auth-primary-button` (`0 8px 18px` + `0 12px 22px` saat hover) dihapus, bersama entri `box-shadow` pada transisi tombol. Melanggar aturan lama "layar autentikasi datar, tanpa glow/blur". Cincin fokus input **dipertahankan** — itu penanda aksesibilitas keyboard, bukan hiasan. Terverifikasi di `dist`: pola `24px 60px` dan `8px 18px` 0 kali. |
-
-**Temuan review yang MASIH terbuka — butuh keputusan pemilik, bukan pekerjaan otomatis:**
-
-| # | Temuan | Kenapa tidak langsung diubah |
-|---|---|---|
-| 1 | `transactions_service.js:97-127` (verifikasi transfer manual) adalah jalur transisi status keempat, hampir menyalin bentuk klaim bersyarat `settlement_service.js:40-80` | Menyatukannya mengubah jalur verifikasi admin yang menyentuh uang; perlu uji manual alur approve/reject |
-| 2 | `order_service.js:102` (hasil `reused`) mengirim `qrMidtransUrl` **tanpa** gerbang `MIDTRANS_IS_PRODUCTION`, sedangkan `:189` (hasil `created`) menggatesnya | Perilaku produksi berubah; ini keputusan keamanan/kepatuhan, bukan perapian kode |
-| 3 | Respons reset sandi: jalur seragam tidak memuat `identifier`/`phone`/`devOtp`, jalur terkirim memuatnya — isi body masih bisa membedakan akun dikenal vs tidak dikenal | Sudah ada sebelum R79; memperbaikinya berarti menyamakan bentuk payload dan bisa mengubah tampilan `ForgotPasswordScreen` |
-| 4 | Duplikasi murni tampilan: kartu agenda di 3 berkas (`SelectedDateAgenda`, `CalendarAllEventsList`, `CalendarSelectedDatePanel`), blok alert + field password di `ForgotPasswordScreen`/`RegisterScreen`/`LoginScreen`, dan `firstIssueMessage` yang belum dipakai `books_service.js:199` | Tidak bisa diverifikasi visual di lingkungan ini (tanpa layar/screenshot); risiko regresi UI > manfaat |
-| 5 | `books_service.js` (392 baris, 11 ekspor: upload-intent, muat konten + konversi DOCX, CRUD) dan `auth_controller.js` (341 baris, 10 endpoint) masih bisa dipecah | Keduanya satu tema; pemecahan menambah lompatan berkas tanpa menghilangkan seam nyata |
-
-### 15.10 Pemeliharaan R80 (3 November 2026)
-
-Duplikasi dicari dengan pemindai blok (shingle 6 baris, sadar-string) di seluruh `server/`, `src/`, `scripts/`, `api/` — bukan dari dugaan. Yang diubah hanya blok yang benar-benar salinan; daftar yang sengaja dibiarkan ada di baris terakhir.
-
-| Klaster | Diganti oleh |
-|---|---|
-| `probePort` ditulis ulang di 3 runner (`clean-ports.js`, `dev.js`, `start.js`) | `scripts/lib/portProbe.js` — satu fungsi, tiga impor |
-| Rakitan Express (context → security → cors → compression → json → trustProxy → routes → 404) disalin di `api/index.js` DAN `server/server.js` | `server/app.js` → `createApiApp()`. Kedua titik masuk kini tidak bisa lagi punya urutan middleware yang berbeda (dev hijau, produksi diam-diam beda). `errorHandler` tetap dipasang tiap titik masuk karena server.js menyisipkan static/Vite sebelum handler itu |
-| Gerbang pembelian (sapu kedaluwarsa → muat pengguna → tolak bila Pro) disalin di jalur QRIS dan jalur transfer manual | `membership.resolvePurchaseGate(userId, fallbackUser)` |
-| Objek respons `already-pro` yang sama persis ditulis di controller dan di rute | `http.replyAlreadyPro(res, result)` |
-| Muat baris agenda + toleransi skema Web Push (2×10 baris) | `eventReminder.loadEventRow(eventId, columns)` — `schemaMissing` tetap dipisah dari `not-found` agar nilai `reason` tidak berubah |
-| Penutup tulis `carousel_slides` (tabel belum ada → 503, tidak kena baris → 404) di 3 jalur tulis | `carousel_service.ensureSlideWritten({ data, error })` |
-| Respons sesi `{ success, message, token, user }` di 3 endpoint auth | `auth_controller.replySession(res, result, message, status)` |
-| Pemetaan field unggah buku (6 kunci) di rute buat dan rute ubah | `books_routes.bookUploadFields(req)` |
-| Boilerplate `method` + `headers` `Content-Type` + `JSON.stringify` ditulis ulang di **20 situs / 13 berkas** | `api.apiJsonSend(path, body, { method, headers, ...rest })` — tersisa 1 situs `Content-Type` manual di klien (POST cancel tanpa badan) plus 1 di dalam helper itu sendiri |
-| Penurunan 9 kolom kwitansi disalin antara tampilan layar dan generator PDF | `src/lib/receiptFields.js` → `resolveReceiptFields(details, user)` |
-| Penggabungan lokasi + tautan Maps dan perakitan payload agenda (create vs edit) | dinaikkan ke satu blok di atas cabang `if (editingEventId)` |
-| Jalur sukses/gagal toast ditulis 3× dalam `withToast.js` sendiri | `succeed()` / `rejectWith()` modul itu |
-| Potongan kelas cincin fokus + status aktif pada dua varian `SidebarNavButton` | konstanta lokal `focusRing` / `activeState` |
-
-**Yang sengaja TIDAK diubah** (pemindai menandainya, tapi setelah dibaca bukan duplikasi atau mengubahnya merusak hal lain):
-
-| Kandidat | Putusan |
-|---|---|
-| `qrTransaction` dsb. muncul identik 8 baris di 3 berkas | Bukan duplikasi: itu objek return hook, destruktur di pemanggil, dan daftar props komponen. Menyatukannya berarti membuat abstraksi palsu |
-| Daftar props/destructure lain (`stats,`, `setForm,`, `pdfDoc,`, `user,`, `containerRef,`) | Kesamaan kebetulan dari tanda baca — dibiarkan |
-| markup kartu agenda di `SelectedDateAgenda.jsx`, `CalendarAllEventsList.jsx`, `CalendarSelectedDatePanel.jsx` (7–8 baris ×3) | Duplikasi nyata, tapi murni tampilan. Ekstraksi komponen tidak bisa diverifikasi di lingkungan ini (tidak ada layar/screenshot, `innerHeight=0`), jadi tidak dilakukan tanpa izin |
-| Blok PowerShell pembunuh port di 3 runner | Mirip tapi berbeda pesan & semantik (`SKIP` non-node di dev.js, hanya `KILL` di clean-ports.js). Menyatukannya akan mengubah keluaran yang dibaca developer setiap hari |
-| POST `/cancel` tanpa badan & `DELETE /events/:id` | Tetap `apiJson`: helper `apiJsonSend` mengasumsikan ada badan JSON |
-
-**Catatan jumlah baris:** total `server/` + `src/` hampir tidak berubah (21.920 → 21.935) — nilai pemubahan ini bukan baris yang hilang, melainkan **satu tempat untuk mengubah kontrak**: 20 bentuk permintaan manual jadi satu helper, dua titik rakitan API jadi satu, dua gerbang beli jadi satu. Isi fungsi dipindah verbatim; helper `apiJsonSend` diuji setara dengan bentuk lama (6 kasus opsi `fetch` identik), `resolveReceiptFields` diuji 4 kasus fallback, dan seluruhnya lolos `npm run check:full` (Prettier bersih, health 7/7, build 2823 modul) plus probe runtime: `/api/health`, `/api/books`, `/api/carousel`, `/api/events`, `/api/notifications/public-key`, dan `POST /api/auth/login` dengan kredensial salah (pesan anti-enumerasi tetap utuh).
-
-### 15.9 Pemeliharaan R79 (3 November 2026)
-
-| Perubahan | Rincian |
-|---|---|
-| Paket `server/services/auth/` | `auth_service.js` (689 baris, 4 alur bercampur) dipecah menjadi `messages.js`, `session_service.js`, `registration_service.js`, `password_reset_service.js`, `otp_resend_service.js`, `google_oauth_service.js`. Teks anti-enumerasi (`RESET_UNIFORM_RESPONSE`, `RESET_UNIFORM_WA_RESPONSE`, `INVALID_CREDENTIALS_MESSAGE`, `GOOGLE_ACCOUNT_MESSAGE`) dan `firstIssueMessage` dipusatkan di `messages.js` — pemisahan tanpa modul ini berpotensi menggandakan pesan dan membuka celah "akun tidak terdaftar". |
-| Paket `server/services/payment/` | `payment_service.js` (476 baris) dipecah menjadi `constants.js`, `order_service.js`, `settlement_service.js`, `status_service.js`, `notification_service.js`. `settlement_service.js` menjadi satu-satunya tempat status transaksi berpindah **untuk jalur QRIS** (dipakai polling, webhook, dan kegagalan charge). Koreksi R81: jalur verifikasi transfer manual masih punya klaim bersyaratnya sendiri di `transactions_service.js:97-127`, jadi klaim "satu-satunya" tidak berlaku menyeluruh — menyatukannya adalah pekerjaan yang belum dikerjakan. Re-export mati `createServiceError` dihapus; konsumen memakainya dari `server/lib/errors.js`. |
-| Subsystem Web Push | `server/lib/eventReminder.js` (429 baris) dipecah tiga: `pushGuards.js` (gerbang VAPID + toleransi skema yang dipakai bersama), `pushSubscriptionStore.js` (seluruh akses `push_subscriptions`), dan `eventReminder.js` yang tersisa khusus pengiriman + penjadwal (319 baris). Bendera "peringatan skema sekali" tetap satu karena hidup di `pushGuards.js`. |
-| Sengaja TIDAK dihapus | Web Push tidak dibuang meski notifikasi pengguna pernah ditunda: modul ini masih satu-satunya jalur siaran pengumuman agenda dari panel admin (`events_service.js` → `sendEventAnnouncementNow`) dan tabel `push_subscriptions` sudah ditoleransi gagal-tenang. Menghapusnya memutus tombol yang masih dipakai. |
-| Batas dekomposisi | Tidak ada barrel/re-export: `auth_controller.js` dan `payment_controller.js` mengimpor modul spesifik. Isi tiap fungsi dipindah verbatim (diff baris kode vs versi lama hanya berbeda pada baris impor dan kata kunci `export`). File terbesar yang tersisa kini `books_service.js` (392) dan `receiptPdf.js` (363) — keduanya satu tujuan, tidak dipecah lagi. |
-
-### 15.8 Pemeliharaan R78 (3 November 2026)
-
-| Perubahan | Rincian |
-|---|---|
-| Hook Pinch & Render PDF | Ekstraksi `usePdfPinchGesture.js` (touch multi-touch GPU) dan `usePdfCanvasRenderer.js` (antrean render PDF.js & lazy observer) dari `ContinuousPdfViewer.jsx`. |
-| Modularisasi Rute App | Pemecahan `App.jsx` ke `src/components/routing/RouteGuards.jsx` dan `src/components/routing/RouterBridge.jsx`, menyisakan tabel rute deklaratif bersih. |
-| Subkomponen Autentikasi OTP | Pemecahan `VerifyEmailScreen.jsx` ke `PasswordResetSuccess.jsx`, `OtpDevNotice.jsx`, dan `OtpResendAction.jsx`. |
-| Desain Sistem & Token | Penegasan arsitektur token desain terpusat pada `component.json`. Palet warna disuntikkan `themeInjector.js` menjadi CSS variable; sizing, radius, elevasi, dan layout dikonsumsi langsung oleh `tailwind.config.js`. Lapisan CSS variable struktural (`--radius-*`, `--btn-*`, `--card-*`, `--input-*`, `--shadow-*`, `--duration-*`, dsb.) sudah dibuang karena tidak ada satu pun pembaca setelah kelas `.app-*` dihapus. |
-
-### 15.7 Pemeliharaan R77 (3 November 2026)
-
-| Perubahan | Rincian |
-|---|---|
-| Layar Pembaca PDF | Pemecahan PdfReaderScreen.jsx ke subkomponen terdedikasi ReaderTopBar.jsx, ReaderContentStates.jsx, HtmlDocViewer.jsx, dan TextDocViewer.jsx. |
-| Layar Kalender & Agenda | Modularisasi CalendarScreen.jsx ke CalendarMonthGrid.jsx, CalendarSelectedDatePanel.jsx, dan CalendarAllEventsList.jsx. |
-| Layar Profil Pengguna | Dekomposisi EditProfileScreen.jsx ke ProfileAccountForm.jsx, ProfileSubscriptionCard.jsx, ProfileNavigationLinks.jsx, dan ProfileSessionSettings.jsx. |
-| Standardisasi & Clean Code | Penambahan dokumentasi JSDoc komprehensif pada seluruh subkomponen baru, verifikasi Prettier, lolos uji build Vite 100% dan health check 7/7. |
-
-### 15.6 Pemeliharaan R76 (3 November 2026)
-
-| Perubahan | Rincian |
-|---|---|
-| Pemecahan Carousel Admin | `CarouselTab.jsx` dipecah menjadi subkomponen modular (`src/features/admin/carousel/CarouselSlideItem.jsx`, `CarouselFormPanel.jsx`) dan custom hook `src/features/admin/hooks/useAdminCarouselEditor.js`. |
-| Modularisasi Konfirmasi Pembayaran | `PaymentConfirmScreen.jsx` dipecah menjadi modul independen (`PaymentPlanSummary.jsx`, `QrisPaymentCard.jsx`, `ManualPaymentForm.jsx`, `PaymentProcessingOverlay.jsx`). |
-| Modularisasi Pembaca PDF | Lembar kanvas halaman pada `ContinuousPdfViewer.jsx` dipisahkan ke subkomponen terdedikasi `src/features/reader/PdfPageSheet.jsx`. |
-| Pembersihan Dead Code | Mengeliminasi dead import ikon yang tidak terpakai (`ArrowLeft` pada `EditProfileScreen.jsx`). |
-
-### 15.5 Pemeliharaan R75 (3 November 2026)
-
-| Perubahan | Rincian |
-|---|---|
-| Modul Klien & Utilitas | Dokumentasi JSDoc lengkap pada utilitas klien (`phone.js`, `date.js`, `navigation.js`, `api.js`, `excelExport.js`, `reminders.js`, dan custom hook `useAdminDashboardData.js`). |
-| Library & Service Server | Dokumentasi JSDoc pada error handler (`errors.js`), utilitas waktu (`time.js`), resolver origin (`origin.js`), validasi Zod (`validate.js`), dan service layer (`transactions_service`, `users_service`, `carousel_service`, `books_service`, `auth_service`). |
-| Runner & Dokumentasi | Penambahan JSDoc arsitektur pada runner `scripts/health-check.js` dan `scripts/start.js`, serta penyelarasan katalog perintah pada `README.md`. |
-
-### 15.4 Peningkatan R74 (2 November 2026)
-
-| Perubahan | Rincian |
-|---|---|
-| Quality Gate Penuh | Menambahkan script `npm run check:full` yang menggabungkan validasi format Prettier, uji kesehatan sistem, dan verifikasi kompilasi Vite. |
-| Standardisasi JSDoc | Dokumentasi teknis JSDoc lengkap pada seluruh route server (`books`, `events`, `payments`, `users`, `carousel`) dan service layer (`events_service`, `payment_service`). |
-| Runner & Utilitas | Dokumentasi arsitektur terintegrasi pada `scripts/dev.js`, helper pemformatan mata uang di `formatUtils.js`, dan header PWA service worker. |
-| Aksesibilitas Reader | Penyematan atribut semantik ARIA (`role="region"`, `aria-label="Area pembaca PDF digital"`) pada komponen `ContinuousPdfViewer.jsx`. |
-
-### 15.3 Pemeliharaan R73 (1 November 2026)
-
-| Perubahan | Rincian |
-|---|---|
-| Quality Gate | Menambahkan script `npm test` dan `npm run check` terpadu yang memverifikasi kepatuhan format Prettier dan kesehatan sistem Supabase/Midtrans. |
-| Health-Check 7/7 | Skrip `scripts/health-check.js` diperluas dengan verifikasi otomatis data tabel `events` (agenda kegiatan). |
-| Port Cleaner | Skrip `scripts/clean-ports.js` disempurnakan dengan dukungan pembersihan port lintas-platform (Windows & POSIX). |
-| Aksesibilitas Admin | Menambahkan atribut `aria-label` semantik pada navigasi dan tombol interaktif di `AdminDashboard.jsx`. |
-| Dokumentasi JSDoc | Melengkapi dokumentasi teknis dan tipe data pada modul helper `server/lib/http.js` dan endpoint `server/routes/books_routes.js`. |
-
-### 15.2 Perubahan R72 (31 Oktober 2026)
-
-| Perubahan | Rincian |
-|---|---|
-| Prettier | `.prettierrc.json` (`printWidth: 100`, `singleQuote`, `semi`, `trailingComma: all`, `endOfLine: lf`) + `.prettierignore`; skrip `format` & `format:check`. Seluruh kode JS/JSX/CSS diformat ulang. |
-| Service layer | Query Supabase dan aturan bisnis dipindah dari `books`, `users`, `transactions`, `events`, dan `carousel` route ke `server/services/*_service.js`. Route kini hanya mendaftarkan URL, middleware, dan respons. |
-| Error layanan | `server/lib/errors.js` (`createServiceError`) + `fail()`/`wrap()` di `server/lib/http.js` menerjemahkan `statusCode` menjadi respons JSON `{ success: false, message }`. |
-| Komponen admin | `EventsTab.jsx` dipecah ke `src/features/admin/events/` (6 berkas) dan `AdminDashboard.jsx` memakai 3 hook di `src/features/admin/hooks/`. |
-| Perbaikan skrip | `scripts/start.js` kini mengimpor `picocolors` yang sebelumnya hilang sehingga `npm start` gagal saat runtime. |
+| Batas uji pembayaran | **Sandbox saja.** Akun produksi tidak didaftarkan karena proyek masih tahap pengembangan dan datanya diambil atas nama penelitian di instansi. Ditulis sebagai batasan penelitian di **11.4**, lengkap dengan kalimat siap pakai untuk Bab V — kekurangan ini dinyatakan, bukan disembunyikan. |
+| §16.1 butir 3 | "Kesiapan Rilis Produksi" direlabel menjadi **opsional / bahan penerus**, dengan status "tidak dilakukan" per butir (Midtrans produksi, Fonnte produksi, domain lembaga). |
+| §16.2 "Yang dibatalkan atau diperkecil" | Daftar yang **dibatalkan / diperkecil / menunggu keputusan**, termasuk penarikan usulan menurunkan `isProduction` otomatis dari prefix kunci (bahayanya: menyalakan transaksi nyata) dan pengecilan rekonsiliasi settlement jadi satu status-lookup saat login. |
+| Pemeriksaan bocornya kunci | **Bersih.** `.env` tidak pernah ter-commit di repo public ini, dan satu-satunya string berpola kunci di berkas ter-lacak adalah teks pesan error `server/lib/midtrans.js:21`. |
 
 Riwayat detail berada di Git. Bagian ini hanya menyimpan konteks yang berguna untuk pengembangan berikutnya.
 
@@ -1415,155 +1367,42 @@ Fitur inti web sudah tersedia, tetapi kelulusan build, verifikasi manual, UAT, d
 2. **Pengujian Pengguna (User Acceptance Testing / UAT):**
    - Melakukan uji coba langsung kepada perwakilan jamaah pengamal Wahidiyah dan admin pengelola buku perpustakaan.
    - Mengukur tingkat kepuasan dan ketergunaan antarmuka menggunakan kuesioner baku *System Usability Scale* (SUS).
-3. **Kesiapan Rilis Produksi (Production Hardening & Go-Live):**
-   - Mengajukan akun produksi Midtrans Merchant ID (`Mid-server-...`) dan mengaktifkan QRIS Production (`MIDTRANS_IS_PRODUCTION=true`).
-   - Mendaftarkan nomor WhatsApp resmi lembaga ke provider Fonnte production untuk alokasi kuota OTP massal.
-   - Pemasangan domain resmi publik (mis. `buku.wahidiyah.org`) dengan sertifikat SSL/TLS HTTPS otomatis.
+3. **Kesiapan Rilis Produksi — BUKAN target proyek ini (ditetapkan 4 November 2026).** Butir ini dipertahankan hanya sebagai bahan bagi mahasiswa penerus bila proyek dilanjutkan; pemilik proyek tidak mengejar go-live (lihat batasan penelitian di 11.4):
+   - Mengajukan akun produksi Midtrans Merchant ID (`Mid-server-...`) dan mengaktifkan QRIS Production (`MIDTRANS_IS_PRODUCTION=true`). **Tidak dilakukan** — butuh legalisasi lembaga dan rekening penampung.
+   - Mendaftarkan nomor WhatsApp resmi lembaga ke provider Fonnte production untuk alokasi kuota OTP massal. **Tidak dilakukan** — pengujian memakai `WHATSAPP_PROVIDER=demo`/kuota testing.
+   - Pemasangan domain resmi publik (mis. `buku.wahidiyah.org`) dengan sertifikat SSL/TLS HTTPS otomatis. **Di luar kendali proyek** — domain milik Wahidiyah Pusat, jadi ini permintaan administrasi, bukan pembelian.
 
 ---
 
-### 16.2. Cetak Biru Pengembangan Aplikasi Mobile Native (React Native / Expo)
+### 16.2. Aplikasi Mobile Native (React Native / Expo)
 
-Status berubah pada 4 November 2026: dari "rencana pasca-skripsi" menjadi **jalur kerja aktif** di branch `mobile-app`. Bagian ini adalah satu-satunya acuan rencana mobile; keputusan, angka, dan batas teknisnya sudah diverifikasi terhadap kode dan dokumentasi resmi Expo, bukan asumsi.
+**Status 4 November 2026: keputusan final, pengerjaan menunggu izin scaffold.** Spesifikasi pengerjaan — struktur folder, kontrak API, desain penyimpanan offline, token desain, risiko, urutan kerja — ada di **`Mobile-app plan.md`**. Bagian ini hanya menyimpan keputusan dan alasannya, sesuai aturan satu-satunya-sumber-kebenaran di pembuka berkas.
 
-#### 16.2.1 Keputusan yang sudah dikunci
-
-| Aspek | Keputusan | Alasan |
+| Aspek | Keputusan | Alasan singkat |
 |---|---|---|
-| Bentuk | **Full React Native (Expo)**, bukan WebView shell, bukan PWA-saja | Shell WebView tidak memenuhi permintaan utama ("dibuka offline"): cache service worker di WebView Android terpisah dan sering dibersihkan. Tambahan untuk skripsi, shell mudah disimpulkan penguji sebagai "browser dibungkus". |
-| Lokasi kode | Folder `mobile/` dengan `package.json` sendiri | `vite build` hanya memuat dari `index.html` → `src/`, jadi web tidak pernah melihat kode RN. Branch `mobile-app` sudah di-push (`b8057af`); Vercel tidak ikut men-deploy karena build hanya dari `main`. |
-| Cakupan aplikasi | Login, katalog, reader, unduh-untuk-offline, layar Setting berisi tombol pembaruan | Sengaja dibatasi; bukan porting seluruh aplikasi. |
-| Tetap di web | **Panel admin, pembayaran, dashboard** | Sudah terpisah (`src/features/admin`, 21 berkas / 2.766 baris) dan pemakai admin bekerja di desktop. Ini pola normal, bukan kompromi. |
-| Distribusi | **Sideload APK lewat GitHub Releases, TANPA Play Store** | Dibatasi ukuran Vercel (100 MB Hobby) dan AUP-nya; GitHub Releases 2 GiB per aset tanpa batas bandwidth. |
-| iOS | **Ditunda** | Build iOS sebenarnya BISA dari Windows (Expo mengompilasi di Mac cloud; paket gratis 15 build Android + 15 build iOS per bulan, plus simulator iOS cloud). Yang tidak bisa tanpa bayar: memasangnya ke iPhone — butuh Apple Developer Program $99/tahun. Expo tidak mengunci keputusan ini, jadi `eas build -p ios` tetap terbuka nanti. |
+| Bentuk | Full React Native + Expo di folder `mobile/` | Shell WebView tidak memenuhi "dibuka offline" (cache service worker di WebView Android terpisah dan sering dibersihkan), dan untuk skripsi mudah disimpulkan penguji sebagai browser dibungkus. |
+| Cakupan v1 | login, katalog, reader, unduh-offline, layar Setting | Sengaja dibatasi: ±1.500–2.500 baris baru, bukan porting 13.468 baris. |
+| Tetap di web | panel admin, pembayaran, dashboard | Sudah terpisah (`src/features/admin`, 21 berkas / 2.766 baris) dan pemakainya bekerja di desktop. |
+| Kode web yang terpakai | hanya `src/lib` + `src/context` (±2,5k baris) sebagai acuan logika | ±11k baris JSX + Tailwind adalah DOM dan tidak bisa dipakai; `pdfjs-dist` butuh canvas, jadi reader diganti viewer native. |
+| Distribusi | APK sideload lewat GitHub Releases, **tanpa Play Store** | Vercel 100 MB + AUP melarangnya; GitHub Releases 2 GiB per aset tanpa batas bandwidth. Tidak ada store berarti tidak ada auto-update — dan syarat `READ_MEDIA_IMAGES` untuk deteksi screenshot tidak lagi merugikan. |
+| iOS | **Ditunda, tidak ditutup** | Build iOS bisa dari cloud Expo (paket gratis 15 Android + 15 iOS per bulan, plus simulator cloud). Yang butuh uang adalah MEMASANGNYA ke iPhone: Apple Developer $99/tahun. |
+| Batas uji pembayaran | Sandbox saja | Ditetapkan di 11.4; akun produksi tidak didaftarkan. |
+| Offline | unduh naskah dari Supabase Storage (signed URL 300 detik) ke **folder privat aplikasi** | Naskah sudah di bucket `buku` sebagai `storage://buku/naskah/…`, bukan data URL di kolom DB. |
+| Anti-screenshot | `expo-screen-capture` (`FLAG_SECURE`) **hanya selama jendela buku terbuka**, untuk semua buku | Konsekuensi yang belum diputuskan: reader tidak bisa di-screenshot untuk Bab IV, jadi hatch build `preview` wajib. Proteksi ini menaikkan biaya menyalin secara santai; tidak mencegah penyalinan bersungguh-sungguhan. |
+| OTA & halaman unduh | **diusulkan opsional**, menunggu keputusan pemilik proyek | ±3 hari kerja untuk nilai nol di sesi UAT puluhan orang; bisa diangkat lagi bila proyek dilanjutkan. |
 
-#### 16.2.2 Realitas penggunaan ulang kode (angka terukur)
+**Tiga hal yang harus dibuktikan lebih dulu, bukan diasumsikan:** (1) OTA bekerja pada APK sideload — dokumentasi Expo tidak membahas distribusi di luar store; (2) `FLAG_SECURE` tidak membuat native PDF view hitam di HP nyata — perilakunya di atas native view tidak terdokumentasi; (3) API unduh `expo-file-system` bisa mengirim header `Authorization` menembus redirect ke signed URL.
 
-`src/` per 4 November 2026: **119 berkas / 13.468 baris**.
+**Penjaga build yang sudah dipasang dan terverifikasi:** `mobile/` masuk `.prettierignore`, dan `@source not "../mobile"` di `src/index.css` agar Tailwind v4 tidak menyapu kode RN ke CSS web. Dibuktikan dengan `vite build` sukses, direktif tidak tersisa di CSS hasil build, `prettier --check .` bersih.
 
-| Bagian | Baris | Bisa dipakai di RN |
-|---|---|---|
-| `src/lib` + `src/context` (logika, API, state) | 2.477 | Sebagian besar, sebagai acuan desain |
-| Sisanya — JSX + Tailwind (`div`, `className`) | ±10.991 | **Tidak** — RN memakai `View` + `StyleSheet` |
-| `src/features/reader` (12 berkas) | 1.674 | **Tidak** — `pdfjs-dist` butuh canvas DOM, diganti viewer PDF native |
-| Server Express + Supabase + Midtrans | — | Tidak berubah sama sekali |
+**Yang dibatalkan atau diperkecil, supaya tidak diusulkan ulang:**
 
-Kesimpulan yang tidak boleh dibelokkan: ini **bukan konversi**, melainkan aplikasi baru yang berbagi backend. Perkiraan pekerjaan 1.500–2.500 baris baru untuk cakupan di 16.2.1.
-
-#### 16.2.3 Sumber naskah dan mekanisme offline
-
-Naskah **sudah tidak lagi** berupa data URL base64 di kolom `books.content_url`. Model aktif sekarang (lihat `server/lib/storage.js`): berkas disimpan di Supabase Storage bucket `buku` sebagai referensi `storage://buku/naskah/...`, dibaca lewat signed URL berumur **300 detik**, maksimal **50 MB** per berkas.
-
-Ini menyederhanakan offline secara nyata: ambil signed URL → simpan ke **folder privat aplikasi** → buka lokal. Tidak ada arsitektur baru yang perlu dibongkar. Catatan: signed URL 300 detik berarti unduhan harus segera dimulai setelah URL diambil; tidak masalah untuk satu berkas, tapi jangan simpan URL-nya sebagai aset tahan lama.
-
-#### 16.2.4 M1 — Proteksi hak cipta di layer web: KOREKSI STATUS
-
-Versi dokumen ini sebelumnya menyatakan M1 "✅ 100% SELESAI" dengan tiga klaim. Diperiksa terhadap kode pada 4 November 2026:
-
-| Klaim | Kenyataan di kode |
-|---|---|
-| Tanda air dinamis (nama pengguna & ID transaksi) dibakar di kanvas | **Tidak ada.** Tidak ada satu pun `fillText`/rotasi tanda air di `src/features/reader/`, dan kata `watermark`/`cetak air`/`tanda air` tidak muncul di `src/` maupun `server/`. |
-| Penonaktifan menu klik kanan (`onContextMenu preventDefault`) | **Tidak ada.** Tidak ada `onContextMenu` di reader; `preventDefault` yang tersisa hanya untuk submit form dan carousel. |
-| Penonaktifan seleksi teks (`select-none`) | **Ada**, di dua tempat: `src/features/reader/PdfReaderScreen.jsx:241` dan `src/features/reader/TextDocViewer.jsx:49`. |
-
-Jadi status jujur M1 = **1 dari 3 butir**, dan yang tersisa hanya CSS (`select-none` mudah dilewati lewat devtools). Kemungkinan besar tanda air dan blokir klik kanan hilang saat dekomposisi `ContinuousPdfViewer` (R76–R78) tanpa pernah dipindah.
-
-**Kenapa ini serius:** judul skripsi (bagian 17) berbunyi "…Pembaca PDF Terproteksi…" dan Bab IV direncanakan memuat "evaluasi proteksi hak cipta konten e-reader PDF". Bab IV tidak boleh mengklaim proteksi yang tidak ada di build yang diuji. Dua pilihan: pulihkan tanda air + blokir klik kanan di reader web sebelum UAT, atau turunkan klaimnya di naskah. Keputusan ini milik pemilik proyek dan belum diambil.
-
-#### 16.2.5 M2 — Anti-screenshot (Android, hanya selama buku terbuka)
-
-Keputusan 4 November 2026: **semua buku, tanpa pengecualian, tapi hanya aktif saat jendela buku terbuka** — bukan proteksi seluruh aplikasi.
-
-- Modul resmi **`expo-screen-capture`** (`preventScreenCaptureAsync()` = `FLAG_SECURE` pada window), dipasang lewat hook `usePreventScreenCapture()` di komponen reader saja: menyala saat layar ter-mount, mati saat keluar.
-- Yang diblokir: tangkapan layar, **rekaman layar**, dan thumbnail aplikasi di Recent Apps jadi blank otomatis. Perlu dicatat: thumbnail blank sering disalahpahami pengguna sebagai aplikasi error.
-- Izin: memblokir **tidak butuh permission** di Android 14+. Untuk **mendeteksi** screenshot di Android 13 ke bawah diperlukan `READ_MEDIA_IMAGES` — di Play Store ini merugikan, tapi karena distribusi sideload, kerugian itu tidak berlaku. Deteksi lewat `useScreenshotListener()` opsional; hasilnya bisa jadi log "siapa mencoba" di dashboard admin.
-- iOS: tidak relevan sekarang (jalur iPhone tetap PWA).
-
-**Konsekuensi yang belum diputuskan pemilik proyek:** `FLAG_SECURE` juga memblokir screenshot-mu sendiri. Halaman reader akan keluar **hitam** di tangkapan layar, padahal Bab IV dan bahan pendukung butuh gambar reader. Rencananya: flag menyala di build `production`, mati otomatis di build `preview`/dev. Kalau diputuskan terkunci total, screenshot reader harus diambil dari rekaman emulator.
-
-**Batas nyata proteksi ini** (wajib ditulis apa adanya di Bab IV, jangan lebih):
-
-1. Hanya menjaga jendela aplikasi ini. Berkas buku yang sudah terunduh offline bisa dibuka di aplikasi lain dan di-screenshot di sana.
-2. Memotret layar dengan HP lain tidak bisa dicegah mekanisme apa pun.
-3. Kalau viewer menampilkan teks (hasil konversi DOCX/TXT), blok teks dan menyalin tetap bisa dilakukan; PDF yang di-render jadi gambar menutup jalur ini.
-4. Perangkat di-root, dan screen reader, berada di luar jangkauan.
-
-Artinya: **biaya menyalin secara santai naik, penyalinan yang sungguh-sungguh tidak dicegah.** Untuk buku keagamaan, blokir screenshot juga mematikan jalur penyebaran paling sehat — pembaca mengutip satu halaman untuk dibagikan. Bila kedua hal itu diinginkan sekaligus, jawabannya bukan melepas flag tapi menambah pembangkit gambar kutipan di dalam aplikasi (teks + sumber + sampul), dan flag tetap menyala.
-
-Catatan pengujian: dokumentasi `expo-screen-capture` tidak menjelaskan perilaku di atas **native view** (viewer PDF adalah permukaan native), dan sebagian ROM lama pernah menampilkan hitam pada permukaan hardware-overlay. Wajib dites di HP nyata, bukan hanya emulator.
-
-#### 16.2.6 M3 — Penyimpanan offline dan batas realistis proteksi
-
-Spesifikasi lama menyebut `expo-secure-store` / SQLCipher dengan enkripsi AES-256. Diturunkan porsinya:
-
-- **Wajib dan cukup:** simpan berkas di **folder privat aplikasi** (`expo-file-system`, document directory), bukan `/Download` atau `/Documents` yang terbuka untuk file manager dan aplikasi lain. Ini menahan sebagian besar penyalinan santai dengan biaya hampir nol.
-- **Opsional, jangan dijual sebagai keamanan:** enkripsi berkas di perangkat sendiri tidak menambah proteksi terhadap screenshot atau pembagian dari dalam aplikasi, karena aplikasi tetap harus mendekripsinya untuk menampilkannya. Ancaman nyata ada di luar berkas (rekaman layar, HP lain), dan keduanya tidak dimitigasi AES-256.
-- `expo-secure-store` tetap dipakai untuk fungsinya yang benar: menyimpan **token sesi**, bukan isi kitab.
-- Ketegangan yang harus diterima, bukan direkayasa habis: **offline ↔ proteksi ↔ usaha pengerjaan** membentuk segitiga. proteksi paling kuat adalah jangan menaruh seluruh naskah di perangkat (render per halaman dari server), dan konsekuensinya buku itu tidak bisa offline.
-
-#### 16.2.7 M4 — Pembaruan dalam aplikasi (tombol "Update" di Setting)
-
-Karena tidak ada Play Store, tidak ada auto-update dari store — tombol ini bukan pajangan, tapi satu-satunya jalur pembaruan.
-
-**Mekanisme utama: OTA via `expo-updates` / EAS Update**
-
-- Mengganti **bundel JS + aset** (layar, logika, styling, copy, gambar & font bawaan, nilai konfigurasi yang dibaca JS) **tanpa instal ulang**; data pemakai dan buku terunduh aman.
-- **Tidak bisa** mengubah modul native, permission, versi SDK, ikon, splash — semuanya butuh APK baru.
-- `runtimeVersion` harus **cocok persis**: klien menolak update yang runtime-nya berbeda. Setiap APK baru membuka "generasi" sendiri.
-- Perilaku bawaan: periksa saat cold launch → unduh di background → **dipakai pada launch berikutnya**. Tombol "Update" yang langsung tampak berubah karena itu TIDAK terjadi secara default; API-nya tersedia: `checkForUpdateAsync` + `fetchUpdateAsync` + `reloadAsync()`.
-- Klien juga perlu API `Updates` untuk foreground/background check dan reload terjadwal.
-- Kuota paket gratis: **1.000 pemakai aktif-per-bulan** untuk update. Jumlah penguji puluhan — ruang masih besar. SDK 55 sudah mendukung bundle diffing (±75% lebih kecil).
-- **Tidak ada flag "update wajib" bawaan.** Kalau versi minimum harus dipaksakan, itu gerbang versi di sisi Express (dibandingkan `runtimeVersion`/versi aplikasi dari klien).
-- Code signing end-to-end hanya di paket Production/Enterprise — tidak dipakai di sini.
-
-**Mekanisme cadangan: APK baru dari dalam aplikasi.** Kalau server menyatakan generasi native tertinggal, unduh APK terbaru dari GitHub Releases lalu buka installer (`REQUEST_INSTALL_PACKAGES`).
-
-**ASUMSI YANG BELUM TERBUKTI — taruh di urutan pengerjaan pertama:** dokumentasi OTA Expo tidak membahas distribusi APK di luar store. Protokolnya publik dan bisa di-self-host, jadi seharusnya jalan pada APK sideload, tapi itu baru akan nyata setelah satu update sungguhan mendarat di satu perangkat sungguhan. Desain layar Setting menunggu hasil tes ini.
-
-#### 16.2.8 M5 — Halaman unduh (rencana, sengaja sesudah APK pertama)
-
-Empat dari isinya tidak bisa ditulis benar sebelum ada build nyata: URL aset, versi, ukuran berkas, tanggal rilis. Tombol "unduh aplikasi" yang mengembalikan 404 lebih merugikan demo skripsi daripada tidak ada halaman sama sekali.
-
-- Bentuknya **rute publik di aplikasi web yang ada** (pola sama dengan `/about`), bukan situs terpisah.
-- Isi wajib: QR ke URL halaman (pembaca lansia tidak akan mengetik alamat `github.com/...`), versi + ukuran + tanggal build, langkah "izinkan sumber tidak dikenal" **per merek** (Xiaomi/Samsung/Advan menamai menunya berbeda — di sinilah orang menyerah), Android minimum, satu baris eksplisit untuk pengguna iPhone ("buka lewat browser → Pasang"), dan cakupan offline yang jujur.
-- Jangan hardcode URL rilis, tapi jangan juga fetch per-render: API GitHub dibatasi **60 req/jam per IP** dan IP Vercel dipakai bersama. Simpan nilainya dan refresh dari cron `daily-maintenance` yang sudah ada di `vercel.json`.
-- Konsekuensi yang diterima: setiap rilis berikutnya membawa kewajiban menjaga halaman ini tetap akurat. Link APK basi lebih buruk dari tidak ada link.
-
-#### 16.2.9 Penjaga build yang sudah dipasang dan terverifikasi
-
-Kode RN di `mobile/` tidak boleh tersentuh tooling web. Dua penjaga sudah dipasang dan **dibuktikan jalan**, bukan diasumsikan:
-
-| Penjaga | Berkas | Fungsi |
-|---|---|---|
-| `mobile/` dikecualikan | `.prettierignore` | `npm run check` menjalankan `prettier --check .` yang memindai seluruh repo |
-| `@source not "../mobile"` | `src/index.css` (setelah `@config`) | Tailwind v4 mendeteksi sumber otomatis dari folder proyek; tanpa ini kelas di `mobile/` bisa ikut tersuntik ke CSS web |
-
-Verifikasi: `vite build` sukses 15,77 s, direktif `@source not` benar-benar diparse (tidak tersisa di CSS hasil build), `prettier --check .` bersih, `npm run health` 7/7. Struktur direktori di bagian 14 **sengaja belum** mencantumkan `mobile/` karena folder itu belum ada — aturan bagian pembuka berkas: kode aktif yang jadi acuan.
-
-#### 16.2.10 Jebakan Git: repositori ini di-clone single-branch
-
-`remote.origin.fetch` repo ini bernilai `+refs/heads/main:refs/remotes/origin/main` (bukan bawaan `+refs/heads/*:refs/remotes/origin/*`; jejak `branch.main.vscode-merge-base` menunjukkan clone dibuat editor). Akibat, terverifikasi:
-
-- `git push -u origin mobile-app` berhasil membuat branch di GitHub (`b8057af`), **tetapi** ref lacakan `refs/remotes/origin/mobile-app` tidak pernah bisa disimpan di lokal.
-- `git status` tidak menampilkan ahead/behind untuk branch apa pun selain `main`; `git branch -vv` tidak menunjukkan tracking untuk `mobile-app`.
-- `git fetch` buta terhadap branch baru. `git pull` di branch ini berisiko error atau diam-diam menyelesaikan dari `main`.
-
-Perbaikan (menunggu persetujuan pemilik proyek, karena mengubah `.git/config`): `git config --add remote.origin.fetch "+refs/heads/mobile-app:refs/remotes/origin/mobile-app"` lalu `git fetch origin`. Alternatif: lebarkan ke semua branch. Jalan tanpa mengubah config: selalu pakai `git merge origin/main` eksplisit, jangan `git pull`.
-
-#### 16.2.11 Urutan pengerjaan dan status per 4 November 2026
-
-| # | Langkah | Status |
-|---|---|---|
-| 1 | Branch `mobile-app` + dua penjaga build | ✅ Selesai, ter-push `b8057af` |
-| 2 | Perbaikan refspec Git single-branch | ⏳ Menunggu persetujuan (menyentuh `.git/config`) |
-| 3 | Scaffold Expo di `mobile/` (`create-expo-app` + install ±1–2 GB) | ⏳ Menunggu persetujuan (bebannya di mesin 16 GB) |
-| 4 | **Buktikan OTA bekerja pada APK sideload** | ⏳ Belum — asumsi paling berisiko, harus paling awal |
-| 5 | Hatch screenshot untuk build `preview` (kebutuhan Bab IV) | ⏳ Belum — keputusan terkunci |
-| 6 | Katalog + reader + unduh offline ke folder privat | ⏳ Belum |
-| 7 | Layar Setting + tombol Update (OTA → fallback APK) | ⏳ Belum, desainnya menunggu langkah 4 |
-| 8 | Rilis APK #1 ke GitHub Releases | ⏳ Belum |
-| 9 | Halaman unduh (M5) | ⏳ Sesudah langkah 8, karena isinya bergantung padanya |
-| — | Pulihkan tanda air + blokir klik kanan di reader **web**, atau turunkan klaim Bab IV | ⚠️ Belum diputuskan, akibat koreksi di 16.2.4 |
+- Menurunkan `isProduction` otomatis dari prefix kunci — **berbahaya**: kunci di `.env` adalah produksi, jadi penurunan otomatis menyalakan transaksi nyata. Yang dipasang justru tolak-start saat flag dan prefix bertentangan (15.14).
+- WebView shell — tidak memenuhi permintaan offline.
+- Branch `mobile-app` berumur panjang — folder `mobile/` sudah mengisolasi; branch hanya membuat pekerjaan mobile tidak ter-deploy. Branch tetap ada sebagai penanda.
+- Cron rekonsiliasi settlement penuh — diperkecil jadi satu status-lookup saat sesi aktif (15.14); pemicu harian tidak dipasang karena separuh tugasnya sudah ditangani `hasActivePro()` saat membaca dan separuh lagi mengirim Web Push yang tabel pelanggannya tidak ada di database live (15.15).
+- Halaman unduh sebelum APK pertama — empat dari isinya (URL aset, versi, ukuran, tanggal) tidak bisa ditulis benar sebelum ada build nyata.
+- **Jebakan Git yang masih terbuka:** repo ini di-clone **single-branch** — `remote.origin.fetch` hanya `+refs/heads/main:refs/remotes/origin/main`, jadi branch lain (termasuk `mobile-app`) tidak pernah punya ref lacakan, `git status` tidak menampilkan ahead/behind, dan `git pull` di branch itu berisiko salah menyelesaikan. Perbaikannya satu baris `git config --add` tetapi menunggu persetujuan pemilik proyek karena menyentuh `.git/config`; sementara itu gunakan `git merge origin/main`, jangan `git pull`.
 
 ---
 

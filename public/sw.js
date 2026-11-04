@@ -34,7 +34,12 @@
 // v23: mode malam dibuang — aplikasi satu tema terang. index.html kehilangan skrip
 //      pra-cat tema dan index.css kehilangan blok .dark + token --night-*, jadi
 //      app shell lama harus dibuang supaya tidak ada sisa tampilan gelap.
-const CACHE_NAME = 'wahidiyah-app-shell-v23';
+// v24: data publik katalog dilayani stale-while-revalidate — kunjungan ulang
+//      mempaint cover instan dari cache, revalidasi jaringan tetap jalan di
+//      belakang. Muat segar (`cache: 'no-store'`, mis. refresh admin) tidak
+//      dilayani dari cache tapi tetap memperbarui isinya. /api/carousel ikut
+//      masuk klaster data publik (sebelumnya jatuh ke cabang default tanpa cache).
+const CACHE_NAME = 'wahidiyah-app-shell-v24';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -100,24 +105,42 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // A. Data Publik API (Katalog Buku, Agenda, Iklan) -> Network First dengan Fallback Cache
-  if (
+  // A. Data Publik API (Katalog Buku, Agenda, Iklan, Carousel) -> Stale-While-Revalidate:
+  //    kunjungan ulang dilayani dari cache lebih dahulu (LCP cover instan di
+  //    jaringan lambat), lalu jaringan menyegarkan cache di belakang. Kunjungan
+  //    pertama tetap network-first sebagaimana v23 (cache masih kosong).
+  const isPublicRead =
     url.pathname === '/api/books' ||
     url.pathname === '/api/events' ||
     url.pathname === '/api/ads' ||
+    url.pathname === '/api/carousel' ||
     url.pathname.endsWith('/thumbnail') ||
-    url.pathname.endsWith('/image')
-  ) {
+    url.pathname.endsWith('/image');
+
+  if (isPublicRead) {
+    /* `cache: 'reload'` menjamin respons datang dari jaringan (bukan HTTP cache),
+     * sekaligus tetap diputar ke app shell cache untuk kunjungan berikutnya.
+     * Permintaan `cache: 'no-store'` dari aplikasi (refresh admin, dsb.) tidak
+     * dilayani cache sehingga data segar tetap tampil — tetapi isinya tetap
+     * diputar ke CacheStorage. */
+    const bypassServeCache = request.cache === 'no-store';
+    const revalidate = fetch(request, { cache: 'reload' }).then((response) => {
+      if (isCacheable(response)) {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+      }
+      return response;
+    });
+    /* Jaga service worker hidup sampai revalidasi selesai walau tab ditutup. */
+    event.waitUntil(revalidate.then(() => undefined, () => undefined));
+
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (isCacheable(response)) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(() => caches.match(request))
+      bypassServeCache
+        ? revalidate
+        : caches
+            .match(request)
+            .then((cached) => cached || revalidate)
+            .catch(() => revalidate)
     );
     return;
   }

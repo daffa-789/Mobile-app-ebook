@@ -5,6 +5,10 @@ import App from './App.jsx';
 import { AppProvider } from '@context/AppContext';
 import { ErrorBoundary } from '@ui/ErrorBoundary';
 import { Toaster } from 'sonner';
+/* Warm-up API katalog: fetch /api/books, /events, /carousel dimulai begitu
+   bundel dieksekusi — berbarengan mount React, bukan setelahnya (comment at
+   src/lib/catalogWarmup.js). Harus dievaluasi sebelum './index.css'. */
+import '@lib/catalogWarmup';
 import './theme/themeInjector.js';
 
 /* Font: full stack bawaan OS (tanpa unduhan font sama sekali, 0 KB).

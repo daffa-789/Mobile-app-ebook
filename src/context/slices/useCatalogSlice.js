@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { apiJson, readableError } from '@lib/api';
+import { takeWarmCatalogResponse } from '@lib/catalogWarmup';
 import { normalizeBook, normalizeEvent, normalizeCarouselSlide } from '@lib/normalizers';
 
 export const useCatalogSlice = ({ navigateTo }) => {
@@ -15,7 +16,13 @@ export const useCatalogSlice = ({ navigateTo }) => {
   const refreshBooks = useCallback(async () => {
     try {
       setLoadingCatalog(true);
-      const payload = await apiJson('/api/books');
+      /* Muat pertama memakai janji warm-up yang telah berjalan sejak bundel
+       * dieksekusi (lebih awal dari mount React); pada kunjungan ulang ia
+       * dilayani stale-while-revalidate oleh service worker → instan.
+       * Panggilan berikutnya (unggahan admin, pembayaran sukses, ganti sesi)
+       * wajib data segar → `cache: 'no-store'`. */
+      const warm = takeWarmCatalogResponse('/api/books');
+      const payload = await (warm ?? apiJson('/api/books', { cache: 'no-store' }));
       const nextBooks = (payload.books || []).map(normalizeBook);
       setBooks(nextBooks);
       setActiveBook((current) => nextBooks.find((book) => book.id === current?.id) || null);
@@ -32,7 +39,9 @@ export const useCatalogSlice = ({ navigateTo }) => {
   const refreshEvents = useCallback(async () => {
     try {
       setLoadingAgenda(true);
-      const payload = await apiJson('/api/events');
+      /* Pola sama dengan refreshBooks: warm-up hanya untuk muat pertama. */
+      const warm = takeWarmCatalogResponse('/api/events');
+      const payload = await (warm ?? apiJson('/api/events', { cache: 'no-store' }));
       const nextEvents = (payload.events || []).map(normalizeEvent);
       setEvents(nextEvents);
       setAgendaError(null);
@@ -47,7 +56,9 @@ export const useCatalogSlice = ({ navigateTo }) => {
 
   const refreshCarousel = useCallback(async () => {
     try {
-      const payload = await apiJson('/api/carousel');
+      /* Pola sama dengan refreshBooks: warm-up hanya untuk muat pertama. */
+      const warm = takeWarmCatalogResponse('/api/carousel');
+      const payload = await (warm ?? apiJson('/api/carousel', { cache: 'no-store' }));
       setCarouselSlides((payload.slides || []).map(normalizeCarouselSlide));
     } catch {
       setCarouselSlides([]);

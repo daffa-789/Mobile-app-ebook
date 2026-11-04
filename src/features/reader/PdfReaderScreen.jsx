@@ -88,6 +88,25 @@ export const PdfReaderScreen = () => {
     [activeBook?.id, totalPages],
   );
 
+  // Update level zoom dengan batasan aman (40% - 300%)
+  const setClampedZoom = useCallback((newValOrFn) => {
+    setZoom((prev) => {
+      const raw = typeof newValOrFn === 'function' ? newValOrFn(prev) : newValOrFn;
+      return Math.min(300, Math.max(40, Math.round(raw)));
+    });
+  }, []);
+
+  const adjustZoom = useCallback(
+    (delta) => {
+      setClampedZoom((prev) => prev + delta);
+    },
+    [setClampedZoom],
+  );
+
+  const resetZoom = useCallback(() => {
+    setClampedZoom(100);
+  }, [setClampedZoom]);
+
   // Toggle Layar Penuh
   const toggleFullscreen = () => {
     if (!supportsNativeFullscreen) return;
@@ -235,6 +254,9 @@ export const PdfReaderScreen = () => {
         setPageInput={setPageInput}
         onPageInputSubmit={handlePageInputSubmit}
         totalPages={totalPages}
+        zoom={zoom}
+        onAdjustZoom={adjustZoom}
+        onResetZoom={resetZoom}
         supportsNativeFullscreen={supportsNativeFullscreen}
         isFullscreen={isFullscreen}
         onToggleFullscreen={toggleFullscreen}
@@ -260,13 +282,14 @@ export const PdfReaderScreen = () => {
             onTargetScrollHandled={() => setTargetScrollPage(null)}
           />
         ) : TEXT_TYPES.has(extension) && textContent ? (
-          <TextDocViewer textContent={textContent} zoom={zoom} />
+          <TextDocViewer textContent={textContent} zoom={zoom} pinchHandlers={{}} />
         ) : totalPages > 0 && samplePages.length > 0 ? (
           <TextDocViewer
             samplePages={samplePages}
             currentPage={currentPage}
             totalPages={totalPages}
             zoom={zoom}
+            pinchHandlers={{}}
           />
         ) : (
           <DocumentEmptyState contentName={activeBook.contentName} />

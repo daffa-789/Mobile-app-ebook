@@ -6,7 +6,7 @@
  */
 
 import { Suspense, lazy } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router';
 import { ScrollRestoration } from '@ui/ScrollRestoration';
 import { PwaInstallBanner } from './components/PwaInstallBanner';
 import { layout } from '@lib/styles';

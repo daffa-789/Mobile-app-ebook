@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import { useApp } from '@context/AppContext';
 import { ServerStatusBanner } from '@ui/ServerStatusBanner';
 import { layout } from '@lib/styles';

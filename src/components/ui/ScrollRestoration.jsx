@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { useLocation, useNavigationType } from 'react-router-dom';
+import { useLocation, useNavigationType } from 'react-router';
 import { SAVE_SCROLL_POSITION_EVENT } from '@lib/scrollPositionEvents';
 
 const STORAGE_KEY = 'wahidiyah-scroll-positions';

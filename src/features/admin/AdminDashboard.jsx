@@ -1,4 +1,4 @@
-import { Navigate, useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router';
 import { useApp } from '@context/AppContext';
 import { apiJsonSend } from '@lib/api';
 

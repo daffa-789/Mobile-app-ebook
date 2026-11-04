@@ -73,6 +73,26 @@ export const usePaymentSlice = ({ patchUser }) => {
     return Boolean(targetUser?.isPro);
   }, []);
 
+  /* Pembayaran yang datang setelah polling di layar bayar berhenti tidak pernah
+   * ditanyakan lagi, dan tidak ada cron yang melakukannya. Satu panggilan ini
+   * menutup celah itu setiap sesi aktif. Kegagalan sengaja didiamkan: membuka
+   * aplikasi tidak boleh ditimpa galat pembayaran yang tidak sedang dicari. */
+  const reconcilePendingPayments = useCallback(async () => {
+    const stored = getStoredSession();
+    if (!stored?.token) return null;
+    try {
+      return await apiJsonSend(
+        '/api/payments/qris/reconcile',
+        {},
+        {
+          headers: authHeaders(stored.token),
+        },
+      );
+    } catch {
+      return null;
+    }
+  }, []);
+
   const completePayment = useCallback(
     async (facts = {}) => {
       const now = new Date();
@@ -252,6 +272,7 @@ export const usePaymentSlice = ({ patchUser }) => {
     setSubscriptions,
     refreshSubscriptions,
     isSubscriptionActive,
+    reconcilePendingPayments,
     completePayment,
   };
 };

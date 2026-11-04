@@ -187,6 +187,7 @@ Aturan OTP yang harus ditiru UI-nya: 6 digit, TTL 10 menit, maks 5 percobaan, co
 - `GET /api/payments/qris/:orderId/status`: 150 / 5 menit, **dikunci per `req.user.id`**.
 - `GET .../qr.png`: 60 / menit / IP.
 - Web mem-poll **3000 ms** (`src/features/payment/useQrisPayment.js:4,142`). Mobile tidak mem-poll sama sekali di v1 (tidak ada pembayaran) — jadi jangan menambah interval apa pun "buat jaga-jaga".
+- **Tapi mobile wajib memanggil `POST /api/payments/qris/reconcile`** (Bearer, body `{}`) sekali setiap sesi aktif, dan sekali lagi saat aplikasi kembali ke foreground. Endpoint ini (R84) menagih ulang order pending milik pengguna sendiri; tanpanya pembayaran yang datang setelah layar bayar tertutup tidak pernah terdeteksi di platform mana pun. Bila responsnya `settled > 0`, panggil ulang `GET /api/auth/me` agar badge Pro ikut berubah.
 
 ### 5.7 Amplop kesalahan — seragam, dan ini yang dipakai untuk menulis UI
 

@@ -544,6 +544,7 @@ Membaca/mengunduh isi buku.
 |---|---|---|---|
 | POST | `/qris/charge` | Bearer | 20 / 5 menit |
 | GET | `/qris/:orderId/status` | Bearer | 150 / 5 menit per akun |
+| POST | `/qris/reconcile` | Bearer | 150 / 5 menit per akun |
 | POST | `/qris/:orderId/cancel` | Bearer | 20 / 5 menit |
 | GET | `/qris/:orderId/qr.png` | Bearer | 60 / menit |
 | POST | `/midtrans/notification` | Publik | Verifikasi signature SHA512 |
@@ -585,6 +586,14 @@ Mengecek status pembayaran (polling berkala tiap 3 detik).
     "expiredAt": "2026-10-07T22:30:00.000Z"
   }
   ```
+
+#### `POST /api/payments/qris/reconcile`
+Menagih ulang maksimal 5 order QRIS `pending` **milik pemanggil sendiri** — penutup celah "bayar setelah polling berhenti". Dipanggil klien saat sesi dipulihkan dan saat tab kembali fokus, bukan dari cron.
+* **Header:** `Authorization: Bearer <TOKEN>`
+* **Response (200 OK):** `{ "success": true, "checked": 2, "settled": 1, "closed": 1 }`
+* Transisi status tetap lewat `settlement_service` (jalur yang sama dengan polling dan webhook), jadi tidak ada logika settle kedua.
+* Order yang ternyata lewat masa berlaku ikut ditutup ke `rejected` oleh jalur yang sama.
+* Kegagalan satu order tidak membatalkan sisanya; klien sengaja diam terhadap galat endpoint ini.
 
 #### `POST /api/payments/qris/:orderId/cancel`
 Membatalkan order aktif di Midtrans (expire lalu cancel) dan menandai baris lokal. Bila Midtrans menolak pembatalan QRIS, server hanya menghentikan order lokal dan mengembalikan `warning` agar pengguna tidak membayar QR lama.
@@ -1051,9 +1060,17 @@ VITE_PORT=3000               # port dev terpadu (Express + middleware Vite)
 # Konfigurasi Midtrans Sandbox
 MIDTRANS_SERVER_KEY=SB-Mid-server-xxxxxxxxxxxxxxxxxxxx
 MIDTRANS_CLIENT_KEY=SB-Mid-client-xxxxxxxxxxxxxxxxxxxx
-MIDTRANS_IS_PRODUCTION=false
+MIDTRANS_IS_PRODUCTION=false        # hanya kata 'true' yang berarti produksi; '1' tidak
 MIDTRANS_QRIS_ACQUIRER=gopay
 MIDTRANS_QRIS_EXPIRY_MINUTES=15
+# Prefix kunci menentukan lingkungan aslinya: SB-Mid- = sandbox, Mid- = produksi.
+# Bila flag dan prefix bertentangan, server mencetak WARN saat boot, `npm run health`
+# gagal pada item Midtrans, dan percobaan bayar melempar MIDTRANS_ENV_MISMATCH
+# (alih-alih 401 tanpa keterangan dari Midtrans). Aturan ini ada di
+# server/lib/midtransKeys.js.
+# CATATAN: server/env.js memuat .env dengan `override: true`, jadi variabel yang
+# di-set dari baris perintah diabaikan di lingkungan lokal — untuk berpindah
+# sandbox/produksi, sunting .env, jangan `MIDTRANS_IS_PRODUCTION=true node server/server.js`.
 
 # Konfigurasi Supabase Cloud
 SUPABASE_URL=https://xxxxxxxxxxxxxxxx.supabase.co
@@ -1224,6 +1241,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R73 | Pemeliharaan sistem 1 Nov 2026: Pemeriksaan kesehatan 7/7, script quality gate, dan optimasi aksesibilitas — lihat 15.3. |
 | R74 | Peningkatan tooling 2 Nov 2026: Quality gate `check:full`, standardisasi JSDoc rute/layanan, dan penguatan pembaca PDF — lihat 15.4. |
 | R75 | Dokumentasi arsitektur terpadu 3 Nov 2026: Standardisasi JSDoc menyeluruh pada modul client, lib server, service layer, dan runner — lihat 15.5. |
+| R84 | Penjaga konfigurasi Midtrans + pemantik rekonsiliasi 4 Nov 2026: flag vs prefix kunci, health check membaca lingkungan dari kunci, `POST /api/payments/qris/reconcile`, plus temuan `override: true` pada `server/env.js` — lihat 15.14. |
 | R83 | Konsolidasi rencana mobile 4 Nov 2026: keputusan React Native/Expo, branch `mobile-app`, penjaga build, dan koreksi status M1 — lihat 15.13. |
 | R82 | Penyatuan alur autentikasi 3 Nov 2026: Unified Auth Screen, lima subkomponen, smart email prefill, dan bump service worker ke v22 — lihat 15.12. |
 | R81 | Tindak lanjut code review 3 Nov 2026: sitasi bagian usang, header controller usang, dead export, satu duplikasi Web Push terakhir, dan layar autentikasi dibuat datar — lihat 15.11. |
@@ -1257,6 +1275,26 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `server/services/auth/password_reset_service.js:103`.
+
+### 15.14 Penjaga Konfigurasi Midtrans & Pemantik Rekonsiliasi R84 (4 November 2026)
+
+Menutup celah "pembayaran gagal tanpa keterangan": `.env` memasang kunci produksi (`Mid-server-…`) bersama `MIDTRANS_IS_PRODUCTION=false`, sehingga klien memanggil endpoint sandbox dengan kunci produksi dan Midtrans menjawab 401 **di tengah alur bayar**, sementara `npm run health` melaporkan "Mode: Sandbox" yang menyesatkan.
+
+| Perubahan | Rincian |
+|---|---|
+| Modul penjaga baru | `server/lib/midtransKeys.js` — murni, tidak membaca `process.env` (sengaja, supaya `scripts/health-check.js` yang memanggil dotenv sendiri bisa mengimpornya tanpa perlombaan urutan impor). Mengekspor `keyEnvironment`, `environmentMismatch`, `mismatchRemediation`, `isProductionFlag`. Nilai kunci tidak pernah ikut dikembalikan, hanya nama lingkungannya — repo ini **public**. |
+| Peringatan saat boot | `server/server.js`: `logger.warn('BOOT', ...)` dengan `akibat` + `perbaikan`, mengikuti pola VULN-09 yang sudah ada. **Sengaja tidak mematikan proses** — kegagalan fatal saat boot akan memblokir pekerjaan yang tidak berhubungan dan menyembunyikan galat hilir. |
+| Galat saat dipakai | `server/lib/midtrans.js`: `getCoreApi()` melempar `MIDTRANS_ENV_MISMATCH` dengan pesan yang menyebut flag, prefix, dan jalan keluarnya. |
+| Health check jujur | `scripts/health-check.js` membaca mode **dari prefix kunci**, bukan dari flag, dan menjatuhkan item Midtrans bila pasangan bertentangan. |
+| Dedup | `server/config.js` tidak lagi mendefinisikan `isTrueFlag` lokal; memakai `isProductionFlag` dari modul baru. Semantics tidak berubah: hanya kata `true` (tanpa peka huruf/spasi) yang berarti produksi — `1` **tidak**. |
+| Temuan sampingan | `server/env.js` memuat `.env` dengan `override: true` (tiga kali), jadi variabel yang di-set dari baris perintah diabaikan secara lokal. Berpindah sandbox/produksi harus lewat penyuntingan `.env`, bukan `MIDTRANS_IS_PRODUCTION=true node server/server.js`. |
+| Pemantik rekonsiliasi (#3) | `reconcilePendingQris()` di `server/services/payment/status_service.js` + rute `POST /api/payments/qris/reconcile` (Bearer, limiter status yang sama). Dipanggil `reconcilePendingPayments()` di `usePaymentSlice.js` dari efek baru di `AppContext.jsx`: sekali saat sesi aktif dan sekali saat tab kembali fokus. **Tidak ada cron baru dan tidak ada logika settle kedua** — transisi tetap lewat `settlement_service`. |
+| Koreksi guard di tengah jalan | Guard pertama memperlakukan prefix client key sebagai kesalahan yang memblokir. Itu salah: dashboard sandbox dapat menampilkan client key tanpa prefiks `SB-`, dan QRIS Core API tidak memakai client key untuk men-charge. Sekarang hanya **server key** yang memblokir; ketidakcocokan client key turun jadi catatan (`clientKeyNotice`). |
+| Sisa di data live | **2 baris `transactions` masih berstatus `pending`** (pemeriksaan baca saja, 4 Nov 2026). Keduanya akan ditutup otomatis oleh pemantik baru ini saat pemiliknya masuk — sengaja tidak ditagih dari tes, karena itu jalur tulis. |
+
+**Bukti verifikasi, bukan asumsi:** kombinasi kunci/flag diuji terhadap `environmentMismatch` dan `clientKeyNotice` — pasangan sandbox dan pasangan produksi lolos, pertentangan flag-vs-server-key tertangkap, bentuk kunci dashboard sandbox (server `SB-Mid-…` + client tanpa prefiks) **tidak diblokir**, dan kunci kosong lolos karena memang ditangani sebagai "belum dikonfigurasi". `npm run health` kini **6/7** dengan baris Midtrans merah beserta pesan perbaikan. Rute baru dibuktikan di port acak milik prosesnya sendiri: `POST /api/payments/qris/reconcile` → **401** tanpa token (terpasang + terlindungi), sedangkan jalur tak dikenal → **404** — setelah percobaan pertama sempat salah membaca hasil karena curl-nya mengenai proses basi dari tes sebelumnya (EADDRINUSE). Pemanggilan service diuji dengan `userId` fiktif sehingga query mengembalikan nol baris: `{ checked: 0, settled: 0, closed: 0 }`, nol tulisan ke data siapa pun. `prettier --write` lalu `npm run check` bersih, `npm run build` ✓ 15,89 s.
+
+**Masih menunggu:** kunci sandbox asli belum dipasang di `.env` (hanya pemilik proyek yang bisa mengambilnya), dan keputusan M1 (tanda air + blokir klik kanan web) belum diambil. Keduanya tercatat di 16.2.12.
 
 ### 15.13 Konsolidasi Rencana Mobile R83 (4 November 2026)
 

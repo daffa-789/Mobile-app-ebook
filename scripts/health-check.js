@@ -10,6 +10,13 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import pc from 'picocolors';
 import { createClient } from '@supabase/supabase-js';
+import {
+  clientKeyNotice,
+  environmentMismatch,
+  isProductionFlag,
+  keyEnvironment,
+  mismatchRemediation,
+} from '../server/lib/midtransKeys.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,12 +52,23 @@ report(
 
 const midtransServer = process.env.MIDTRANS_SERVER_KEY;
 const midtransClient = process.env.MIDTRANS_CLIENT_KEY;
+const midtransProduction = isProductionFlag(process.env.MIDTRANS_IS_PRODUCTION);
+const midtransMismatch = environmentMismatch({
+  isProduction: midtransProduction,
+  serverKey: midtransServer,
+});
+const midtransNotice = clientKeyNotice({ serverKey: midtransServer, clientKey: midtransClient });
+/* Mode dibaca dari prefix kunci server, bukan dari flag: flag sendirian bisa
+ * berkata "Sandbox" sementara yang terpasang kunci produksi.
+ */
 report(
   'Midtrans Gateway',
-  Boolean(midtransServer && midtransClient),
-  midtransServer
-    ? `Mode: ${process.env.MIDTRANS_IS_PRODUCTION === 'true' ? 'Production' : 'Sandbox'}`
-    : 'Key belum diisi',
+  Boolean(midtransServer && midtransClient) && !midtransMismatch,
+  midtransMismatch
+    ? `${midtransMismatch}. Perbaikan: ${mismatchRemediation(midtransProduction)}`
+    : midtransServer
+      ? `Mode: ${keyEnvironment(midtransServer) === 'production' ? 'Production' : 'Sandbox'} (dari prefix kunci server)${midtransNotice ? ` — catatan: ${midtransNotice}` : ''}`
+      : 'Key belum diisi',
 );
 
 const waProvider = process.env.WHATSAPP_PROVIDER || 'fonnte';

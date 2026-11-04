@@ -12,8 +12,12 @@ import {
   CSP_REPORT_ONLY,
   FRONTEND_PORT,
   LISTEN_PORT,
+  MIDTRANS_CLIENT_KEY,
+  MIDTRANS_IS_PRODUCTION,
+  MIDTRANS_SERVER_KEY,
   USE_VITE_MIDDLEWARE,
 } from './config.js';
+import { clientKeyNotice, environmentMismatch, mismatchRemediation } from './lib/midtransKeys.js';
 import { errorHandler } from './middleware/errors.js';
 import { createApiApp } from './app.js';
 import { NON_SPA_EXTENSIONS } from './lib/constants.js';
@@ -153,6 +157,32 @@ if (process.env.NODE_ENV !== 'test') {
           perbaikan: 'set CORS_ORIGINS di .env, misalnya https://buku-wahidiyah.example.com',
         },
       );
+    }
+
+    /* Kunci Midtrans membawa lingkungannya sendiri di prefix (SB-Mid- =
+     * sandbox, Mid- = produksi). Flag dan pasangan kunci harus sepasang, dan
+     * itu diketahui di sini — bukan dari 401 yang muncul setelah pengguna
+     * menekan Bayar.
+     */
+    const midtransMismatch = environmentMismatch({
+      isProduction: MIDTRANS_IS_PRODUCTION,
+      serverKey: MIDTRANS_SERVER_KEY,
+    });
+    if (midtransMismatch) {
+      logger.warn('BOOT', `Konfigurasi Midtrans tidak konsisten: ${midtransMismatch}`, {
+        akibat: 'semua permintaan pembayaran ditolak Midtrans dengan 401 tanpa keterangan',
+        perbaikan: mismatchRemediation(MIDTRANS_IS_PRODUCTION),
+      });
+    } else {
+      const clientKeyNote = clientKeyNotice({
+        serverKey: MIDTRANS_SERVER_KEY,
+        clientKey: MIDTRANS_CLIENT_KEY,
+      });
+      if (clientKeyNote) {
+        logger.warn('BOOT', `Kunci Midtrans tidak seragam: ${clientKeyNote}`, {
+          akibat: 'QRIS tetap berjalan; hanya alur Snap yang kelak memakai client key',
+        });
+      }
     }
 
     if (CSP_REPORT_ONLY) {

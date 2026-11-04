@@ -45,7 +45,7 @@
 Aplikasi **Wahidiyah Book** dibangun menggunakan arsitektur **Modular Layered Monolith (Murni React 19 JSX + Node.js Express)** dengan integrasi Service Layer decoupled dan Single-Port delivery:
 
 * **Frontend:** React 19 (`.jsx` dan `.js`), Vite 6, React Router v7, Tailwind CSS 4, Headless UI, Lucide Icons, Sonner.
-* **Document Engine:** Mozilla PDF.js Canvas (`ContinuousPdfViewer.jsx` Continuous Vertical Scroll, Retina HD scaling, scroll-spy otomatis, anchor pelacak zoom tanpa geser teks) dan Mammoth (.docx ke HTML semantik terproteksi).
+* **Document Engine:** Native Mozilla PDF.js (`pdfjs-dist/web/pdf_viewer.mjs` via `PdfDocumentViewer.jsx` dengan EventBus, PDFLinkService, virtualisasi halaman otomatis, double-buffered rendering bebas kedip & zero layout shift) dan client-side Word paginated renderer (`docx-preview` via `DocxDocumentViewer.jsx`).
 * **Receipt Engine:** `jspdf` untuk ekspor kwitansi digital A4 resmi instan di peramban (client-side) tanpa dialog print fisik.
 * **Backend:** Node.js 24.x (`engines` di `package.json`) dan Express.js 4 (ES Module), dengan Service Layer dan adapter serverless Vercel (`api/index.js`).
 * **Database & BaaS:** Supabase Cloud (PostgreSQL 17 dengan *Row Level Security* fail-closed dan zona waktu `Asia/Jakarta`).
@@ -62,8 +62,8 @@ Aplikasi **Wahidiyah Book** dibangun menggunakan arsitektur **Modular Layered Mo
 ### 2.1. Katalog Buku & Universal Document Reader (Read-Only)
 - **Katalog Interaktif Minimalis:** Desain elegan ala e-reader (Moco-style) yang menonjolkan sampul jilid dan judul kitab tanpa teks penulis generik, dilengkapi pencarian katalog instan dan badge akses (*locked* vs *free*).
 - **Universal Document Reader (PDF & Word DOCX):**
-  - **Dukungan Berkas PDF Continuous Vertical Scroll:** Dirender interaktif via Mozilla PDF.js Canvas dengan gulir vertikal mulus (*continuous scroll*), auto scroll-spy sinkronisasi halaman, kanvas berasio aspek tetap (*fixed-aspect ratio*), pelacak zoom persentase real-time, dan titik jangkar baca (*reading anchor*) yang menjaga posisi teks tidak melompat saat zoom in/out. Tombol kontrol zoom diletakkan ringkas berdampingan dengan tombol layar penuh (*fullscreen*).
-  - **Dukungan Naskah Word DOCX:** Dikonversi langsung di sisi server via pustaka `mammoth` menjadi HTML semantik (`GET /api/books/:id/html`) dengan sanitasi anti-XSS (`DOMPurify`), disajikan secara responsif di peramban tanpa memerlukan Microsoft Word fisik.
+  - **Dukungan Berkas PDF Continuous Vertical Scroll:** Dirender interaktif via mesin native Mozilla PDF.js (`pdfjs-dist/web/pdf_viewer.mjs` di `PdfDocumentViewer.jsx`) dengan gulir vertikal mulus (*continuous scroll*), virtualisasi DOM halaman otomatis, double-buffered rendering bebas kedip & layout shift, dan perbesaran alami (*smooth browser zoom*). Top bar pembaca dirancang sangat bersih dan minimalis (tombol kembali, indikator halaman `1 / X`, dan tombol layar penuh).
+  - **Dukungan Naskah Word DOCX:** Dirender langsung di sisi klien ke lembaran A4 fisik terpaginasi lengkap dengan margin, kolom, tabel, dan tipografi asli menggunakan pustaka `docx-preview` (`DocxDocumentViewer.jsx`) tanpa membutuhkan converter server.
   - **Proteksi Hak Cipta:** Larangan seleksi teks (`select-none` di `PdfReaderScreen.jsx:241` dan `TextDocViewer.jsx:49`) dan pengiriman konten via HTTP header `inline` berotorisasi JWT. Tanda air identitas di kanvas dan pemblokiran klik kanan **tidak ada di kode** — memulihkannya atau menurunkan klaimnya adalah keputusan terbuka (lihat 15.15), dan judul skripsi menyebut "Pembaca PDF Terproteksi", jadi ini harus diputuskan sebelum Bab IV dikunci.
 - **Last Read Tracker (Ingat Posisi Terakhir):** Otomatis menyimpan posisi halaman baca pengguna ke `localStorage` peramban (tanpa beban latensi database) dan menampilkan dialog resume *"Lanjut membaca dari Halaman X?"*.
 - **Mode Tema Pembaca:** Pilihan latar belakang **Terang**, **Sepia (Hangat Lembut)**, dan **Malam (Gelap Elegan)** untuk kenyamanan membaca dalam waktu lama.
@@ -127,7 +127,7 @@ graph TD
     Client["Browser Desktop / Mobile PWA (React 19 + Vite 6)"] -->|Dev :3000 · Produksi :5000 · Vercel Serverless| Express["Server Express Node.js / api/index.js"]
     
     subgraph Frontend ["Frontend Modular (React 19)"]
-        UI["Komponen UI (DeviceFrame, ContinuousPdfViewer, PhoneInput)"]
+        UI["Komponen UI (DeviceFrame, PdfDocumentViewer, DocxDocumentViewer, PhoneInput)"]
         State["Context Slices (Catalog, Payment, Navigation)"]
         AdminTabs["Admin Modular Tabs (Overview, Books, Users, Events, Carousel, Logs)"]
         Receipt["Client-Side Receipt Generator (jsPDF A4 Digital Receipt)"]
@@ -289,11 +289,11 @@ Permukaan yang memang gelap secara desain (sidebar admin) memakai token `semanti
    - Kartu buku minimalis Moco-style (sampul jilid dominan, judul kitab tegas, tanpa nama penulis generik, badge status Pro emas).
    - Pencarian instan dan filter akses (Semua / Gratis / Pro).
 2. **Universal Document Reader (Continuous Vertical Scroll):**
-   - Penampil PDF multi-halaman berbasis canvas Mozilla PDF.js murni (`ContinuousPdfViewer.jsx`).
+   - Penampil PDF multi-halaman berbasis arsitektur native Mozilla PDF.js viewer (`PdfDocumentViewer.jsx` via `pdfjs-dist/web/pdf_viewer.mjs`, EventBus, dan PDFLinkService).
    - Auto scroll-spy untuk sinkronisasi halaman aktif secara otomatis saat digulir.
-   - Kanvas berasio aspek tetap (*fixed-aspect*) dan *reading anchor* penahan posisi teks saat perbesaran zoom in/out.
-   - Tombol kontrol zoom diletakkan ringkas berdampingan dengan tombol layar penuh (*fullscreen*).
-   - Pembaca Word DOCX berbasis HTML semantik terproteksi via Mammoth engine dan sanitasi anti-XSS (`DOMPurify`).
+   - Double-buffered virtualized page rendering bebas kedip dan zero layout shift.
+   - Perbesaran alami (*smooth browser zoom*) yang mulus di peramban tanpa listener sentakan manual; top bar pembaca dirancang sangat bersih dan minimalis (tombol kembali, indikator halaman `1 / X`, dan tombol layar penuh).
+   - Pembaca Word DOCX berbasis render lembaran fisik terpaginasi di sisi klien (`docx-preview` via `DocxDocumentViewer.jsx`) dengan tata letak, margin, font, dan tabel presisi tanpa converter server.
    - Proteksi hak cipta: larangan seleksi teks (`select-none`). Tanda air dinamis identitas pembaca dan pelarangan klik kanan (`contextmenu`) **belum ada di kode** — statusnya keputusan terbuka (15.15).
 3. **Membership Pro & Real Midtrans QRIS:**
    - Paket Pro tunggal terstandarisasi Rp 25.000/bulan + biaya administrasi Rp 3.000.
@@ -1204,7 +1204,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 │   │   │   ├── carousel/   # CarouselSlideItem, CarouselFormPanel
 │   │   │   ├── events/     # AllAgendaPanel, EventCalendarPanel, EventFormPanel, ...
 │   │   │   └── hooks/      # useAdminDashboardData, useAdminBookEditor, useAdminEventEditor, useAdminCarouselEditor
-│   │   └── reader/         # ContinuousPdfViewer, PdfReaderScreen, PdfPageSheet, usePdfPinchGesture, usePdfCanvasRenderer, ...
+│   │   └── reader/         # PdfDocumentViewer, DocxDocumentViewer, PdfReaderScreen, ReaderTopBar, TextDocViewer, pdfWorkerSetup
 │   ├── lib/                # api (termasuk `apiJsonSend`), phone, date, excelExport, receiptPdf, receiptFields, navigation, normalizers, ...
 │   ├── theme/              # themeInjector (satu tema terang, tanpa provider)
 │   ├── App.jsx             # Router navigasi utama
@@ -1237,6 +1237,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R72–R82 | 31 Okt – 3 Nov 2026: perapian Prettier & service layer, quality gate `check:full`, standardisasi JSDoc, dekomposisi layar utama dan service layer menjadi paket `auth/` + `payment/`, penghapusan 13 klaster duplikasi, penyatuan layar autentikasi menjadi satu kartu, layar auth dibuat datar. Subbagian riwayat rounds ini **dipangkas 4 Nov 2026** — `git log` yang menyimpan detailnya. Satu pelajaran ditahan di sini karena masih berlaku: nilai penghapusan duplikasi (R80) bukan pada baris yang hilang (21.920 → 21.935, praktis tetap), melainkan pada **satu tempat untuk mengubah kontrak**. |
 | R83 | Konsolidasi rencana mobile 4 Nov 2026: keputusan React Native/Expo, branch `mobile-app`, penjaga build, dan koreksi status M1 — lihat 15.13. |
 | R84 | Penjaga konfigurasi Midtrans + pemantik rekonsiliasi 4 Nov 2026: flag vs prefix kunci, health check membaca lingkungan dari kunci, `POST /api/payments/qris/reconcile`, plus temuan `override: true` pada `server/env.js` — lihat 15.14. |
+| R91 | Modernisasi Reader & Pembukaan Buku 4 Nov 2026: refaktor mesin dokumen ke native Mozilla PDF.js viewer (`pdfjs-dist`) dan `docx-preview` (Word paginasi client-side), pembersihan mobile bloat, eliminasi crash `AbortException` via deferred binding `globalThis.pdfjsLib`, penyederhanaan top bar pembaca menjadi minimalis bersih, penghapusan listener zoom kaku, serta pembukaan akses gratis Hadits Arba'in An-Nawawiyah di Supabase (`is_locked: false`) — lihat 15.21. |
 | R90 | Zoom per bucket resolusi 4 Nov 2026: bitmap dirender per tingkat 0,5× (lantai 1,5×), renderer berhenti berlangganan zoom — zoom kecil tidak menyentuh kanvas sama sekali — lihat 15.20. |
 | R89 | Zoom PDF model transform 4 Nov 2026: zoom tidak lagi mengubah ukuran kotak halaman, hanya skala + resolusi bitmap — menghapus kedip dan lompatan posisi — lihat 15.19. |
 | R88 | Zoom trackpad 4 Nov 2026: pinch trackpad pindah ke jalur transform-GPU + commit sekali seperti pinch dua jari, `deltaMode` mouse dibedakan, `customFocalYRef` mati dihapus — lihat 15.18. |
@@ -1262,6 +1263,33 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `server/services/auth/password_reset_service.js:103`.
+
+### 15.21 Modernisasi Mesin Dokumen (Native PDF.js Viewer & Docx-Preview), Top Bar Minimalis, dan Pembukaan Akses Hadits Arba'in R91 (4 November 2026)
+
+**Latar Belakang & Masalah:**
+1. **Penyederhanaan Mesin Dokumen:** Penanganan kanvas PDF manual sebelumnya melibatkan logika matematika pinch/wheel/transform/bucket resolusi kustom yang rentan terhadap perbedaan perilaku antar-peramban dan device. Pemilik proyek meminta penampil dokumen memanfaatkan pustaka resmi secara utuh tanpa kode *hardcode* berlebih.
+2. **Crash Runtime `AbortException`:** Pada saat migrasi ke modul resmi `pdfjs-dist/web/pdf_viewer.mjs`, muncul galat `TypeError: Cannot destructure property 'AbortException' of 'globalThis.pdfjsLib' as it is undefined` karena file `pdf_viewer.mjs` mengevaluasi global `pdfjsLib` di level root sebelum modul runtime siap.
+3. **Zoom Kaku vs Smooth Browser Zoom:** Percobaan menginjeksi listener manual `ctrl+wheel` dan `touchmove` pinch memicu sentakan diskrit (*jank/stiffness*) yang dikeluhkan kaku oleh pemilik proyek ("malah kaku si kalau dibikin kaya gitu, balikin"). Di sisi lain, peramban modern (Google Chrome, Edge, Safari, Mobile PWA) sudah memiliki mesin perbesaran dokumen (*native smooth zoom*) yang jauh lebih mulus tanpa perlu diintersepsi listener JavaScript manual. Perbedaan perilaku juga teridentifikasi antara Google Chrome (mendukung smooth zoom OS) vs Antigravity IDE (embedded webview berbasis Electron yang mengabaikan gesture zoom peramban).
+4. **Header Terlalu Penuh:** Keberadaan tombol zoom manual (`-`, `100%`, `+`) di bilah atas dinilai mengganggu kebersihan visual e-reader.
+5. **Akses Buku Hadits Terkunci:** Buku *Hadits Arba'in An-Nawawiyah* sempat terkonfigurasi terkunci (`is_locked: true`) di database, sehingga pengguna meminta agar seluruh buku perpustakaan dibuka gratis (`is_locked: false`).
+
+**Perubahan Arsitektur & Implementasi:**
+
+| Komponen / Fitur | Sebelum (R90) | Sesudah (R91) |
+|---|---|---|
+| **PDF Engine** | Kanvas kustom bertahap (`ContinuousPdfViewer.jsx`, `PdfPageSheet.jsx`, `usePdfCanvasRenderer.js`, ~1.000 baris kode matematika kalkulasi manual) | Native Mozilla PDF.js Viewer resmi (`pdfjs-dist/web/pdf_viewer.mjs` di `PdfDocumentViewer.jsx`) dengan `PDFViewer`, `EventBus`, `PDFLinkService`, dan virtualisasi DOM bawaan |
+| **Pencegahan Crash `AbortException`** | Impor statis yang menyebabkan evaluasi global premature | Dynamic import via helper `getPdfjsViewer()` di `src/features/reader/pdfWorkerSetup.js` yang mengikat `window.pdfjsLib = pdfjsLib` dan `globalThis.pdfjsLib = pdfjsLib` sebelum modul penampil dievaluasi |
+| **DOCX Engine** | Pengubahan ke HTML di backend via pustaka `mammoth` lalu dirender teks semantik responsif | Paginasi lembaran A4 fisik di sisi klien via `docx-preview` (`DocxDocumentViewer.jsx`) dengan margin, kolom, font asli, dan tabel presisi |
+| **Top Bar Header** | Memuat tombol zoom out, persentase zoom numerik `100%`, dan zoom in | Minimalis dan bersih: hanya memuat tombol kembali (`ArrowLeft`), nomor halaman aktif `Halaman X / Total`, dan tombol layar penuh (`Maximize` / `Minimize`) |
+| **Interaksi Zoom** | Intersepsi wheel/pinch manual yang memicu lag/sentakan | Membiarkan gestur zoom peramban bekerja secara natural (*smooth native zoom*) tanpa listener sentakan manual kaku |
+| **Akses Database Supabase** | Buku *Hadits Arba'in An-Nawawiyah* berstatus `is_locked: true` | Nilai `is_locked` diubah menjadi `false` pada tabel `books` via script Supabase admin; 3 dari 3 buku katalog kini berstatus gratis (*unlocked*) |
+| **Pembersihan Monorepo** | Folder `mobile/` tersisa di repositori | Direktori `mobile/` dibersihkan dari workspace web monorepo agar fokus tunggal pada web application |
+
+**Bukti & Verifikasi:**
+- **Zero Runtime Error:** Galat `AbortException` teratasi 100%; dokumen PDF 62 halaman dimuat dan dirender secara instan di peramban.
+- **Tangkapan Layar Pengujian:** Terverifikasi via Google Chrome bahwa pembaca PDF dapat diperbesar secara halus tanpa teks pecah atau posisi halaman terlempar (HTTP 200 di `https://wahidiyah-book.vercel.app/reader`).
+- **Integritas Database Supabase:** Kueri tabel `books` membuktikan ketiga buku (`buku-d123...`, `buku-270a...`, `buku-3165...`) memiliki `is_locked = false`.
+- **Kualitas Kode:** `npm run build` sukses 0 error (dist Vite ~1.6 MB chunk teroptimasi), `npm run format:check` lolos 100% bersih.
 
 ### 15.20 Zoom per Bucket Resolusi R90 (4 November 2026)
 

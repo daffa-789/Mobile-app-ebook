@@ -2,7 +2,7 @@ import React from 'react';
 import { BookOpen, Lock } from 'lucide-react';
 
 export const BookCard = React.memo(
-  ({ book, isLocked, onBookClick, onPaywallClick, hasError, onError }) => {
+  ({ book, isLocked, onBookClick, onPaywallClick, hasError, onError, priority = false }) => {
     const handleClick = () => {
       if (isLocked) {
         onPaywallClick(book);
@@ -35,7 +35,11 @@ export const BookCard = React.memo(
             <img
               src={book.coverUrl}
               alt={book.title}
-              loading="lazy"
+              /* Kartu paling atas layar adalah kandidat LCP — dimuat eager
+                 dengan prioritas tinggi; sisanya lazy agar tidak berebut
+                 bandwidth dengan JS awal. */
+              loading={priority ? 'eager' : 'lazy'}
+              fetchPriority={priority ? 'high' : undefined}
               decoding="async"
               onError={() => onError(book.id)}
               className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"

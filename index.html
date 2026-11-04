@@ -18,20 +18,15 @@
       content="Aplikasi Buku Wahidiyah - Perpustakaan Digital & Langganan Buku Wahidiyah"
     />
     <title>E-Book Wahidiyah — Perpustakaan Digital</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!--
-    R29 — Fraunces ditambahkan sebagai font display (judul).
+    R29 — Fraunces sebagai font display (judul), kini di-host sendiri via @fontsource.
     Kenapa Fraunces: ini serif "soft-serif" dengan sumbu optik & berat variabel,
     terasa seperti tipografi katalog cetak — bukan serif generik (Times/Georgia).
-    Ini yang membedakan aplikasi dari tampilan dashboard SaaS yang seragam.
-    Bobot 400-800 + sumbu opsz supaya judul besar & kecil tetap proporsional.
-  -->
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Amiri:wght@400;700&display=swap"
-      rel="stylesheet"
-    />
-  </head>
+    Kenapa @fontsource: rantai Google Fonts (fonts.googleapis.com -> fonts.gstatic.com)
+    render-blocking, menambah 2 origin + 2 TLS handshake pada load pertama, dan
+    tidak bisa dimuat dari edge Vercel. Font kini dibundel Vite: same-origin,
+    brotli, ter-cache, offline-friendly.
+  --></head>
 
   <body class="bg-cream-50 text-ink-800 antialiased min-h-screen">
     <div id="root"></div>

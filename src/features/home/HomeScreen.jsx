@@ -96,7 +96,7 @@ export const HomeScreen = () => {
 
             {/* Grid Koleksi Buku */}
             <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5 lg:gap-6 justify-start items-start">
-              {books.map((book) => (
+              {books.map((book, index) => (
                 <BookCard
                   key={book.id}
                   book={book}
@@ -105,6 +105,7 @@ export const HomeScreen = () => {
                   onPaywallClick={setPaywallBook}
                   hasError={Boolean(imgErrors[book.id])}
                   onError={handleImgError}
+                  priority={index < 2}
                 />
               ))}
             </div>

@@ -71,8 +71,11 @@ export const CSP_DIRECTIVES = {
    * utilitas Tailwind; tidak ada jalan keluar selain menghapus keduanya.
    */
   'script-src': ["'self'"],
-  'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-  'font-src': ["'self'", 'https://fonts.gstatic.com'],
+  /* Font kini di-host sendiri via @fontsource (dibundel Vite), jadi
+   * style/font tidak lagi perlu mengizinkan origin Google Fonts.
+   */
+  'style-src': ["'self'", "'unsafe-inline'"],
+  'font-src': ["'self'"],
   'img-src': ["'self'", 'data:', 'blob:'],
   /* Supabase hanya dipakai jalur /auth/callback lama; Midtrans dipanggil
    * server, jadi peramban tidak perlu akses ke sana.

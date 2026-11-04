@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ServerCrash, RefreshCw } from 'lucide-react';
 import { layout } from '@lib/styles';
+import { API_FALLBACK_ORIGIN } from '@lib/api';
 
 export const ServerStatusBanner = () => {
   const [status, setStatus] = useState('checking');
@@ -14,7 +15,7 @@ export const ServerStatusBanner = () => {
       try {
         response = await fetch('/api/health', { cache: 'no-store' });
       } catch {
-        response = await fetch('http://localhost:5000/api/health', { cache: 'no-store' });
+        response = await fetch(`${API_FALLBACK_ORIGIN}/api/health`, { cache: 'no-store' });
       }
 
       if (!response) {

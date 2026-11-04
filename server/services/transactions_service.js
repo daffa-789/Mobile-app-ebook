@@ -177,7 +177,7 @@ export async function createManualTransaction({ user, body = {} }) {
       amount: pricing.amount,
       adminFee: pricing.adminFee,
       totalPaid: pricing.totalPaid,
-      planName: 'Pro',
+      planName: pricing.planName,
       paymentMethod: method,
       status: TRANSACTION_PENDING_STATUS,
     },

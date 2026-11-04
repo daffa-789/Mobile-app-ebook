@@ -7,6 +7,7 @@
 import { Calendar, Clock, MapPin } from 'lucide-react';
 import { getMapUrl, getDisplayLocation } from '@lib/maps';
 import { layout, controls } from '@lib/styles';
+import { fullDateLabel } from '@lib/date';
 
 /**
  * Komponen panel agenda tanggal terpilih.
@@ -17,12 +18,7 @@ import { layout, controls } from '@lib/styles';
  * @returns {import('react').JSX.Element}
  */
 export const CalendarSelectedDatePanel = ({ selectedDate, events }) => {
-  const formattedDate = new Date(selectedDate).toLocaleDateString('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  const formattedDate = fullDateLabel(selectedDate);
 
   return (
     <div className="bg-cream-50 rounded-3xl p-4 border border-cream-200 shadow-sm space-y-3">

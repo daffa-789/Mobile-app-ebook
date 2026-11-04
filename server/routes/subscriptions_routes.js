@@ -37,7 +37,7 @@ subscriptionsRouter.get(
     const fallbackSubs = (txs || []).map((tx) => ({
       id: 'sub-' + tx.id.replace('tx-', ''),
       user_id: tx.user_id,
-      plan_name: tx.plan_name || fallbackPlan?.name || 'Paket Bulanan',
+      plan_name: tx.plan_name || fallbackPlan?.name,
       price: tx.amount || fallbackPlan?.price || 0,
       status: 'Aktif',
       expires_at: tx.expires_at || null,

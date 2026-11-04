@@ -5,6 +5,7 @@ import { TxStatusBadge } from './TxStatusBadge';
 import { formatWIB } from '@lib/date';
 import { formatRupiah } from '@lib/formatUtils';
 import { layout, typography, surfaces } from '@lib/styles';
+import { DEFAULT_PLAN } from '@lib/plans';
 
 const formatCurrency = formatRupiah;
 
@@ -163,7 +164,7 @@ export const OverviewTab = ({ stats, books = [], users = [], transactions = [], 
                 </div>
                 <div className="text-right">
                   <p className="font-bold text-ink-900">{formatCurrency(tx.totalPaid)}</p>
-                  <p className="text-caption text-ink-500">{tx.planName || 'Paket Bulanan'}</p>
+                  <p className="text-caption text-ink-500">{tx.planName || DEFAULT_PLAN.title}</p>
                 </div>
               </div>
               <p className="text-micro text-ink-400 pt-1.5 border-t border-cream-100">
@@ -199,7 +200,7 @@ export const OverviewTab = ({ stats, books = [], users = [], transactions = [], 
                     <p className="font-bold text-ink-900">{tx.userName || '-'}</p>
                     <p className={typography.helperInline}>{tx.userEmail || ''}</p>
                   </td>
-                  <td className="px-3.5 py-2.5">{tx.planName || 'Paket Bulanan'}</td>
+                  <td className="px-3.5 py-2.5">{tx.planName || DEFAULT_PLAN.title}</td>
                   <td className="px-3.5 py-2.5 font-bold text-ink-900">
                     {formatCurrency(tx.totalPaid)}
                   </td>

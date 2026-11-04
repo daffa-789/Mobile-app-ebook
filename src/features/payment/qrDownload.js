@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+import { DEFAULT_PLAN } from '@lib/plans';
 
 /**
  * Mengunduh kode QRIS sebagai berkas gambar PNG ke galeri perangkat
@@ -7,7 +8,11 @@ import { toast } from 'sonner';
  * @param {string} [options.planId] - ID paket langganan
  * @param {string} [options.qrImageUrl] - URL gambar QR fallback dari gateway
  */
-export const downloadQrisImage = async ({ container, planId = 'pro', qrImageUrl = null }) => {
+export const downloadQrisImage = async ({
+  container,
+  planId = DEFAULT_PLAN.id,
+  qrImageUrl = null,
+}) => {
   try {
     const svg = container?.querySelector('svg');
     if (svg) {

@@ -10,7 +10,7 @@ import {
   TRANSACTION_PENDING_STATUS,
 } from '../auth.js';
 import { logger } from '../logger.js';
-import { QRIS_ADMIN_FEE, SUBSCRIPTION_PLANS } from './constants.js';
+import { QRIS_ADMIN_FEE, SUBSCRIPTION_PLANS, findPlan } from './constants.js';
 import { toPositiveNumber } from './validate.js';
 
 export const ACTIVE_SUBSCRIPTION_STATUS = 'Aktif';
@@ -64,7 +64,7 @@ export async function insertTransaction({
     id: txId,
     ref_no: refNo,
     user_id: userId,
-    plan_name: planName || 'Pro',
+    plan_name: planName || findPlan().name,
     amount: Number(amount) || 0,
     admin_fee: Number(adminFee) || 0,
     total_paid: Number(totalPaid) || 0,
@@ -99,7 +99,7 @@ export async function activatePaidMembership({
   const subscriptionInsert = await supabaseServer.from('subscriptions').insert({
     id: subId,
     user_id: userId,
-    plan_name: planName || 'Pro',
+    plan_name: planName || findPlan().name,
     price: Number(price) || 0,
     status: ACTIVE_SUBSCRIPTION_STATUS,
     expires_at: expiresAt,

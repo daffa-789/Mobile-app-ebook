@@ -43,13 +43,13 @@ const buildEventPayload = (event, { type = 'auto' } = {}) => {
     if (event.event_date) {
       const [y, m, d] = String(event.event_date).slice(0, 10).split('-').map(Number);
       const dt = new Date(Date.UTC(y, m - 1, d));
-      formattedDate = dt.toLocaleDateString('id-ID', {
+      formattedDate = new Intl.DateTimeFormat('id-ID', {
         weekday: 'long',
         day: 'numeric',
         month: 'short',
         year: 'numeric',
         timeZone: 'Asia/Jakarta',
-      });
+      }).format(dt);
     }
   } catch {}
 

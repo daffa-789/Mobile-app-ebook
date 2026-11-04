@@ -166,7 +166,9 @@ export async function cancelQrisForUser({ transaction }) {
   });
 
   const kedaluwarsaLama = transaction.expires_at
-    ? new Date(transaction.expires_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })
+    ? new Intl.DateTimeFormat('id-ID', { timeZone: 'Asia/Jakarta' }).format(
+        new Date(transaction.expires_at),
+      )
     : null;
 
   return { voidedByMidtrans, kedaluwarsaLama };

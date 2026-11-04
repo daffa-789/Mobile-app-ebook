@@ -7,6 +7,7 @@
 import { Clock, MapPin } from 'lucide-react';
 import { getMapUrl, getDisplayLocation } from '@lib/maps';
 import { layout, controls } from '@lib/styles';
+import { dateLabel } from '@lib/date';
 
 const CATEGORY_PILLS = ['Semua', 'Kubro', 'Mujahadah', 'Pengajian'];
 
@@ -91,11 +92,7 @@ export const CalendarAllEventsList = ({
                   {evt.category}
                 </span>
                 <span className="text-micro font-bold text-brand-800 bg-brand-50 px-2 py-0.5 rounded-lg border border-brand-100">
-                  {new Date(evt.date).toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
+                  {dateLabel(evt.date)}
                 </span>
               </div>
               <h4 className="font-bold text-caption text-ink-800 leading-snug">{evt.title}</h4>

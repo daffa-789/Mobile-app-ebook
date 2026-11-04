@@ -6,7 +6,7 @@
  * @module src/lib/api
  */
 
-const API_FALLBACK_ORIGIN = 'http://localhost:5000';
+export const API_FALLBACK_ORIGIN = 'http://localhost:5000';
 
 const canUseApiFallback = (path) =>
   import.meta.env?.DEV === true &&

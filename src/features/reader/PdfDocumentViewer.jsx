@@ -195,15 +195,83 @@ export const PdfDocumentViewer = ({
     };
   }, [isViewerReady, pdfBlob]);
 
-  // 3. Penerapan Zoom Dinamis
+  // 3. Penerapan Zoom Dinamis & Pencegahan Zoom Browser Global
+  // Menangkap wheel (Ctrl+Scroll / Trackpad Pinch) dan touch pinch agar HANYA dokumen PDF
+  // yang di-zoom, bukan seluruh layar web/browser.
   useEffect(() => {
-    if (pdfViewerRef.current?.pdfDocument) {
+    if (pdfViewerRef.current?.pdfDocument && typeof zoom === 'number') {
       const scale = zoom / 100;
       if (pdfViewerRef.current.currentScale !== scale) {
         pdfViewerRef.current.currentScale = scale;
       }
     }
   }, [zoom]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e) => {
+      // Browser Chromium & Firefox mengirim ctrlKey: true untuk trackpad pinch atau Ctrl+Wheel
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        const viewer = pdfViewerRef.current;
+        if (!viewer || !viewer.pdfDocument) return;
+
+        const delta = -e.deltaY;
+        const factor = delta > 0 ? 1.05 : 0.95;
+        const currentScale = viewer.currentScale || 1;
+        const nextScale = Math.min(3.0, Math.max(0.4, Number((currentScale * factor).toFixed(2))));
+        if (viewer.currentScale !== nextScale) {
+          viewer.currentScale = nextScale;
+        }
+      }
+    };
+
+    let touchStartDist = 0;
+    let initialScale = 1;
+
+    const handleTouchStart = (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const [t1, t2] = e.touches;
+        touchStartDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        initialScale = pdfViewerRef.current?.currentScale || 1;
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (e.touches.length === 2 && touchStartDist > 0) {
+        e.preventDefault();
+        const [t1, t2] = e.touches;
+        const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        const factor = dist / touchStartDist;
+        const nextScale = Math.min(3.0, Math.max(0.4, Number((initialScale * factor).toFixed(2))));
+        if (pdfViewerRef.current && pdfViewerRef.current.currentScale !== nextScale) {
+          pdfViewerRef.current.currentScale = nextScale;
+        }
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      if (e.touches.length < 2) {
+        touchStartDist = 0;
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      container.removeEventListener('wheel', handleWheel);
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, []);
 
   // 4. Navigasi Scroll ke Halaman Tertentu
   useEffect(() => {

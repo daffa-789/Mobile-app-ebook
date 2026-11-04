@@ -2,6 +2,9 @@
 node_modules/
 dist/
 dist-*/
+
+# Aplikasi mobile punya tooling & gaya sendiri, tidak ikut diformat build web.
+mobile/
 .vscode/
 .qoder/
 

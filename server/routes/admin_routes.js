@@ -9,7 +9,13 @@ const DEFAULT_LOG_LIMIT = 50;
 
 export const adminRouter = Router();
 
-const formatRupiah = (value) => `Rp ${Number(value || 0).toLocaleString('id-ID')}`;
+const idrFormatter = new Intl.NumberFormat('id-ID', {
+  style: 'currency',
+  currency: 'IDR',
+  maximumFractionDigits: 0,
+});
+
+const formatRupiah = (value) => idrFormatter.format(Number(value || 0));
 
 adminRouter.get(
   '/admin/logs',

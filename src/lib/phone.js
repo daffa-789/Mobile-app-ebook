@@ -7,9 +7,37 @@
  * @module src/lib/phone
  */
 
+import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js';
+
 const ID_PREFIX = '62';
 
 const digitsOnly = (raw) => String(raw ?? '').replace(/[^0-9]/g, '');
+
+/** Bangun nomor nasional (0xxx) dari sekumpulan digit mentah. */
+const toNationalNumber = (digits) => {
+  const d = String(digits || '');
+  if (d.startsWith(ID_PREFIX)) return `0${d.slice(ID_PREFIX.length)}`;
+  if (d.startsWith('0')) return d;
+  if (d.startsWith('8')) return `0${d}`;
+  return d;
+};
+
+/**
+ * Parse nomor lewat libphonenumber-js lalu ambil bentuk E.164 (+62...).
+ * @returns {string|null} Nomor E.164 tanpa tanda '+' atau null bila tidak valid.
+ */
+const toE164 = (raw) => {
+  const digits = digitsOnly(raw);
+  const national = toNationalNumber(digits);
+  if (!national) return null;
+  if (!isValidPhoneNumber(national, 'ID')) return null;
+  try {
+    const parsed = parsePhoneNumber(national, 'ID');
+    return parsed?.number ? parsed.number.replace(/^\+/, '') : null;
+  } catch {
+    return null;
+  }
+};
 
 /**
  * Ubah 08xx, +62xx, atau 62xx menjadi format baku 628xx.
@@ -19,12 +47,8 @@ const digitsOnly = (raw) => String(raw ?? '').replace(/[^0-9]/g, '');
  * @example normalizePhone('08123456789') // => '628123456789'
  */
 export const normalizePhone = (raw) => {
-  const digits = digitsOnly(raw);
-  if (!digits) return '';
-  if (digits.startsWith('0')) return ID_PREFIX + digits.slice(1);
-  if (digits.startsWith(ID_PREFIX)) return digits;
-  if (digits.startsWith('8')) return ID_PREFIX + digits;
-  return digits;
+  const e164 = toE164(raw);
+  return e164 || '';
 };
 
 /**

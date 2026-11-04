@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import dayjs from 'dayjs';
 import { supabaseServer } from '../db.js';
 import {
   generateId,
@@ -33,7 +34,7 @@ const planDaysFromPeriod = (period) => {
 };
 
 const expiresAtFromNow = (days = DEFAULT_PLAN_DAYS, from = new Date()) =>
-  new Date(from.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+  dayjs(from).add(days, 'day').toISOString();
 
 const generateRefNo = () => `0000${crypto.randomInt(10000000, 100000000)}`;
 

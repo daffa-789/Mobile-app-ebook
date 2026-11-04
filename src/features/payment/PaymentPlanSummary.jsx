@@ -4,6 +4,9 @@
  * @module src/features/payment/PaymentPlanSummary
  */
 
+import { formatRupiah } from '@lib/formatUtils';
+import { DEFAULT_PLAN, getAdminFee } from '@lib/plans';
+
 /**
  * Komponen rincian tagihan paket langganan.
  *
@@ -13,8 +16,8 @@
  * @returns {import('react').JSX.Element}
  */
 export const PaymentPlanSummary = ({ selectedPlan, selectedPaymentMethod }) => {
-  const basePrice = Number(selectedPlan?.price || 25000);
-  const adminFee = 3000;
+  const basePrice = Number(selectedPlan?.price || DEFAULT_PLAN.price);
+  const adminFee = getAdminFee();
   const total = basePrice + adminFee;
 
   return (
@@ -45,15 +48,13 @@ export const PaymentPlanSummary = ({ selectedPlan, selectedPaymentMethod }) => {
       <div className="flex justify-between items-center pb-3 border-b border-cream-200 text-xs">
         <span className="font-medium text-ink-400">Biaya Administrasi</span>
         <span className="font-bold text-ink-700 bg-cream-200 px-2 py-0.5 rounded-md border border-cream-300">
-          Rp {adminFee.toLocaleString('id-ID')}
+          {formatRupiah(adminFee)}
         </span>
       </div>
 
       <div className="flex justify-between items-center pt-1 text-xs">
         <span className="font-bold text-ink-700">Total Pembayaran</span>
-        <span className="text-lg font-black text-brand-800">
-          Rp {total.toLocaleString('id-ID')}
-        </span>
+        <span className="text-lg font-black text-brand-800">{formatRupiah(total)}</span>
       </div>
     </div>
   );

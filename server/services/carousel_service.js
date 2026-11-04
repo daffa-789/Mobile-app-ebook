@@ -240,7 +240,7 @@ export async function updateSlideImage({ id, buffer }) {
   }
 
   /* Jenis gambar dari isi berkas, bukan `mimetype` kiriman klien (VULN-11). */
-  const detectedMime = sniffImageMime(buffer);
+  const detectedMime = await sniffImageMime(buffer);
   if (!detectedMime) {
     throw createServiceError('Berkas bukan gambar PNG, JPG, WebP, atau GIF.', { statusCode: 415 });
   }

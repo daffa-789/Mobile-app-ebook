@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Check, ArrowRight } from 'lucide-react';
 import { useApp } from '@context/AppContext';
 import { layout, surfaces } from '@lib/styles';
+import { DEFAULT_PLAN } from '@lib/plans';
 
 export const ProScreen = () => {
   const { user, setSelectedPlan, navigateTo, isSubscriptionActive, clearLastPaymentResult } =
@@ -33,15 +34,17 @@ export const ProScreen = () => {
         <div className="w-full bg-cream-50 rounded-3xl p-6 sm:p-7 border border-cream-300 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between relative group hover:border-brand-200">
           <div>
             <div>
-              <h3 className="text-title font-black text-ink-900">Paket Bulanan</h3>
+              <h3 className="text-title font-black text-ink-900">{DEFAULT_PLAN.title}</h3>
             </div>
 
             <div className="mt-5 pb-5 border-b border-cream-200">
               <div className="flex items-baseline gap-1">
                 <span className="text-2xl sm:text-3xl font-black text-ink-900 tracking-tight">
-                  Rp 25.000
+                  {DEFAULT_PLAN.formattedPrice}
                 </span>
-                <span className="text-caption font-semibold text-ink-500">/bulan</span>
+                <span className="text-caption font-semibold text-ink-500">
+                  {DEFAULT_PLAN.period}
+                </span>
               </div>
             </div>
 
@@ -77,7 +80,13 @@ export const ProScreen = () => {
             <button
               type="button"
               onClick={() =>
-                handleSelectPlan('monthly', 'Paket Bulanan', 25000, '/bulan', 'Rp 25.000')
+                handleSelectPlan(
+                  DEFAULT_PLAN.id,
+                  DEFAULT_PLAN.title,
+                  DEFAULT_PLAN.price,
+                  DEFAULT_PLAN.period,
+                  DEFAULT_PLAN.formattedPrice,
+                )
               }
               className="w-full mt-6 py-3.5 bg-brand-700 hover:bg-brand-600 active:bg-brand-800 text-cream-50 text-small font-extrabold rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
             >

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { supabaseServer } from '../db.js';
 import { requireAuth } from '../auth.js';
 import { wrap } from '../lib/http.js';
+import { findPlan } from '../lib/constants.js';
 
 export const subscriptionsRouter = Router();
 
@@ -32,11 +33,12 @@ subscriptionsRouter.get(
 
     if (txError) throw txError;
 
+    const fallbackPlan = findPlan();
     const fallbackSubs = (txs || []).map((tx) => ({
       id: 'sub-' + tx.id.replace('tx-', ''),
       user_id: tx.user_id,
-      plan_name: tx.plan_name || 'Paket Bulanan Pro',
-      price: tx.amount || 25000,
+      plan_name: tx.plan_name || fallbackPlan?.name || 'Paket Bulanan',
+      price: tx.amount || fallbackPlan?.price || 0,
       status: 'Aktif',
       expires_at: tx.expires_at || null,
       ref_code: tx.ref_no ? 'REF-' + String(tx.ref_no).slice(-8) : '',

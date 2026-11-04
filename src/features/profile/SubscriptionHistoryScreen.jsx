@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useApp } from '@context/AppContext';
 import { formatWIB } from '@lib/date';
 import { layout, controls } from '@lib/styles';
+import { DEFAULT_PLAN } from '@lib/plans';
 
 export const SubscriptionHistoryScreen = () => {
   const { subscriptions, refreshSubscriptions, navigateTo, user } = useApp();
@@ -27,10 +28,10 @@ export const SubscriptionHistoryScreen = () => {
         {
           refNo: sub.ref || sub.orderId,
           dateStr: formatWIB(sub.createdAt),
-          planName: sub.planName || 'Paket Bulanan Pro',
-          amount: sub.rawPrice || 25000,
+          planName: sub.planName || DEFAULT_PLAN.title,
+          amount: sub.rawPrice || DEFAULT_PLAN.price,
           adminFee: sub.adminFee || 0,
-          totalPaid: sub.totalPaid || 25000,
+          totalPaid: sub.totalPaid || DEFAULT_PLAN.price,
           periodStr: sub.period || '1 Bulan Langganan Pro',
         },
         user,

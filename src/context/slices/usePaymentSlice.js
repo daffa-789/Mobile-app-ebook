@@ -1,5 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
+import dayjs from 'dayjs';
 import { PAYMENT_METHODS } from '@data/mockData';
+import { formatRupiah } from '@lib/formatUtils';
+import { DEFAULT_PLAN } from '@lib/plans';
 import {
   apiJson,
   apiJsonSend,
@@ -19,13 +22,7 @@ export const isQrisPaymentMethod = (method) => {
 };
 
 export const usePaymentSlice = ({ patchUser }) => {
-  const [selectedPlan, setSelectedPlan] = useState({
-    id: 'monthly',
-    title: 'Paket Bulanan',
-    price: 25000,
-    formattedPrice: 'Rp 25.000',
-    period: '/bulan',
-  });
+  const [selectedPlan, setSelectedPlan] = useState(() => ({ ...DEFAULT_PLAN }));
 
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(PAYMENT_METHODS[0].options[0]);
   const [paymentPhone, setPaymentPhone] = useState('');
@@ -52,10 +49,10 @@ export const usePaymentSlice = ({ patchUser }) => {
       const subs = (payload.subscriptions || []).map((sub) => ({
         id: sub.id,
         planName: sub.plan_name,
-        price: Number(sub.price) ? `Rp ${Number(sub.price).toLocaleString('id-ID')}` : sub.price,
-        rawPrice: Number(sub.price) || 25000,
+        price: Number(sub.price) ? formatRupiah(sub.price) : sub.price,
+        rawPrice: Number(sub.price) || DEFAULT_PLAN.price,
         adminFee: Number(sub.admin_fee) || 0,
-        totalPaid: Number(sub.total_paid) || Number(sub.price) || 25000,
+        totalPaid: Number(sub.total_paid) || Number(sub.price) || DEFAULT_PLAN.price,
         status: sub.status,
         period: sub.period,
         ref: sub.ref_code,
@@ -98,7 +95,7 @@ export const usePaymentSlice = ({ patchUser }) => {
       const now = new Date();
       const expiry = new Date(now);
       expiry.setMonth(expiry.getMonth() + 1);
-      const periodStr = `${now.toLocaleDateString('id-ID')} – ${expiry.toLocaleDateString('id-ID')}`;
+      const periodStr = `${dayjs(now).format('DD/MM/YYYY')} – ${dayjs(expiry).format('DD/MM/YYYY')}`;
       const refNo = `0000${Math.floor(10000000 + Math.random() * 90000000)}`;
 
       /* Angka struk diambil dari server kalau ada. `selectedPlan.price` hanya
@@ -115,7 +112,7 @@ export const usePaymentSlice = ({ patchUser }) => {
 
       const result = {
         refNo,
-        dateStr: `${now.toLocaleDateString('id-ID')}, ${now.toLocaleTimeString('id-ID')}`,
+        dateStr: `${dayjs(now).format('DD/MM/YYYY, HH:mm')}`,
         periodStr,
         amount,
         adminFee,

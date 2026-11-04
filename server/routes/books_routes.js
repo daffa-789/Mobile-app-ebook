@@ -114,7 +114,7 @@ booksRouter.get(
      * Data URL yang isinya bukan gambar tidak disajikan sama sekali.
      */
     if (url.startsWith('data:')) {
-      const imageMime = sniffDataUrlImage(url);
+      const imageMime = await sniffDataUrlImage(url);
       if (!imageMime) return notFound(res, 'Thumbnail tidak dapat disajikan');
       if (sendDataUrl(res, url, { contentType: imageMime, cacheControl: 'public, max-age=86400' }))
         return;

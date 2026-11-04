@@ -7,6 +7,7 @@ import {
   getProviderByName,
   listSupportedProviders,
 } from './providers/index.js';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
@@ -33,16 +34,23 @@ export const normalizePhone = (raw) => {
   } else if (cleaned.startsWith('8') && cleaned.length >= 9 && cleaned.length <= 13) {
     cleaned = '62' + cleaned;
   }
-  return cleaned;
+  const e164 = cleaned.replace(/^\+/, '');
+  if (!/^[1-9][0-9]{7,14}$/.test(e164)) return '';
+  const valid = isValidPhoneNumber(e164, 'ID');
+  return valid ? e164 : cleaned;
 };
 
 /**
  * Validasi nomor HP (mendukung Indonesia 628xxx maupun format internasional 8-15 digit).
+ * Shape E.164 (tanpa plus, 8–15 digit, tidak diawali 0) dicek manual, lalu
+ * kesesuaiannya dicek lewat libphonenumber-js (region ID).
  */
 export const isValidPhone = (raw) => {
   const normalized = normalizePhone(raw);
+  const e164 = normalized.replace(/^\+/, '');
   // Standar E.164 tanpa tanda plus: 8 sampai 15 digit angka, tidak diawali 0
-  return /^[1-9][0-9]{7,14}$/.test(normalized);
+  if (!/^[1-9][0-9]{7,14}$/.test(e164)) return false;
+  return isValidPhoneNumber(e164, 'ID');
 };
 
 /**

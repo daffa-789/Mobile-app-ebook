@@ -4,6 +4,9 @@ import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { useApp } from '@context/AppContext';
 import { typography } from '@lib/styles';
+import { formatRupiah } from '@lib/formatUtils';
+import dayjs from 'dayjs';
+import { DEFAULT_PLAN, getAdminFee } from '@lib/plans';
 
 export const PaymentSuccessScreen = () => {
   const { user, lastPaymentResult, selectedPlan, selectedPaymentMethod, navigateTo } = useApp();
@@ -23,17 +26,17 @@ export const PaymentSuccessScreen = () => {
     }
   }, []);
 
-  const fallbackAmount = Number(selectedPlan?.price || 25000);
-  const fallbackAdminFee = 3000;
+  const fallbackAmount = Number(selectedPlan?.price || DEFAULT_PLAN.price);
+  const fallbackAdminFee = getAdminFee();
   const details = lastPaymentResult || {
     refNo: null,
-    dateStr: new Date().toLocaleString('id-ID'),
+    dateStr: dayjs().format('DD/MM/YYYY, HH:mm'),
     periodStr: null,
     amount: fallbackAmount,
     adminFee: fallbackAdminFee,
     totalPaid: fallbackAmount + fallbackAdminFee,
     methodName: selectedPaymentMethod?.name || 'QRIS',
-    planName: selectedPlan?.title || 'Paket Bulanan',
+    planName: selectedPlan?.title || DEFAULT_PLAN.title,
   };
 
   const hasRef = Boolean(details.refNo) && details.refNo !== '—';
@@ -55,7 +58,7 @@ export const PaymentSuccessScreen = () => {
     ['Waktu', details.dateStr],
     ['Paket', details.planName],
     ['Masa aktif', hasPeriod ? details.periodStr : 'Aktif 30 Hari (Pro)'],
-    ['Biaya layanan', adminFee === 0 ? 'Gratis (Rp 0)' : `Rp ${adminFee.toLocaleString('id-ID')}`],
+    ['Biaya layanan', adminFee === 0 ? 'Gratis (Rp 0)' : formatRupiah(adminFee)],
   ];
 
   /* Tidak ada pratinjau kwitansi: tombol ini langsung menghasilkan PDF-nya,
@@ -107,7 +110,7 @@ export const PaymentSuccessScreen = () => {
                 Total pembayaran
               </p>
               <p className="mt-1 text-3xl font-black tracking-tight text-brand-900">
-                Rp {total.toLocaleString('id-ID')}
+                {formatRupiah(total)}
               </p>
               <p className={typography.helperTight}>{details.methodName}</p>
             </div>

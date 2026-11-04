@@ -9,6 +9,7 @@
 import ExcelJS from 'exceljs';
 import { formatWIB } from '@lib/date';
 import { formatRupiah } from '@lib/formatUtils';
+import { DEFAULT_PLAN } from '@lib/plans';
 
 const BRAND_GREEN = 'FF14523A';
 const CREAM_LIGHT = 'FFFBF8F3';
@@ -145,7 +146,7 @@ export const exportFullReportToExcel = async ({
         refNo: t.refNo || '-',
         userName: t.userName || '-',
         userEmail: t.userEmail || '-',
-        planName: t.planName || 'Paket Bulanan',
+        planName: t.planName || DEFAULT_PLAN.title,
         amount: Number(t.amount || 0),
         adminFee: Number(t.adminFee || 0),
         totalPaid: Number(t.totalPaid || 0),

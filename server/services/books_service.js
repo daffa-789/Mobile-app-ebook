@@ -75,7 +75,7 @@ const storedContentFields = async (contentPath, originalName) => {
     throw createServiceError(`Ukuran konten maksimal ${MAX_CONTENT_MB} MB.`, { statusCode: 415 });
   }
   const head = await headBytes(contentPath);
-  if (!matchesContentExtension(head, extension)) {
+  if (!(await matchesContentExtension(head, extension))) {
     throw createServiceError(
       `Isi berkas tidak cocok dengan ekstensi ${extension}. Periksa apakah berkasnya benar-benar jenis tersebut.`,
       { statusCode: 415 },
@@ -108,8 +108,8 @@ const toBookResponse = (book) => ({
   has_content: Number(book.content_size) > 0,
 });
 
-const requireThumbnailMime = (buffer) => {
-  const detected = sniffImageMime(buffer);
+const requireThumbnailMime = async (buffer) => {
+  const detected = await sniffImageMime(buffer);
   if (!detected) throw createServiceError(THUMBNAIL_FORMAT_MESSAGE, { statusCode: 415 });
   return detected;
 };
@@ -254,7 +254,7 @@ export async function createBookWithContent({
     });
   }
 
-  const thumbnailMimeDetected = requireThumbnailMime(thumbnailBuffer);
+  const thumbnailMimeDetected = await requireThumbnailMime(thumbnailBuffer);
   const storedFields = await storedContentFields(contentPath, contentName);
 
   const id = generateId('buku');
@@ -365,7 +365,7 @@ export async function updateBook({
   };
 
   if (thumbnailBuffer) {
-    const thumbnailMimeDetected = requireThumbnailMime(thumbnailBuffer);
+    const thumbnailMimeDetected = await requireThumbnailMime(thumbnailBuffer);
     const result = await toWebp(thumbnailBuffer, {
       width: 600,
       quality: 80,

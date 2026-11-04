@@ -1,3 +1,6 @@
+import dayjs from 'dayjs';
+import { DEFAULT_PLAN } from '@lib/plans';
+
 /**
  * @file src/lib/receiptFields.js
  * @description Penurunan kolom kwitansi — satu sumber kebenaran bagi layar yang
@@ -16,13 +19,13 @@
  * @returns {{ refNo: string, dateStr: string, planName: string, amount: number, adminFee: number, totalPaid: number, userName: string, userEmail: string, userPhone: string }}
  */
 export const resolveReceiptFields = (details, user) => {
-  const amount = Number(details?.amount || 25000);
+  const amount = Number(details?.amount || DEFAULT_PLAN.price);
   const adminFee = Number(details?.adminFee || 0);
 
   return {
     refNo: details?.refNo || details?.ref || `WB-${Date.now().toString(36).toUpperCase()}`,
-    dateStr: details?.dateStr || details?.createdAt || new Date().toLocaleString('id-ID'),
-    planName: details?.planName || 'Paket Bulanan Pro',
+    dateStr: details?.dateStr || details?.createdAt || dayjs().format('DD/MM/YYYY, HH:mm'),
+    planName: details?.planName || DEFAULT_PLAN.title,
     amount,
     adminFee,
     totalPaid: Number(details?.totalPaid || amount + adminFee),

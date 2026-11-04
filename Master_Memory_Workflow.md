@@ -1237,6 +1237,7 @@ Wahidiyah Book + Real Midtrans Skripsi/
 | R72–R82 | 31 Okt – 3 Nov 2026: perapian Prettier & service layer, quality gate `check:full`, standardisasi JSDoc, dekomposisi layar utama dan service layer menjadi paket `auth/` + `payment/`, penghapusan 13 klaster duplikasi, penyatuan layar autentikasi menjadi satu kartu, layar auth dibuat datar. Subbagian riwayat rounds ini **dipangkas 4 Nov 2026** — `git log` yang menyimpan detailnya. Satu pelajaran ditahan di sini karena masih berlaku: nilai penghapusan duplikasi (R80) bukan pada baris yang hilang (21.920 → 21.935, praktis tetap), melainkan pada **satu tempat untuk mengubah kontrak**. |
 | R83 | Konsolidasi rencana mobile 4 Nov 2026: keputusan React Native/Expo, branch `mobile-app`, penjaga build, dan koreksi status M1 — lihat 15.13. |
 | R84 | Penjaga konfigurasi Midtrans + pemantik rekonsiliasi 4 Nov 2026: flag vs prefix kunci, health check membaca lingkungan dari kunci, `POST /api/payments/qris/reconcile`, plus temuan `override: true` pada `server/env.js` — lihat 15.14. |
+| R87 | Toolchain mobile 4 Nov 2026: scaffold SDK 53 ditemukan di branch `mobile-app`, `main` digabung ke sana, dan Expo SDK 58 ditetapkan dengan fallback resmi 57 — lihat 15.17. |
 | R86 | Pemangkasan & penyesuaian dokumen 4 Nov 2026: §16.2 diringkas 163 → 31 baris (spesifikasi tinggal di `Mobile-app plan.md`), riwayat R40–R71 dirapatkan, delapan drift dokumen dikoreksi di tempatnya, dan rujukan mati hasil pemangkasan disambungkan — lihat 15.16. |
 | R85 | Koreksi cron & metadata buku 4 Nov 2026: blok `crons` yang struktural selalu gagal dihapus dari `vercel.json` (diputuskan: tidak perlu infra), jumlah halaman PDF dihitung dari berkasnya dan 3 baris katalog diperbaiki, plus audit menyeluruh klaim dokumen vs kode — lihat 15.15. |
 
@@ -1258,6 +1259,20 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
 - `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `server/services/auth/password_reset_service.js:103`.
+
+### 15.17 Toolchain Mobile R87 (4 November 2026)
+
+| Fakta | Detail |
+|---|---|
+| Scaffold sudah nyata, bukan rencana lagi | `mobile/` berisi **44 berkas** (±1.825 baris JavaScript di `mobile/src`, 9 layar: Auth, VerifyEmail, ForgotPassword, Home, Reader, PdfViewer, HtmlViewer, Downloads, Settings) plus `app.json`, `metro.config.js`, `package-lock.json`. Dibuat di commit `99ddc5c`. |
+| Toolchain yang dipakai scaffold | **Expo SDK 53** (`expo ~53.0.27`, `react-native 0.79.2`, `react 19.0.0`), `react-native-pdf ^6.7.7`, `expo-file-system ~18.1.11`, `expo-screen-capture ~8.0.10`, `expo-sqlite ~15.2.14`, `expo-secure-store ~14.2.3`, `expo-updates` belum dipasang. |
+| Branch-nya bercabang sebelum pekerjaan web hari ini | `mobile-app` tumbuh dari `4eb506a`, sehingga **tidak** memuat penjaga Midtrans (R84), hitungan halaman PDF + penghapusan cron (R85), pemangkasan dokumen (R86), maupun `Mobile-app plan.md`. Artinya: aplikasi mobile di branch itu bicara ke API produksi yang sudah punya `/qris/reconcile` dan `pages` hasil hitungan, sementara kode server di checkout-nya masih lama — gejala klasik "sudah diperbaiki tapi masih salah". |
+| Sudah dirapikan | `git merge origin/main` → `a437893`, **tanpa konflik** (scaffold hanya menyentuh `mobile/`). Sekarang branch ini memuat seluruh pekerjaan web hari ini + rencana mobile. |
+| Keputusan toolchain | **Expo SDK 58** ditetapkan, dengan **fallback resmi SDK 57** bila `react-native-pdf` belum kompatibel RN 0.88 / New Architecture. Aturan versi: `npx expo install` selalu, angka manual tidak pernah, dan **SDK dikunci sebelum Probe A/B**. Langkahnya masuk `Mobile-app plan.md` §14 sebagai **1a** (±0,5–1 hari). |
+| Konfigurasi yang sudah benar | `mobile/app.json` cocok dengan §17 rencana: `package: id.wahidiyah.book`, `versionCode: 1`, `minSdkVersion: 24`, `adaptiveIcon` latar `#FBF8F3`, permission hanya `INTERNET`, `windowSoftInputMode: adjustResize`. **Satu yang harus diingat:** `usesCleartextTraffic: true` hanya sah untuk build dev/preview — production wajib `false`. |
+| Yang masih menggantung | `origin/mobile-app` masih di `b8057af` (ketinggalan jauh), jadi branch ini belum ter-backup ke GitHub. Dan `mobile/assets/` menyisakan tiga berkas untracked (ikon & splash) yang belum masuk commit. |
+
+**Yang berubah di dokumen karena ini:** `Mobile-app plan.md` mendapat §3 (bentuk aplikasi + tabel "sistem yang dipakai agar cocok dengan arsitektur proyek" + aturan versi + delta 53→58 + kondisi nyata saat ini), §4.1 (isi `package.json` hari ini dan apa yang harus terjadi saat naik), langkah **1a** di §14 dengan total naik ±12 → **±13 hari**, dua baris risiko baru (kompatibilitas `react-native-pdf`, R8 di build release), empat larangan baru (21–24), dan catatan `targetSdk`/`newArchEnabled` di §17.
 
 ### 15.16 Pemangkasan & Penyesuaian Dokumen R86 (4 November 2026)
 
@@ -1380,6 +1395,7 @@ Fitur inti web sudah tersedia, tetapi kelulusan build, verifikasi manual, UAT, d
 
 | Aspek | Keputusan | Alasan singkat |
 |---|---|---|
+| Toolchain | **Expo SDK 58** (React Native 0.88, rilis 15 Okt 2026). Fallback resmi **SDK 57** kalau `react-native-pdf` belum kompatibel | Versi tidak ditulis manual — `npx expo install` yang memilih. SDK harus dikunci **sebelum** Probe A/B, karena menggantinya setelah probe berarti mengulang keduanya. Yang membedakan 53 → 58 dan menyentuh rencana: legacy architecture dihapus sejak 55 (tidak ada jalan mundur), `expo-file-system` API baru default sejak 54, dan **R8 minification menyala default di build release** |
 | Bentuk | Full React Native + Expo di folder `mobile/` | Shell WebView tidak memenuhi "dibuka offline" (cache service worker di WebView Android terpisah dan sering dibersihkan), dan untuk skripsi mudah disimpulkan penguji sebagai browser dibungkus. |
 | Cakupan v1 | login, katalog, reader, unduh-offline, layar Setting | Sengaja dibatasi: ±1.500–2.500 baris baru, bukan porting 13.468 baris. |
 | Tetap di web | panel admin, pembayaran, dashboard | Sudah terpisah (`src/features/admin`, 21 berkas / 2.766 baris) dan pemakainya bekerja di desktop. |

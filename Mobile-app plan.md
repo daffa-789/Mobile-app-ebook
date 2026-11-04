@@ -42,12 +42,49 @@
 
 ---
 
-## 3. Bentuk aplikasi
+## 3. Bentuk aplikasi & sistem yang dipakai
 
-- **Expo** (bukan bare RN CLI), proyek di folder `mobile/` dengan `package.json` sendiri.
-- **JavaScript, bukan TypeScript** — mengikuti keputusan repo induk; tidak ada `tsconfig` di `src/` web, dan memaksa TS di RN akan menambah satu lapisan kesalahan baru.
-- Distribusi: **APK sideload** lewat GitHub Releases. Tidak ada Play Store.
-- Update: OTA (`expo-updates`) **ditandai opsional** — lihat §13 dan `Master_Memory_Workflow.md` §16.2 (bagian Yang dibatalkan).
+**Expo SDK 58** (rilis 15 Oktober 2026, React Native 0.88) — bukan bare React Native CLI, bukan framework lain. Proyek tinggal di `mobile/` dengan `package.json` sendiri.
+
+- Distribusi: **APK sideload** lewat GitHub Releases. Tidak ada Play Store, tidak ada akun developer.
+- Update: OTA (`expo-updates`) **tetap opsional** — lihat §13 dan `Master_Memory_Workflow.md` §16.2 (bagian Yang dibatalkan).
+- iOS: **ditunda**, bukan ditutup. Build-nya bisa dari cloud Expo; yang berbayar adalah memasangnya ke iPhone.
+
+Sistem yang dipilih mengikuti arsitektur proyek ini, bukan mengikuti apa yang populer di ekosistem RN:
+
+| Lapisan | Yang dipakai | Kenapa ini yang cocok dengan repo induk |
+|---|---|---|
+| Bahasa | JavaScript + JSX, **bukan TypeScript** | Repo induk sudah menolak TS (15.1, dan keputusan 3 Nov 2026). Tidak ada `tsconfig` di `src/`; memaksa TS di mobile menambah satu lapisan kesalahan baru tanpa keuntungan untuk dua aplikasi riset. |
+| State | React Context: `state/AuthContext.js`, `state/BookContext.js` | Meniru `src/context/AppContext.jsx` + pola slice. Bukan Redux/Zustand/MobX — tidak ada satu pun di web. |
+| Data | `fetch` tipis di `api/`, amplop `{ success, message }` | Padanan jujur dari `src/lib/api.js` dan `server/lib/http.js`. Tanpa axios, tanpa React Query/tanstack. |
+| Styling | `StyleSheet` + `mobile/src/theme.js` hasil porting token | Melanjutkan aturan "satu sumber warna" (`component.json` → `src/lib/styles.js`). **Nativewind, Tamagui, NativeBase ditolak**: lapisan gaya baru yang tidak punya padanan di web, dan justru sumber kesalahan yang sedang kita hindari. |
+| Navigasi | React Navigation (`native-stack` + `bottom-tabs`) | Web tetap `react-router`; tidak ada niat menyatukan keduanya. |
+| Penyimpanan | `expo-secure-store` (token), `expo-sqlite` (manifest unduhan & progres), `@react-native-async-storage/async-storage` (nilai kecil) | Mengganti `localStorage`/`sessionStorage` web satu per satu, sesuai pemetaan §6. |
+| Konvensi kode | komentar & pesan bahasa Indonesia, JSDoc `@file`/`@description` per modul, Prettier dijalankan dari dalam `mobile/` | Melanjutkan standardisasi JSDoc R74/R75 di web. `mobile/` sengaja dikecualikan dari tooling web (`.prettierignore` + `@source not`), jadi gayanya dijaga sendiri. |
+| Verifikasi | `npm run build` + `npm run health` web + **probe di perangkat nyata**; tanpa test suite | Keputusan sadar repo ramping (15.1). Memasang vitest di mobile sama dengan menghidupkan kembali benda yang sudah dibuang. |
+| Backend | **tidak berubah sedikit pun** | Mobile hanyalah klien kedua dari Express + Supabase + Midtrans yang sudah ada. |
+
+### 3.1 Aturan versi
+
+1. **Versi paket tidak pernah ditulis manual.** Selalu `npx expo install <paket>` supaya resolver SDK 58 yang memilih, lalu `npx expo install --fix` untuk merapikan yang tertinggal. Menulis angka dari memori adalah cara tercepat mendapat Metro error yang pesannya menyesatkan.
+2. `mobile/package.json` dan `mobile/package-lock.json` ikut di-commit. Kalau keduanya berubah, itu hasil perintah di atas — bukan suntingan angka.
+3. **SDK dikunci sebelum Probe A dan B dikerjakan.** Mengganti SDK setelah probe berarti mengulang keduanya — ±1 hari terbuang hanya karena menunda satu keputusan.
+4. **Fallback resmi: SDK 57** (rilis 30 Juni 2026, React Native 0.86.2 — yang membawa perbaikan Hermes). Fallback ini diputuskan oleh hasil probe, bukan oleh dugaan.
+
+### 3.2 Yang berubah dari SDK 53 ke SDK 58 dan menyentuh rencana ini
+
+| Perubahan | Konsekuensi nyata ke proyek |
+|---|---|
+| Legacy architecture **dihapus sejak SDK 55** | Tidak ada lagi jalan mundur "matikan new arch kalau library rusak". Setiap library native, terutama `react-native-pdf`, wajib kompatibel New Architecture. |
+| `expo-file-system` API baru (`File`/`Paths`) default sejak 54, celah fiturnya ditutup di 56 | §9.2 Probe A sekarang menguji **pengiriman header `Authorization` pada API baru**, bukan `downloadAsync` legacy. Kode scaffold yang masih memakai API lama harus ikut diperiksa. |
+| React Native 0.79 → 0.88 | Lima loncatan SDK sekaligus; ini migrasi, bukan `npm update`. |
+| Android Gradle Plugin 9 didukung, **R8 minification default di build release** | Library pihak ketiga yang memakai refleksi bisa patah **hanya di APK release** sementara dev/preview normal. §18 menambah langkah "tes APK release", dan itu bukan opsional. |
+| iOS diarahkan ke iOS 27 | Tidak relevan — proyek ini Android-only dan iOS ditunda. |
+| Nama layanan "EAS Build/Update" → "Expo Build/Expo Update" | §13 penamaan; perintah `eas ...` masih berlaku. |
+
+### 3.3 Kondisi nyata saat ini (bukan rencana)
+
+Scaffold **sudah ada** di `mobile/`: 38 berkas, ±1.825 baris, sembilan layar, dibangun di atas **Expo SDK 53** (React Native 0.79.2, React 19.0.0) di branch `mobile-app`. Jadi "pindah ke 58" bukan lagi edit dokumen — ia migrasi kode nyata, dan urutannya ada di §14 langkah 1a.
 
 ### Struktur folder
 
@@ -106,7 +143,7 @@ mobile/
 
 ## 4. Dependensi, dan apa yang menggantikan apa
 
-Pilih versi lewat `npx create-expo-app@latest` lalu kunci dengan `package-lock.json`; **jangan** memasang paket RN dengan versi angka yang ditulis manual dari memori — pasangan SDK Expo ↔ React Native ↔ React itu kaku, dan salah satu saja membuat Metro gagal dengan pesan yang menyesatkan.
+Target: **Expo SDK 58**. Semua paket di bawah dipasang lewat `npx expo install` supaya resolvert yang memilih versi (aturan §3.1) — angka pada tabel ini adalah **nama paket, bukan versi**. Setelah instalasi, `npx expo install --fix` untuk merapikan yang tertinggal dari SDK lama.
 
 | Kebutuhan | Paket | Catatan penting |
 |---|---|---|
@@ -122,6 +159,27 @@ Pilih versi lewat `npx create-expo-app@latest` lalu kunci dengan `package-lock.j
 | Font | `expo-font` + `@expo-google-fonts/plus-jakarta-sans`, `@expo-google-fonts/fraunces`, `@expo-google-fonts/amiri` | Web memuat dari Google Fonts di `index.html:27-30`; di RN **tidak ada** `@font-face`, harus di-bundle. Amiri dibutuhkan kalau naskah memuat teks Arab. |
 | Toast | `react-native-toast-message` atau komponent sendiri 30 baris | Jangan porting `sonner`. |
 | OTA (opsional) | `expo-updates` | Hanya jika §13 jadi dikerjakan. |
+
+### 4.1 Isi `mobile/package.json` hari ini (SDK 53) dan apa yang harus terjadi saat naik ke 58
+
+Terverifikasi dari berkas pada 4 Nov 2026, bukan dari ingatan:
+
+| Paket | Versi sekarang | Yang harus terjadi di SDK 58 |
+|---|---|---|
+| `expo` | ~53.0.27 | `npx expo install expo@^58` — ini langkah pertama, sisanya ikut |
+| `react-native` | 0.79.2 | ikut ke 0.88 oleh resolver; **jangan** dipasang manual |
+| `react` | 19.0.0 | ikut versi yang ditentukan template 58; jangan ditulis dari memori |
+| `expo-file-system` | ~18.1.11 | naik; **cek apakah kode memakai API lama** (`FileSystem.downloadAsync`) — API baru `File`/`Paths` default sejak 54, dan §9.2 menguji opsi header di API baru itu |
+| `expo-secure-store` | ~14.2.3 | naik |
+| `expo-sqlite` | ~15.2.14 | naik; perhatikan perubahan API statement kalau manifest sudah ditulis |
+| `expo-screen-capture` | ~8.0.10 | naik; **Probe B (§14 langkah 3) wajib diulang setelah naik**, karena perilakunya di atas native view adalah taruhannya |
+| `react-native-pdf` | ^6.7.7 | **titik risiko terbesar.** Ini paket pihak ketiga, bukan paket Expo — resolver tidak menjamin kompatibilitas RN 0.88 + New Architecture + R8. Kalau ia gagal, fallback resmi §3.1 butir 4 (SDK 57), bukan menulis viewer sendiri |
+| `react-native-webview` | 13.13.5 | naik |
+| `@react-navigation/native-stack` | ^7.3.10 | naik |
+| `expo-font` | ~13.3.2 | naik |
+| `expo-updates` | belum ada | hanya dipasang kalau §13 jadi dikerjakan |
+
+Setelah `npx expo install expo@^58`: jalankan Metro di **perangkat**, ulangi Probe A dan B, baru lanjut. Naik SDK tanpa mengulang dua probe itu berarti meninggalkan satu-satunya bagian rencana yang bisa membuktikan dirinya sendiri.
 
 **Tidak dipakai di mobile:** `pdfjs-dist`, `dompurify`, `jspdf`, `exceljs`, `recharts`, `qrcode.react`, `@headlessui/react`, `sonner`, `canvas-confetti`, `mammoth` (konversi DOCX memang sudah terjadi di server), `clsx`/`tailwind-merge`, `tailwindcss`. Kalau ada yang mengusulkan **Nativewind** agar kelas Tailwind web bisa dipakai: **jangan di v1.** Kombinasi Nativewind + Tailwind v4 + Metro adalah sumber kesalahan yang persis yang sedang kita hindari; `StyleSheet` + `theme.js` lebih membosankan dan lebih sedikit bug.
 
@@ -431,8 +489,9 @@ Setiap langkah punya "titik bukti" — kalau belum lewat, jangan lanjut ke langk
 | # | Pekerjaan | Titik bukti | Estimasi |
 |---|---|---|---|
 | 0 | Prasyarat P1–P7 (termasuk keystore + backup, dua HP beda merek, keputusan §20) | Keystore ada di luar repo dan bisa dibuka; dua HP terdeteksi `adb devices`; `npm run health` 7/7 | — |
-| 1 | Scaffold Expo + `mobile/` berdiri + **`app.json` §17 lengkap** (package, cleartext dev, ikon, adaptive icon, permission) + penjaga build sudah ada | Metro start, layar kosong ter-render di **perangkat**, `npm run check` tetap hijau, ikon terlihat di launcher | 1 hari |
-| 2 | **Probe A:** `/api/books/:id/content` — header/redirect/download (lihat §9.2) | Satu PDF nyata dari DB tersimpan di folder privat dan terbuka | 0,5 hari |
+| **1a** | **Naikkan scaffold yang sudah ada dari SDK 53 ke SDK 58** (`npx expo install expo@^58`, lalu `npx expo install --fix`, lalu `npm install` di `mobile/`) | Metro start tanpa error resolusi paket, aplikasi lama masih terbuka di perangkat, `git diff` pada `mobile/package.json` seluruhnya hasil perintah — bukan angka yang diketik tangan | 0,5–1 hari |
+| 1 | Scaffold Expo + `mobile/` berdiri + **`app.json` §17 lengkap** (package, cleartext dev, ikon, adaptive icon, permission) + penjaga build sudah ada | Metro start, layar kosong ter-render di **perangkat**, `npm run check` tetap hijau, ikon terlihat di launcher | 0,5 hari *(sudah dikerjakan scaffold 53 — tinggal verifikasi setelah 1a)* |
+| 2 | **Probe A:** `/api/books/:id/content` — header/redirect/download pada **API `expo-file-system` baru** (lihat §9.2) | Satu PDF nyata dari DB tersimpan di folder privat dan terbuka | 0,5 hari |
 | 3 | **Probe B:** `FLAG_SECURE` di atas native PDF view, di **dua** HP nyata | Screenshot diblokir **dan** isi naskah tetap terlihat (bukan hitam) | 0,5 hari |
 | 4 | `client.js` + SecureStore + `AuthContext` | Login, restore sesi saat buka aplikasi, 401 → logout bersih | 1 hari |
 | 5 | AuthScreen (Masuk/Daftar/Verifikasi OTP) | Daftar → 202 → OTP (pakai `EXPOSE_DEV_OTP=1`) → 201 → masuk | 1 hari |
@@ -446,7 +505,7 @@ Setiap langkah punya "titik bukti" — kalau belum lewat, jangan lanjut ke langk
 | — | (opsional) OTA + tombol update | lihat §13 | 1–2 hari |
 | — | (opsional) Halaman unduh | lihat `Master_Memory_Workflow.md` §16.2 | 1 hari |
 
-Total v1 tanpa opsi: **±12 hari kerja** (naik ±1,5 hari dari perkiraan awal, karena langkah 1, 9, dan 11 tadi belum terhitung). Angka ini bukan janji — kalau Probe A jatuh ke kasus (3), tambahkan ±0,5 hari untuk endpoint `content-url` di server.
+Total v1 tanpa opsi: **±13 hari kerja** (±12 hari rencana + 0,5–1 hari untuk langkah 1a menaikkan scaffold yang sudah ada dari SDK 53 ke 58). Angka ini bukan janji — kalau Probe A jatuh ke kasus (3), tambahkan ±0,5 hari untuk endpoint `content-url` di server; kalau `react-native-pdf` belum kompatibel SDK 58, yang lebih murah adalah fallback ke SDK 57 (§3.1 butir 4), bukan menulis viewer PDF sendiri.
 
 ---
 
@@ -468,6 +527,9 @@ Total v1 tanpa opsi: **±12 hari kerja** (naik ±1,5 hari dari perkiraan awal, k
 | `Intl` Hermes jatuh ke locale `en-US` | "Rp 25.000" tampil sebagai "25,000" hanya di HP — tidak kelihatan saat dites di Node maupun web | Formatter manual `rupiah.js`/`tanggalWib.js` (§19); jangan port `formatUtils.js` apa adanya |
 | Back fisik keluar aplikasi dari reader | `FLAG_SECURE` tertinggal menyala, atau halaman terakhir tidak sempat tersimpan | `BackHandler` dengan urutan simpan → lepas flag → pop (§19); dibuktikan di langkah 11 |
 | Satu HP dipakai beberapa akun | Buku terunduh milik A terbuka untuk B | Manifest berkunci `(user_id, book_id)` + verifikasi ulang tiap 30 hari (§20) |
+| `react-native-pdf` ^6.7.7 belum kompatibel RN 0.88 / New Architecture | Reader PDF mati total, dan itu inti aplikasi | Fallback resmi **SDK 57** (§3.1 butir 4). Jangan menulis viewer PDF sendiri, jangan mematikan new arch — keduanya lebih mahal |
+| R8 minification (default release di SDK 58) mematahkan library refleksi | Reader berjalan normal di dev/preview, **hitam atau crash di APK release** yang dibagikan ke penguji | §18 butir 6: satu tes APK release di HP nyata sebelum distribusi; keep-rules terarah, bukan mematikan R8 |
+| Branch `mobile-app` dan `main` berjalan terpisah | Kode mobile bicara ke API produksi yang sudah punya `/qris/reconcile` dan `pages` hasil hitungan, sementara checkout lokal masih lama — gejalanya "sudah diperbaiki tapi masih salah" | `git merge origin/main` secara rutin (bukan `git pull` — lihat §2 P3). Sudah dilakukan 4 Nov 2026 di `a437893` |
 
 ---
 
@@ -524,6 +586,10 @@ Lapisan ini tidak menyentuh logika aplikasi, tapi menentukan apakah aplikasinya 
 | `permissions` | Hanya `INTERNET`. `REQUEST_INSTALL_PACKAGES` **tidak dipasang** kecuali self-update APK (§13) jadi dikerjakan. | Meminta izin yang tidak dipakai menaikkan curiga penguji dan tidak memberi manfaat. |
 | `scheme` | `wahidiyahbook` | Belum ada yang memakai (QRIS + polling tidak butuh deep link, Google OAuth ditunda). Ditetapkan sekarang supaya tidak berubah nanti. |
 | Ikon & splash | `assets/` + `adaptiveIcon` wajib diisi | APK tanpa ikon terlihat seperti build gagal. Adaptive icon Android punya jebakan sendiri: foreground 108dp dengan 66dp aman di tengah, kalau tidak ikon terpotong bulat. |
+| `targetSdkVersion` | **Ikut default build SDK 58, jangan di-override** | Override manual membuat APK tidak lolos kebijakan toko (kalau nanti naik) dan membuat aturan cleartext tidak sesuai yang diasumsikan §17. Nilai aktual dibaca dari hasil build, bukan ditebak. |
+| `newArchEnabled` | Tidak perlu ditulis — **wajib** dan tidak bisa dimatikan sejak SDK 55 | Jangan pernah menulis `newArchEnabled: false` sebagai "jalan pintas" saat library bermasalah. Di SDK 58 itu bukan pilihan; yang benar adalah fallback SDK 57 atau ganti library. |
+
+**Status nyata saat ini:** `mobile/app.json` hasil scaffold SDK 53 **sudah cocok** dengan tabel di atas — `package: id.wahidiyah.book`, `versionCode: 1`, `minSdkVersion: 24`, `usesCleartextTraffic: true`, `windowSoftInputMode: adjustResize`, `adaptiveIcon` dengan latar `#FBF8F3`, dan permission hanya `INTERNET`. Yang perlu diawasi saat naik ke 58 hanyalah `usesCleartextTraffic`: ia **harus `false`** di build production, dan nilai itu sekarang masih `true` di berkas.
 
 ## 18. Signing & kebijakan versi
 
@@ -539,6 +605,7 @@ Lapisan ini tidak menyentuh logika aplikasi, tapi menentukan apakah aplikasinya 
 3. **Build debug memakai `~/.android/debug.keystore`** (dibuat otomatis) untuk probe awal; **jangan pernah distribute APK debug** ke penguji, karena berpindah dari debug ke release juga menuntut uninstall.
 4. **`versionCode` naik +1 setiap APK yang dibagikan**, `versionName` mengikuti versi manusia. Android menolak install kalau `versionCode` lebih rendah, jadi tanpa aturan ini "coba versi baru" akan gagal diam-diam dan disalahpahami sebagai bug aplikasi.
 5. Tampilkan keduanya di layar Setting (`expo-application` / `Constants.expoConfig`) — tanpa itu kamu tidak akan tahu versi mana yang terpasang di HP penguji saat mereka melapor.
+6. **Tes APK `release`, bukan hanya `preview`/dev.** SDK 58 menyalakan **R8 minification secara default di build release**, dan R8 bisa mematahkan library pihak ketiga yang memakai refleksi — termasuk viewer PDF. Kegagalan jenis ini tidak muncul di Metro/dev, jadi satu langkah di akhir bukan formalitas: pasang APK release di HP nyata, buka satu buku, dan pastikan tidak hitam/error. Kalau R8 menjadi penyebabnya, pertahankan aturannya lewat `proguard-rules.pro` (keep rules untuk paket yang bersangkutan), jangan matikan R8 sekalian.
 
 ## 19. Perilaku perangkat yang tidak muncul di emulator default
 
@@ -590,6 +657,10 @@ Keputusan default di bawah **bisa diubah pemilik proyek**; yang penting jangan d
 18. **Jangan** mengandalkan `Intl` Hermes untuk format rupiah/tanggal — lihat §19, ini sudah terverifikasi sebagai risiko nyata pada kode yang mau diport.
 19. **Jangan** melepas `FLAG_SECURE` lewat jalan pintas (mis. flag global) saat screenshot Bab IV dibutuhkan — pakai build `preview`, supaya yang terpasang di HP penguji tetap terkunci.
 20. **Jangan** menghapus buku terunduh saat logout atau saat Pro kedaluwarsa tanpa persetujuan pengguna — lihat §20.
+21. **Jangan** menulis versi paket dengan tangan. `npx expo install` yang memilih; `npx expo install --fix` yang merapikan (§3.1).
+22. **Jangan** mengganti SDK setelah Probe A/B lolos — menggantinya berarti mengulang keduanya.
+23. **Jangan** menulis `newArchEnabled: false` sebagai jalan pintas saat library bermasalah; legacy architecture sudah dihapus sejak SDK 55 dan tidak bisa dinyalakan lagi.
+24. **Jangan** membagikan APK yang hanya dites di dev/preview. R8 menyala default di release, dan kegagalan jenis itu tidak tampak sebelum dipasang di HP nyata (§18 butir 6).
 
 ---
 

@@ -21,12 +21,12 @@
 export const TextDocViewer = ({
   textContent,
   samplePages = [],
-  currentPage,
-  totalPages,
-  zoom,
+  currentPage = 1,
+  totalPages = 1,
+  zoom = 100,
   surfaceRef,
   previewRef,
-  pinchHandlers,
+  pinchHandlers = {},
 }) => {
   const isSampleMode = !textContent && samplePages.length > 0;
   const currentSample = isSampleMode ? samplePages[currentPage - 1] : null;
@@ -34,9 +34,9 @@ export const TextDocViewer = ({
   return (
     <div
       ref={surfaceRef}
-      onTouchStart={pinchHandlers.handleTouchStart}
-      onTouchEnd={pinchHandlers.handleTouchEnd}
-      onTouchCancel={pinchHandlers.handleTouchEnd}
+      onTouchStart={pinchHandlers?.handleTouchStart}
+      onTouchEnd={pinchHandlers?.handleTouchEnd}
+      onTouchCancel={pinchHandlers?.handleTouchEnd}
       className="w-full h-full flex flex-col items-center overflow-y-auto p-4 sm:p-8 overscroll-contain"
       style={{
         WebkitOverflowScrolling: 'touch',

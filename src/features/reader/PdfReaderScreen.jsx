@@ -260,14 +260,13 @@ export const PdfReaderScreen = () => {
             onTargetScrollHandled={() => setTargetScrollPage(null)}
           />
         ) : TEXT_TYPES.has(extension) && textContent ? (
-          <TextDocViewer textContent={textContent} zoom={zoom} pinchHandlers={{}} />
+          <TextDocViewer textContent={textContent} zoom={zoom} />
         ) : totalPages > 0 && samplePages.length > 0 ? (
           <TextDocViewer
             samplePages={samplePages}
             currentPage={currentPage}
             totalPages={totalPages}
             zoom={zoom}
-            pinchHandlers={{}}
           />
         ) : (
           <DocumentEmptyState contentName={activeBook.contentName} />

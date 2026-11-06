@@ -9,15 +9,45 @@
     "resolveJsonModule": true,
     "moduleDetection": "force",
     "paths": {
-      "@/*": ["./src/*"],
-      "@features/*": ["./src/features/*"],
-      "@ui/*": ["./src/components/ui/*"],
-      "@lib/*": ["./src/lib/*"],
-      "@data/*": ["./src/data/*"],
-      "@context/*": ["./src/context/*"],
-      "@theme/*": ["./src/theme/*"]
+      "@/*": ["./src/*", "./landing-page/src/*", "./admin-dashboard-web/src/*"],
+      "@features/*": [
+        "./src/features/*",
+        "./landing-page/src/features/*",
+        "./admin-dashboard-web/src/features/*"
+      ],
+      "@ui/*": [
+        "./src/components/ui/*",
+        "./landing-page/src/components/ui/*",
+        "./admin-dashboard-web/src/components/ui/*"
+      ],
+      "@lib/*": ["./src/lib/*", "./landing-page/src/lib/*", "./admin-dashboard-web/src/lib/*"],
+      "@data/*": ["./src/data/*", "./landing-page/src/data/*", "./admin-dashboard-web/src/data/*"],
+      "@context/*": [
+        "./src/context/*",
+        "./landing-page/src/context/*",
+        "./admin-dashboard-web/src/context/*"
+      ],
+      "@theme/*": [
+        "./src/theme/*",
+        "./landing-page/src/theme/*",
+        "./admin-dashboard-web/src/theme/*"
+      ],
+      "@shared/*": ["./shared/*"]
     }
   },
-  "include": ["src/**/*", "vite.config.js", "tailwind.config.js", "postcss.config.js"],
-  "exclude": ["node_modules", "dist", "dist-*"]
+  "include": [
+    "src/**/*",
+    "landing-page/**/*",
+    "admin-dashboard-web/**/*",
+    "mobile-app/**/*",
+    "shared/**/*",
+    "server/**/*",
+    "scripts/**/*",
+    "vite.config.js",
+    "vite.config.landing.js",
+    "vite.config.admin.js",
+    "tailwind.config.js",
+    "postcss.config.js"
+  ],
+  "exclude": ["node_modules", "dist", "dist-*", ".agents"]
 }

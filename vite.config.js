@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
         '@data': fileURLToPath(new URL('./src/data', import.meta.url)),
         '@context': fileURLToPath(new URL('./src/context', import.meta.url)),
         '@theme': fileURLToPath(new URL('./src/theme', import.meta.url)),
+        '@shared': fileURLToPath(new URL('./shared', import.meta.url)),
       },
     },
     build: {

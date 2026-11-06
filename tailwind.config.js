@@ -25,7 +25,13 @@ const scale = (prefix, shades) =>
   Object.fromEntries(shades.map((shade) => [shade, v(`${prefix}-${shade}`)]));
 
 export default {
-  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  content: [
+    './index.html',
+    './src/**/*.{js,ts,jsx,tsx}',
+    './landing-page/**/*.{js,ts,jsx,tsx,html}',
+    './admin-dashboard-web/**/*.{js,ts,jsx,tsx,html}',
+    './shared/**/*.{js,ts,jsx,tsx}',
+  ],
   theme: {
     borderRadius: {
       none: '0px',

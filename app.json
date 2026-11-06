@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "wahidiyah-book",
+    "slug": "wahidiyah-book",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./mobile-app/assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./mobile-app/assets/android-icon-foreground.png",
+        "backgroundImage": "./mobile-app/assets/android-icon-background.png",
+        "monochromeImage": "./mobile-app/assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./mobile-app/assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7175b4fc-04f3-423b-a7fd-06a1ccff134c"
+      }
+    }
+  }
+}

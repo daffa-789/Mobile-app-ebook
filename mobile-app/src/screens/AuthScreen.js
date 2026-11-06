@@ -134,7 +134,7 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
     try {
       const clientId =
         process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ||
-        '277393391094-61h85oseelbsl3gim564nl1o3aoot50k.apps.googleusercontent.com';
+        '8108075809-5lfbtqmkq9gkbn869jmvd8hhajinl1k2.apps.googleusercontent.com';
 
       const isWeb = Platform.OS === 'web';
       let redirectUri = 'https://wahidiyah-book.vercel.app/api/auth/google/callback';

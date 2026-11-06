@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "version": 2,
-  "buildCommand": "vite build",
-  "outputDirectory": "dist",
+  "buildCommand": "npm run build:landing",
+  "outputDirectory": "dist/landing",
   "framework": "vite",
   "regions": ["sin1"],
   "rewrites": [

@@ -62,7 +62,9 @@ export const ServerStatusBanner = () => {
             </div>
             <p className="mt-0.5 text-caption leading-relaxed text-ink-700">
               {detail ||
-                'Layanan backend (Port 5000) tidak merespons. Jalankan "npm run dev" pada Command Prompt / Terminal.'}
+                (import.meta.env.PROD
+                  ? 'Layanan backend Vercel tidak merespons atau database belum terhubung. Pastikan Environment Variables (Supabase & JWT) sudah terpasang di Vercel Settings.'
+                  : 'Layanan backend (Port 5000) tidak merespons. Jalankan "npm run dev" pada Command Prompt / Terminal.')}
             </p>
           </div>
         </div>

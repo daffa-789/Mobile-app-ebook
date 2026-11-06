@@ -10,6 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Image,
+  Linking,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -130,32 +132,47 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
     setErrorMessage('');
     setIsSubmitting(true);
     try {
-      // Demo instant Google sign-in untuk pengetesan mulus tanpa konfigurasi OAuth rumit
-      const googleUser = {
-        ...DEFAULT_USER,
-        id: 'usr-google-' + Date.now(),
-        name: sharedEmail ? sharedEmail.split('@')[0] : 'Ghazalah Ramadhan Daffa Firjatullah',
-        fullName: sharedEmail ? sharedEmail.split('@')[0] : 'Ghazalah Ramadhan Daffa Firjatullah',
-        email: sharedEmail || 'ghazalahramadhan6@gmail.com',
-        phone: phone || '081234567890',
-        role: 'user',
-        is_pro: true,
-        isPro: true,
-      };
-      await loginWithUser(googleUser, 'google-oauth-demo-token');
-      onAuthSuccess?.(googleUser);
+      const clientId =
+        process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ||
+        '277393391094-61h85oseelbsl3gim564nl1o3aoot50k.apps.googleusercontent.com';
+
+      const isWeb = Platform.OS === 'web';
+      let redirectUri = 'https://wahidiyah-book.vercel.app/api/auth/google/callback';
+      if (isWeb && typeof window !== 'undefined') {
+        const origin = window.location.origin;
+        if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+          redirectUri = 'http://localhost:3000/api/auth/google/callback';
+        } else {
+          redirectUri = `${origin}/api/auth/google/callback`;
+        }
+      }
+
+      const state = 'oauth_' + Math.random().toString(36).substring(2);
+      if (isWeb && typeof document !== 'undefined') {
+        document.cookie = `google_oauth_state=${encodeURIComponent(state)}; Path=/; Max-Age=600; SameSite=Lax`;
+      }
+
+      // URL OAuth Google dengan prompt=select_account agar pengguna dapat memilih akun Google
+      const authUrl =
+        `https://accounts.google.com/o/oauth2/v2/auth` +
+        `?client_id=${encodeURIComponent(clientId)}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&response_type=code` +
+        `&scope=${encodeURIComponent('openid email profile')}` +
+        `&state=${encodeURIComponent(state)}` +
+        `&access_type=online` +
+        `&prompt=select_account`;
+
+      if (isWeb && typeof window !== 'undefined') {
+        window.location.href = authUrl;
+      } else {
+        await Linking.openURL(authUrl);
+      }
     } catch (err) {
-      setErrorMessage('Gagal masuk dengan Google: ' + err.message);
+      setErrorMessage('Gagal membuka login Google: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleQuickDemoFill = () => {
-    setSharedEmail('ghazalahramadhan6@gmail.com');
-    setPassword('password123');
-    setErrorMessage('');
-    setNoticeMessage('Kredensial akun demo berhasil diisi.');
   };
 
   const handleForgotPassword = () => {
@@ -458,23 +475,15 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
             disabled={isSubmitting}
             activeOpacity={0.8}
           >
-            <Ionicons name="logo-google" size={18} color="#EA4335" />
+            <Image
+              source={require('../../assets/google-icon.png')}
+              style={styles.googleIconImage}
+              resizeMode="contain"
+            />
             <Text style={styles.googleButtonText}>
               {activeTab === 'register' ? 'Daftar dengan Google' : 'Masuk dengan Google'}
             </Text>
           </TouchableOpacity>
-
-          {/* Quick Demo Credentials Helper */}
-          {activeTab === 'login' && (
-            <TouchableOpacity
-              style={styles.demoFillBtn}
-              onPress={handleQuickDemoFill}
-              activeOpacity={0.7}
-            >
-              <Feather name="zap" size={12} color="#14523A" />
-              <Text style={styles.demoFillText}>Isi Otomatis Akun Demo</Text>
-            </TouchableOpacity>
-          )}
 
           {/* 1:1 Footer Link */}
           <View style={styles.footerWrap}>
@@ -725,27 +734,14 @@ const styles = StyleSheet.create({
     borderColor: '#E4D9C6',
     height: 48,
   },
+  googleIconImage: {
+    width: 20,
+    height: 20,
+  },
   googleButtonText: {
     fontSize: 13,
     fontWeight: 'bold',
     color: '#1D1B17',
-  },
-  demoFillBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#F0E8DA',
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    alignSelf: 'center',
-    marginTop: 12,
-  },
-  demoFillText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#14523A',
   },
   footerWrap: {
     alignItems: 'center',

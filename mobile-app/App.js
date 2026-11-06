@@ -26,6 +26,15 @@ function MainNavigator() {
   const [showRiwayat, setShowRiwayat] = useState(false);
   const [authModalVisible, setAuthModalVisible] = useState(false);
 
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.__openAuthModal = () => setAuthModalVisible(true);
+      if (window.location.search.includes('auth=1')) {
+        setAuthModalVisible(true);
+      }
+    }
+  }, []);
+
   // Jika sedang membaca buku
   if (activeBook) {
     return <ReaderScreen book={activeBook} onBack={() => setActiveBook(null)} />;

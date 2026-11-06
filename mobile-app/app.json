@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "wahidiyah-book",
-    "slug": "wahidiyah-book",
+    "name": "Wahidiyah Book",
+    "slug": "mobile-app-ebook",
+    "owner": "jualendfield1610s-team",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -22,7 +23,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "7175b4fc-04f3-423b-a7fd-06a1ccff134c"
+        "projectId": "ef5df259-9b15-4288-80de-5fdff2510d5a"
       }
     }
   }

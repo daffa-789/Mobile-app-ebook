@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  Platform,
+  useWindowDimensions,
+  ActivityIndicator,
+} from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { theme } from './src/theme';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
@@ -10,6 +20,7 @@ import { ProScreen } from './src/screens/ProScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { SubscriptionHistoryScreen } from './src/screens/SubscriptionHistoryScreen';
 import { ReaderScreen } from './src/screens/ReaderScreen';
+import { AuthScreen } from './src/screens/AuthScreen';
 import { AuthModal } from './src/screens/AuthModal';
 
 const TABS = [
@@ -20,11 +31,14 @@ const TABS = [
 ];
 
 function MainNavigator() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [activeBook, setActiveBook] = useState(null);
   const [showRiwayat, setShowRiwayat] = useState(false);
   const [authModalVisible, setAuthModalVisible] = useState(false);
+
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const isDesktopWeb = Platform.OS === 'web' && windowWidth > 500;
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -35,34 +49,90 @@ function MainNavigator() {
     }
   }, []);
 
-  // Jika sedang membaca buku
-  if (activeBook) {
-    return <ReaderScreen book={activeBook} onBack={() => setActiveBook(null)} />;
-  }
+  // Reset screen states whenever user logs out
+  React.useEffect(() => {
+    if (!user) {
+      setActiveTab('home');
+      setActiveBook(null);
+      setShowRiwayat(false);
+      setAuthModalVisible(false);
+    }
+  }, [user]);
 
-  // Jika sedang membuka layar riwayat langganan
-  if (showRiwayat) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FBF8F3" />
-        <SubscriptionHistoryScreen onBack={() => setShowRiwayat(false)} />
-        {/* Tetap sertakan bottom nav */}
-        <BottomNavBar
-          activeTab={activeTab}
-          onTabPress={(tabId) => {
-            setShowRiwayat(false);
-            setActiveTab(tabId);
-          }}
-        />
-      </SafeAreaView>
+  // Frame container mock-up perangkat mobile
+  const renderFramed = (children) => (
+    <View
+      style={[styles.outerContainer, { backgroundColor: isDesktopWeb ? '#1E2022' : '#FBF8F3' }]}
+    >
+      <StatusBar barStyle="dark-content" backgroundColor="#FBF8F3" />
+
+      {/* Frame Smartphone Android Otomatis di Layar Laptop / Web Desktop */}
+      <View
+        style={[
+          styles.deviceFrame,
+          isDesktopWeb && {
+            width: 440,
+            height: Math.min(windowHeight - 40, 920),
+            borderRadius: 36,
+            borderWidth: 8,
+            borderColor: '#1D1B17',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 16 },
+            shadowOpacity: 0.35,
+            shadowRadius: 32,
+            elevation: 16,
+            overflow: 'hidden',
+          },
+        ]}
+      >
+        {/* Notch / Punch-hole Kamera Mockup jika dibuka di desktop */}
+        {isDesktopWeb && (
+          <View style={styles.notchContainer}>
+            <View style={styles.cameraPill} />
+          </View>
+        )}
+
+        <SafeAreaView style={styles.innerSafeArea}>{children}</SafeAreaView>
+      </View>
+    </View>
+  );
+
+  // 1. Loading state saat inisialisasi sesi tersimpan
+  if (loading) {
+    return renderFramed(
+      <View style={styles.centeredLoading}>
+        <ActivityIndicator size="large" color="#14523A" />
+      </View>,
     );
   }
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FBF8F3" />
+  // 2. AUTH GATE (Wajib Login sebelum masuk aplikasi):
+  // Saat user belum login (user === null), tampilkan antarmuka AuthScreen secara langsung.
+  // Jangan render layar utama maupun bottom navigation bar.
+  if (!user) {
+    return renderFramed(
+      <AuthScreen
+        onAuthSuccess={() => {
+          setActiveTab('home');
+          setActiveBook(null);
+          setShowRiwayat(false);
+          setAuthModalVisible(false);
+        }}
+      />,
+    );
+  }
 
-      {/* Screen Body */}
+  // 3. Layar Utama Aplikasi (hanya dapat diakses setelah login terverifikasi)
+  const renderCurrentScreen = () => {
+    if (activeBook) {
+      return <ReaderScreen book={activeBook} onBack={() => setActiveBook(null)} />;
+    }
+
+    if (showRiwayat) {
+      return <SubscriptionHistoryScreen onBack={() => setShowRiwayat(false)} />;
+    }
+
+    return (
       <View style={styles.screenContainer}>
         {activeTab === 'home' && (
           <HomeScreen
@@ -79,19 +149,27 @@ function MainNavigator() {
           />
         )}
       </View>
+    );
+  };
 
-      {/* 1:1 Mobile Bottom Navigation Bar */}
-      <BottomNavBar
-        activeTab={activeTab}
-        onTabPress={(tabId) => {
-          setShowRiwayat(false);
-          setActiveTab(tabId);
-        }}
-      />
+  return renderFramed(
+    <>
+      {renderCurrentScreen()}
 
-      {/* Auth Modal (Login / Register) */}
+      {/* Bottom Bar selalu ada selama tidak sedang membaca buku */}
+      {!activeBook && (
+        <BottomNavBar
+          activeTab={activeTab}
+          onTabPress={(tabId) => {
+            setShowRiwayat(false);
+            setActiveTab(tabId);
+          }}
+        />
+      )}
+
+      {/* Modal Masuk / Daftar Akun untuk switch akun atau tindakan pro */}
       <AuthModal visible={authModalVisible} onClose={() => setAuthModalVisible(false)} />
-    </SafeAreaView>
+    </>,
   );
 }
 
@@ -136,9 +214,42 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  outerContainer: {
     flex: 1,
-    backgroundColor: '#FBF8F3', // 1:1 Canvas Cream Hangat
+    backgroundColor: Platform.OS === 'web' ? '#1E2022' : '#FBF8F3', // Studio Dark Backdrop saat di laptop
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deviceFrame: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#FBF8F3',
+    position: 'relative',
+  },
+  notchContainer: {
+    width: '100%',
+    height: 24,
+    backgroundColor: '#FBF8F3',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 50,
+  },
+  cameraPill: {
+    width: 70,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#1D1B17',
+  },
+  innerSafeArea: {
+    flex: 1,
+    backgroundColor: '#FBF8F3',
+    position: 'relative',
+  },
+  centeredLoading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FBF8F3',
   },
   screenContainer: {
     flex: 1,

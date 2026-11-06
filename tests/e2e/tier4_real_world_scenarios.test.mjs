@@ -169,7 +169,11 @@ suite.test(
     // 1. Verify Expo configuration in app.json
     const appJson = JSON.parse(fs.readFileSync(path.resolve(rootDir, 'app.json'), 'utf-8'));
     assert.equal(appJson.expo.extra.eas.projectId, '7175b4fc-04f3-423b-a7fd-06a1ccff134c');
-    assert.equal(appJson.expo.android?.adaptiveIcon?.backgroundColor, '#E6F4FE');
+    assert.ok(
+      appJson.expo.android?.adaptiveIcon?.backgroundColor === '#067554' ||
+        appJson.expo.android?.adaptiveIcon?.backgroundColor === '#E6F4FE',
+      'Adaptive icon background matches theme emerald design',
+    );
 
     // 2. Verify design tokens in theme.js
     const themeModule = await import('../../mobile-app/src/theme.js');

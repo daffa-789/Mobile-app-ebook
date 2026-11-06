@@ -6,21 +6,24 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { useBooks } from '../context/BookContext';
 import { useAuth } from '../context/AuthContext';
 
-const { width } = Dimensions.get('window');
 const CARD_GAP = 16;
-const CARD_WIDTH = (width - 32 - CARD_GAP) / 2;
 
 export const HomeScreen = ({ onOpenBook, onOpenPro }) => {
   const { books, carouselSlides } = useBooks();
   const { isPro } = useAuth();
   const [slideIndex, setSlideIndex] = useState(0);
+
+  const { width: windowWidth } = useWindowDimensions();
+  // Kunci lebar maksimal pada 440px (rasio mobile phone) dan hitung 2 kolom presisi
+  const effectiveWidth = Math.min(windowWidth, 424);
+  const cardWidth = Math.floor((effectiveWidth - 32 - CARD_GAP) / 2);
 
   // Auto-play carousel slides
   useEffect(() => {
@@ -88,7 +91,7 @@ export const HomeScreen = ({ onOpenBook, onOpenPro }) => {
           return (
             <TouchableOpacity
               key={book.id}
-              style={styles.bookCard}
+              style={[styles.bookCard, { width: cardWidth }]}
               activeOpacity={0.88}
               onPress={() => {
                 if (isLocked) {
@@ -241,7 +244,6 @@ const styles = StyleSheet.create({
     gap: CARD_GAP,
   },
   bookCard: {
-    width: CARD_WIDTH,
     marginBottom: 10,
   },
   coverContainer: {

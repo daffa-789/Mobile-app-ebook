@@ -1,0 +1,765 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import { theme } from '../theme';
+import { useAuth, DEFAULT_USER } from '../context/AuthContext';
+
+export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
+  const { login, register, loginWithUser } = useAuth();
+  const [activeTab, setActiveTab] = useState(initialTab); // 'login' | 'register'
+  const [sharedEmail, setSharedEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [noticeMessage, setNoticeMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setErrorMessage('');
+    setNoticeMessage('');
+  };
+
+  const handleLoginSubmit = async () => {
+    setErrorMessage('');
+    setNoticeMessage('');
+
+    const trimmedEmail = sharedEmail.trim();
+    if (!trimmedEmail || !password) {
+      setErrorMessage('Masukkan alamat email dan password Anda.');
+      return;
+    }
+
+    if (password.length < 8) {
+      setErrorMessage('Password minimal 8 karakter.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await login(trimmedEmail, password);
+      if (res.success) {
+        onAuthSuccess?.(res.user);
+      } else {
+        setErrorMessage(res.error || 'Email atau password belum sesuai.');
+      }
+    } catch (err) {
+      setErrorMessage(err.message || 'Terjadi kesalahan saat masuk.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRegisterSubmit = async () => {
+    setErrorMessage('');
+    setNoticeMessage('');
+
+    const trimmedName = fullName.trim();
+    const trimmedEmail = sharedEmail.trim();
+    const cleanPhone = String(phone || '')
+      .trim()
+      .replace(/[^0-9]/g, '');
+
+    if (!trimmedName) {
+      setErrorMessage('Nama lengkap wajib diisi.');
+      return;
+    }
+
+    if (!trimmedEmail || !/^\S+@\S+\.\S+$/.test(trimmedEmail)) {
+      setErrorMessage('Masukkan alamat email yang valid.');
+      return;
+    }
+
+    if (!cleanPhone || cleanPhone.length < 8 || cleanPhone.length > 15) {
+      setErrorMessage('Masukkan nomor WhatsApp yang valid (8-15 digit).');
+      return;
+    }
+
+    if (password.length < 8) {
+      setErrorMessage('Password minimal 8 karakter.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMessage('Konfirmasi password belum sesuai.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await register({
+        fullName: trimmedName,
+        email: trimmedEmail,
+        phone: cleanPhone,
+        password,
+      });
+
+      if (res.success) {
+        Alert.alert(
+          'Pendaftaran Berhasil',
+          res.message || 'Akun Anda berhasil didaftarkan! Silakan masuk.',
+        );
+        setActiveTab('login');
+        setNoticeMessage('Akun berhasil dibuat. Silakan masukkan password Anda untuk masuk.');
+      } else {
+        setErrorMessage(res.error || 'Pendaftaran belum dapat diproses.');
+      }
+    } catch (err) {
+      setErrorMessage(err.message || 'Gagal melakukan pendaftaran.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    setErrorMessage('');
+    setIsSubmitting(true);
+    try {
+      // Demo instant Google sign-in untuk pengetesan mulus tanpa konfigurasi OAuth rumit
+      const googleUser = {
+        ...DEFAULT_USER,
+        id: 'usr-google-' + Date.now(),
+        name: sharedEmail ? sharedEmail.split('@')[0] : 'Ghazalah Ramadhan Daffa Firjatullah',
+        fullName: sharedEmail ? sharedEmail.split('@')[0] : 'Ghazalah Ramadhan Daffa Firjatullah',
+        email: sharedEmail || 'ghazalahramadhan6@gmail.com',
+        phone: phone || '081234567890',
+        role: 'user',
+        is_pro: true,
+        isPro: true,
+      };
+      await loginWithUser(googleUser, 'google-oauth-demo-token');
+      onAuthSuccess?.(googleUser);
+    } catch (err) {
+      setErrorMessage('Gagal masuk dengan Google: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleQuickDemoFill = () => {
+    setSharedEmail('ghazalahramadhan6@gmail.com');
+    setPassword('password123');
+    setErrorMessage('');
+    setNoticeMessage('Kredensial akun demo berhasil diisi.');
+  };
+
+  const handleForgotPassword = () => {
+    setNoticeMessage(
+      'Untuk memulihkan kata sandi, silakan hubungi tim sekretariat di info@wahidiyah.org atau buka portal web resmi.',
+    );
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.keyboardAvoid}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.authCard}>
+          {/* 1:1 Header: Wahidiyah Book */}
+          <View style={styles.brandHeader}>
+            <Text style={styles.brandTitle}>Wahidiyah Book</Text>
+            <Text style={styles.brandSubtitle}>
+              {activeTab === 'login'
+                ? 'Masuk ke akun Anda untuk mengakses koleksi buku.'
+                : 'Daftar akun baru untuk mulai membaca dan berlangganan.'}
+            </Text>
+          </View>
+
+          {/* 1:1 Segmented Tab Switcher */}
+          <View style={styles.tabSwitcher}>
+            <TouchableOpacity
+              style={[styles.tabButton, activeTab === 'login' && styles.tabButtonActive]}
+              onPress={() => handleTabChange('login')}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[styles.tabButtonText, activeTab === 'login' && styles.tabButtonTextActive]}
+              >
+                Masuk
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.tabButton, activeTab === 'register' && styles.tabButtonActive]}
+              onPress={() => handleTabChange('register')}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.tabButtonText,
+                  activeTab === 'register' && styles.tabButtonTextActive,
+                ]}
+              >
+                Daftar Akun
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Alert Error Box */}
+          {errorMessage ? (
+            <View style={styles.errorAlert}>
+              <Feather name="alert-circle" size={16} color="#C00511" />
+              <Text style={styles.errorAlertText}>{errorMessage}</Text>
+            </View>
+          ) : null}
+
+          {/* Notice Status Box */}
+          {noticeMessage ? (
+            <View style={styles.noticeAlert}>
+              <Feather name="info" size={16} color="#14523A" />
+              <Text style={styles.noticeAlertText}>{noticeMessage}</Text>
+            </View>
+          ) : null}
+
+          {/* Form Content */}
+          {activeTab === 'login' ? (
+            <View style={styles.formContainer}>
+              {/* Field: Alamat Email */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Alamat email</Text>
+                <View style={styles.inputWrap}>
+                  <Feather name="mail" size={16} color="#7C756C" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.textInput}
+                    value={sharedEmail}
+                    onChangeText={(val) => {
+                      setSharedEmail(val);
+                      setErrorMessage('');
+                    }}
+                    placeholder="nama@email.com"
+                    placeholderTextColor="#A8A199"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    editable={!isSubmitting}
+                  />
+                </View>
+              </View>
+
+              {/* Field: Password */}
+              <View style={styles.fieldGroup}>
+                <View style={styles.passwordLabelRow}>
+                  <Text style={styles.fieldLabel}>Password</Text>
+                  <TouchableOpacity onPress={handleForgotPassword} disabled={isSubmitting}>
+                    <Text style={styles.forgotLink}>Lupa password?</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.inputWrap}>
+                  <Feather name="lock" size={16} color="#7C756C" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.textInput}
+                    value={password}
+                    onChangeText={(val) => {
+                      setPassword(val);
+                      setErrorMessage('');
+                    }}
+                    placeholder="Minimal 8 karakter"
+                    placeholderTextColor="#A8A199"
+                    secureTextEntry={!showPassword}
+                    editable={!isSubmitting}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeBtn}
+                    disabled={isSubmitting}
+                  >
+                    <Feather name={showPassword ? 'eye-off' : 'eye'} size={16} color="#7C756C" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Submit Masuk */}
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={handleLoginSubmit}
+                disabled={isSubmitting}
+                activeOpacity={0.85}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Feather name="log-in" size={16} color="#FFFFFF" />
+                    <Text style={styles.primaryButtonText}>Masuk</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.formContainer}>
+              {/* Field: Nama Lengkap */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Nama lengkap</Text>
+                <View style={styles.inputWrap}>
+                  <Feather name="user" size={16} color="#7C756C" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.textInput}
+                    value={fullName}
+                    onChangeText={(val) => {
+                      setFullName(val);
+                      setErrorMessage('');
+                    }}
+                    placeholder="Nama Anda"
+                    placeholderTextColor="#A8A199"
+                    editable={!isSubmitting}
+                  />
+                </View>
+              </View>
+
+              {/* Field: Alamat Email */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Alamat email</Text>
+                <View style={styles.inputWrap}>
+                  <Feather name="mail" size={16} color="#7C756C" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.textInput}
+                    value={sharedEmail}
+                    onChangeText={(val) => {
+                      setSharedEmail(val);
+                      setErrorMessage('');
+                    }}
+                    placeholder="nama@email.com"
+                    placeholderTextColor="#A8A199"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    editable={!isSubmitting}
+                  />
+                </View>
+              </View>
+
+              {/* Field: Nomor WhatsApp */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Nomor WhatsApp</Text>
+                <View style={styles.inputWrap}>
+                  <Feather name="phone" size={16} color="#7C756C" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.textInput}
+                    value={phone}
+                    onChangeText={(val) => {
+                      setPhone(val);
+                      setErrorMessage('');
+                    }}
+                    placeholder="081212345678"
+                    placeholderTextColor="#A8A199"
+                    keyboardType="phone-pad"
+                    editable={!isSubmitting}
+                  />
+                </View>
+              </View>
+
+              {/* Field: Password */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Password</Text>
+                <View style={styles.inputWrap}>
+                  <Feather name="lock" size={16} color="#7C756C" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.textInput}
+                    value={password}
+                    onChangeText={(val) => {
+                      setPassword(val);
+                      setErrorMessage('');
+                    }}
+                    placeholder="Minimal 8 karakter"
+                    placeholderTextColor="#A8A199"
+                    secureTextEntry={!showPassword}
+                    editable={!isSubmitting}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword(!showPassword)}
+                    style={styles.eyeBtn}
+                    disabled={isSubmitting}
+                  >
+                    <Feather name={showPassword ? 'eye-off' : 'eye'} size={16} color="#7C756C" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Field: Konfirmasi Password */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Konfirmasi password</Text>
+                <View style={styles.inputWrap}>
+                  <Feather name="lock" size={16} color="#7C756C" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.textInput}
+                    value={confirmPassword}
+                    onChangeText={(val) => {
+                      setConfirmPassword(val);
+                      setErrorMessage('');
+                    }}
+                    placeholder="Tulis ulang password"
+                    placeholderTextColor="#A8A199"
+                    secureTextEntry={!showConfirmPassword}
+                    editable={!isSubmitting}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    style={styles.eyeBtn}
+                    disabled={isSubmitting}
+                  >
+                    <Feather
+                      name={showConfirmPassword ? 'eye-off' : 'eye'}
+                      size={16}
+                      color="#7C756C"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Submit Daftar */}
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={handleRegisterSubmit}
+                disabled={isSubmitting}
+                activeOpacity={0.85}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Feather name="user-plus" size={16} color="#FFFFFF" />
+                    <Text style={styles.primaryButtonText}>Daftar Sekarang</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* 1:1 Divider Atau */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>atau</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* 1:1 Google Button */}
+          <TouchableOpacity
+            style={styles.googleButton}
+            onPress={handleGoogleAuth}
+            disabled={isSubmitting}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="logo-google" size={18} color="#EA4335" />
+            <Text style={styles.googleButtonText}>
+              {activeTab === 'register' ? 'Daftar dengan Google' : 'Masuk dengan Google'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Quick Demo Credentials Helper */}
+          {activeTab === 'login' && (
+            <TouchableOpacity
+              style={styles.demoFillBtn}
+              onPress={handleQuickDemoFill}
+              activeOpacity={0.7}
+            >
+              <Feather name="zap" size={12} color="#14523A" />
+              <Text style={styles.demoFillText}>Isi Otomatis Akun Demo</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* 1:1 Footer Link */}
+          <View style={styles.footerWrap}>
+            {activeTab === 'login' ? (
+              <Text style={styles.footerPrompt}>
+                Belum memiliki akun?{' '}
+                <Text style={styles.footerAction} onPress={() => handleTabChange('register')}>
+                  Daftar sekarang
+                </Text>
+              </Text>
+            ) : (
+              <Text style={styles.footerPrompt}>
+                Sudah memiliki akun?{' '}
+                <Text style={styles.footerAction} onPress={() => handleTabChange('login')}>
+                  Masuk
+                </Text>
+              </Text>
+            )}
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+};
+
+const styles = StyleSheet.create({
+  keyboardAvoid: {
+    flex: 1,
+    backgroundColor: '#FBF8F3',
+  },
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#FBF8F3',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 40,
+    justifyContent: 'center',
+  },
+  authCard: {
+    backgroundColor: '#FFFDF9',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#E4D9C6',
+    padding: 22,
+    shadowColor: '#14523A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  brandHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  brandTitle: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#1D1B17',
+    fontFamily: theme.typography.serif,
+    letterSpacing: -0.5,
+  },
+  brandSubtitle: {
+    fontSize: 12,
+    color: '#5A544C',
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 17,
+    maxWidth: 290,
+  },
+  statusBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#DCEDE4',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#B9DBC9',
+    marginBottom: 16,
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#216B4C',
+  },
+  statusBannerText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#14523A',
+  },
+  tabSwitcher: {
+    flexDirection: 'row',
+    backgroundColor: '#F0E8DA',
+    borderRadius: 14,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: '#E4D9C6',
+    marginBottom: 16,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+  },
+  tabButtonActive: {
+    backgroundColor: '#14523A',
+  },
+  tabButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#5A544C',
+  },
+  tabButtonTextActive: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  errorAlert: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FDE8E8',
+    borderColor: '#F8B4B4',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 14,
+  },
+  errorAlertText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#C00511',
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  noticeAlert: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#DCEDE4',
+    borderColor: '#B9DBC9',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 10,
+    marginBottom: 14,
+  },
+  noticeAlertText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#14523A',
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  formContainer: {
+    gap: 12,
+  },
+  fieldGroup: {
+    gap: 5,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#2B2823',
+  },
+  passwordLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  forgotLink: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#14523A',
+  },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFDF9',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E4D9C6',
+    paddingHorizontal: 12,
+    height: 48,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 13,
+    color: '#1D1B17',
+    fontWeight: '500',
+  },
+  eyeBtn: {
+    padding: 6,
+  },
+  primaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#14523A',
+    borderRadius: 14,
+    height: 48,
+    marginTop: 4,
+    shadowColor: '#14523A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  primaryButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E4D9C6',
+  },
+  dividerText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#8C857B',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: '#FFFDF9',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E4D9C6',
+    height: 48,
+  },
+  googleButtonText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#1D1B17',
+  },
+  demoFillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#F0E8DA',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    alignSelf: 'center',
+    marginTop: 12,
+  },
+  demoFillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#14523A',
+  },
+  footerWrap: {
+    alignItems: 'center',
+    marginTop: 18,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F0E8DA',
+  },
+  footerPrompt: {
+    fontSize: 12,
+    color: '#5A544C',
+  },
+  footerAction: {
+    fontWeight: 'bold',
+    color: '#14523A',
+  },
+});

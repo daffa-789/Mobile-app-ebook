@@ -242,6 +242,17 @@ export const BookProvider = ({ children }) => {
     }
   };
 
+  const deleteDownloadedBook = async (bookId) => {
+    try {
+      const nextDownloads = downloadedBooks.filter((b) => b.id !== bookId);
+      setDownloadedBooks(nextDownloads);
+      await AsyncStorage.setItem('@offline_books_manifest', JSON.stringify(nextDownloads));
+      return { success: true };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  };
+
   return (
     <BookContext.Provider
       value={{
@@ -254,6 +265,7 @@ export const BookProvider = ({ children }) => {
         refreshBooks,
         isDownloaded,
         downloadBook,
+        deleteDownloadedBook,
       }}
     >
       {children}

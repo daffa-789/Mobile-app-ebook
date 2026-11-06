@@ -70,7 +70,10 @@ export async function apiRequest(endpoint, options = {}) {
 
     if (!res.ok) {
       const errorMsg = data?.message || data?.error || `Request gagal (${res.status})`;
-      throw new Error(errorMsg);
+      const error = new Error(errorMsg);
+      error.status = res.status;
+      error.data = data;
+      throw error;
     }
 
     return data;

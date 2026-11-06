@@ -14,7 +14,7 @@
       "package": "id.wahidiyah.book",
       "usesCleartextTraffic": true,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#067554",
         "foregroundImage": "./mobile-app/assets/android-icon-foreground.png",
         "backgroundImage": "./mobile-app/assets/android-icon-background.png",
         "monochromeImage": "./mobile-app/assets/android-icon-monochrome.png"

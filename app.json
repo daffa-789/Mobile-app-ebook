@@ -2,6 +2,7 @@
   "expo": {
     "name": "wahidiyah-book",
     "slug": "wahidiyah-book",
+    "owner": "daffa1610s-team",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./mobile-app/assets/icon.png",

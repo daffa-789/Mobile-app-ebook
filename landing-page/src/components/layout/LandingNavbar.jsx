@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router';
-import { BookOpen, Crown, LogOut, Menu, User, X } from 'lucide-react';
+import { BookOpen, Crown, Download, LogOut, Menu, User, X } from 'lucide-react';
 import { useApp } from '@context/AppContext';
 
 export const LandingNavbar = () => {
@@ -65,6 +65,17 @@ export const LandingNavbar = () => {
 
           {/* Desktop Auth State / CTA */}
           <div className="hidden md:flex items-center gap-3">
+            <a
+              href="https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-gold-400/20 text-gold-800 hover:bg-gold-400/30 border border-gold-500/40 rounded-xl transition cursor-pointer"
+              title="Unduh Aplikasi Android (.APK)"
+            >
+              <Download className="w-3.5 h-3.5 text-gold-700" />
+              <span>Unduh APK</span>
+            </a>
+
             {isLoggedIn ? (
               <div className="flex items-center gap-3 pl-2 border-l border-cream-200">
                 <div className="flex items-center gap-2">

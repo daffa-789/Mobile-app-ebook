@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { ArrowRight, BookOpen, Crown, FileText, Lock, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, Crown, Download, FileText, Lock, ShieldCheck, Smartphone, Sparkles } from 'lucide-react';
 import { useApp } from '@context/AppContext';
 import { useDialogFocusTrap } from '@lib/useDialogFocusTrap';
 import { HeroCarousel } from './HeroCarousel';
@@ -71,6 +71,16 @@ export const HomeScreen = () => {
               >
                 <span>Mulai Membaca</span>
                 <ArrowRight className="w-4 h-4" />
+              </a>
+
+              <a
+                href="https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-brand-900 hover:bg-brand-950 text-gold-400 font-bold text-sm shadow-md shadow-brand-950/20 transition cursor-pointer border border-gold-500/30"
+              >
+                <Smartphone className="w-4 h-4 text-gold-400" />
+                <span>Unduh Aplikasi Android (.APK)</span>
               </a>
 
               <button

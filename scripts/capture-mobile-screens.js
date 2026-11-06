@@ -5,7 +5,8 @@ import puppeteer from 'puppeteer-core';
 
 const PORT = 4567;
 const DIST_DIR = path.resolve(process.cwd(), 'dist');
-const OUTPUT_DIR = 'C:\\Users\\Daffa\\.gemini\\antigravity\\brain\\cb555392-c06f-4880-8f8e-97d0c668e233\\screenshots';
+const OUTPUT_DIR =
+  'C:\\Users\\Daffa\\.gemini\\antigravity\\brain\\cb555392-c06f-4880-8f8e-97d0c668e233\\screenshots';
 
 if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
@@ -64,15 +65,19 @@ server.listen(PORT, async () => {
 
     // Helper untuk klik elemen berdasarkan teks dengan koordinat mouse nyata
     const clickText = async (text, exact = false) => {
-      const handle = await page.evaluateHandle((targetText, isExact) => {
-        const elements = Array.from(document.querySelectorAll('*'));
-        return elements.reverse().find((el) => {
-          if (!el.textContent) return false;
-          const trimmed = el.textContent.trim();
-          if (isExact) return trimmed === targetText;
-          return trimmed.includes(targetText);
-        });
-      }, text, exact);
+      const handle = await page.evaluateHandle(
+        (targetText, isExact) => {
+          const elements = Array.from(document.querySelectorAll('*'));
+          return elements.reverse().find((el) => {
+            if (!el.textContent) return false;
+            const trimmed = el.textContent.trim();
+            if (isExact) return trimmed === targetText;
+            return trimmed.includes(targetText);
+          });
+        },
+        text,
+        exact,
+      );
 
       const el = handle.asElement();
       if (el) {

@@ -2,7 +2,8 @@ import sharp from 'sharp';
 import fs from 'fs';
 import path from 'path';
 
-const SRC_ICON = 'C:\\Users\\Daffa\\.gemini\\antigravity\\brain\\cb555392-c06f-4880-8f8e-97d0c668e233\\.user_uploaded\\media_1793981391003_eaa13715.png';
+const SRC_ICON =
+  'C:\\Users\\Daffa\\.gemini\\antigravity\\brain\\cb555392-c06f-4880-8f8e-97d0c668e233\\.user_uploaded\\media_1793981391003_eaa13715.png';
 const ASSETS_DIR = path.resolve('mobile-app', 'assets');
 const PUBLIC_DIR = path.resolve('public');
 
@@ -62,14 +63,8 @@ async function generateIcons() {
   console.log('✔ favicon.png dibuat');
 
   // 6. Sinkronkan juga ke public/ web PWA
-  await sharp(SRC_ICON)
-    .resize(192, 192)
-    .png()
-    .toFile(path.join(PUBLIC_DIR, 'icon-192.png'));
-  await sharp(SRC_ICON)
-    .resize(512, 512)
-    .png()
-    .toFile(path.join(PUBLIC_DIR, 'icon-512.png'));
+  await sharp(SRC_ICON).resize(192, 192).png().toFile(path.join(PUBLIC_DIR, 'icon-192.png'));
+  await sharp(SRC_ICON).resize(512, 512).png().toFile(path.join(PUBLIC_DIR, 'icon-512.png'));
   console.log('✔ public/icon-192.png & public/icon-512.png diperbarui');
 }
 

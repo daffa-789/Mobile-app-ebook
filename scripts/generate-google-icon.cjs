@@ -18,7 +18,7 @@ sharp(svgBuffer)
     fs.copyFileSync('mobile-app/assets/google-icon.png', 'public/google-icon.png');
     console.log('google-icon.png generated successfully!');
   })
-  .catch(err => {
+  .catch((err) => {
     console.error('Error generating google icon:', err);
     process.exit(1);
   });

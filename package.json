@@ -6,7 +6,7 @@
   "main": "mobile-app/index.js",
   "description": "Perpustakaan digital Wahidiyah — katalog buku, membership Pro, dan pembayaran QRIS via Midtrans Core API.",
   "engines": {
-    "node": ">=20.x"
+    "node": "24.x"
   },
   "scripts": {
     "dev": "node scripts/dev.js",

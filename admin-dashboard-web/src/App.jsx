@@ -13,6 +13,8 @@ import { useAdminEventEditor } from './features/admin/hooks/useAdminEventEditor'
 import { useAdminBookEditor } from './features/admin/hooks/useAdminBookEditor';
 import { apiJsonSend } from '@lib/api';
 import { withToast, withToastSync } from '@lib/withToast';
+import { Toaster } from 'sonner';
+import { AdminLogin } from './features/admin/AdminLogin';
 import {
   LayoutDashboard,
   BookOpen,
@@ -272,10 +274,32 @@ function AdminDashboardContent() {
   );
 }
 
+function AdminRoot() {
+  const { authReady, isLoggedIn, user } = useApp();
+
+  if (!authReady) {
+    return (
+      <div className="min-h-screen bg-brand-950 flex flex-col items-center justify-center text-cream-100 gap-3 font-sans">
+        <span className="w-8 h-8 rounded-full border-2 border-gold-400 border-t-transparent animate-spin" />
+        <p className="text-xs font-serif tracking-wider text-cream-300">
+          Memeriksa Sesi Administrator...
+        </p>
+      </div>
+    );
+  }
+
+  if (!isLoggedIn || user?.role !== 'admin') {
+    return <AdminLogin />;
+  }
+
+  return <AdminDashboardContent />;
+}
+
 export default function App() {
   return (
     <AppProvider>
-      <AdminDashboardContent />
+      <Toaster position="top-right" richColors />
+      <AdminRoot />
     </AppProvider>
   );
 }

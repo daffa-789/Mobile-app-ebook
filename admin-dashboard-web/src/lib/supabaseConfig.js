@@ -5,14 +5,14 @@ export const SUPABASE_URL =
   metaEnv.VITE_SUPABASE_URL ||
   procEnv.VITE_SUPABASE_URL ||
   procEnv.SUPABASE_URL ||
-  'https://pdimjmbjutlzjdfjaqgt.supabase.co';
+  'https://pfiowztxlbcclazpdsxe.supabase.co';
 
 export const SUPABASE_ANON_KEY =
   metaEnv.VITE_SUPABASE_ANON_KEY ||
   metaEnv.VITE_SUPABASE_PUBLISHABLE_KEY ||
   procEnv.VITE_SUPABASE_ANON_KEY ||
   procEnv.SUPABASE_PUBLISHABLE_KEY ||
-  '';
+  'sb_publishable_dXKLW87Q8CdC8pBtJ4KOPg_OQOfb44p';
 
 export const isSupabaseConfigured = Boolean(
   SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes('your-anon-key'),

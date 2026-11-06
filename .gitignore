@@ -96,3 +96,7 @@ __pycache__/
 supabase/.temp/
 
 .agents/
+
+.vercel
+.env*
+laptop_desktop_preview.png

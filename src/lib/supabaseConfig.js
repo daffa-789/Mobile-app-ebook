@@ -5,7 +5,7 @@ export const SUPABASE_URL =
   metaEnv.VITE_SUPABASE_URL ||
   procEnv.VITE_SUPABASE_URL ||
   procEnv.SUPABASE_URL ||
-  'https://pdimjmbjutlzjdfjaqgt.supabase.co';
+  'https://pfiowztxlbcclazpdsxe.supabase.co';
 
 export const SUPABASE_ANON_KEY =
   metaEnv.VITE_SUPABASE_ANON_KEY ||

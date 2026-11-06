@@ -10,7 +10,7 @@ dotenv.config({ path: path.resolve(__dirname, '..', '.env'), override: true });
 dotenv.config({ path: path.resolve(__dirname, '.env'), override: true });
 dotenv.config({ override: true });
 
-const SUPABASE_PROJECT_URL = 'https://pdimjmbjutlzjdfjaqgt.supabase.co';
+const SUPABASE_PROJECT_URL = 'https://pfiowztxlbcclazpdsxe.supabase.co';
 
 const resolveSupabaseCredentials = (env = process.env) => {
   const url = env.VITE_SUPABASE_URL || env.SUPABASE_URL || SUPABASE_PROJECT_URL;

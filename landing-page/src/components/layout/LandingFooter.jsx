@@ -1,5 +1,6 @@
-import { Link } from 'react-router';
-import { BookOpen, Heart, Mail, Shield } from 'lucide-react';
+import { BookOpen, Download, Heart, Shield, Smartphone } from 'lucide-react';
+
+const APK_URL = 'https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk';
 
 export const LandingFooter = () => {
   return (
@@ -9,77 +10,87 @@ export const LandingFooter = () => {
           {/* Brand Info */}
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-brand-700 text-cream-50 flex items-center justify-center shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-brand-700 text-cream-50 flex items-center justify-center shadow-xs">
                 <BookOpen className="w-5 h-5 text-gold-400" />
               </div>
-              <span className="font-serif text-xl font-bold text-ink-900 tracking-tight">
-                Wahidiyah Book
-              </span>
+              <div>
+                <span className="font-serif text-xl font-bold text-ink-900 tracking-tight block">
+                  Wahidiyah Book
+                </span>
+                <span className="text-xs text-ink-500 font-medium">
+                  Aplikasi Android Kitab Sholawat Wahidiyah
+                </span>
+              </div>
             </div>
-            <p className="text-sm text-ink-500 leading-relaxed max-w-md">
-              Perpustakaan digital dan wadah literatur resmi ajaran Sholawat Wahidiyah. Menyajikan
-              koleksi naskah terverifikasi, amaliyah, serta layanan keanggotaan Pro untuk kemudahan
-              belajar kapan saja dan di mana saja.
+            <p className="text-sm text-ink-600 leading-relaxed max-w-md">
+              Aplikasi mobile resmi untuk membaca lembaran Sholawat Wahidiyah, panduan mujahadah,
+              kalender agenda amaliyah, dan khazanah literatur secara mudah, nyaman, dan offline di
+              perangkat Android Anda.
             </p>
-            <div className="flex items-center gap-4 text-xs text-ink-500 pt-1">
-              <span className="inline-flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-4 text-xs text-ink-600 pt-1">
+              <span className="inline-flex items-center gap-1.5 font-medium">
                 <Shield className="w-3.5 h-3.5 text-brand-600" /> Naskah Resmi & Terverifikasi
               </span>
+              <span className="inline-flex items-center gap-1.5 font-medium">
+                <Smartphone className="w-3.5 h-3.5 text-brand-600" /> Khusus Android 8.0+
+              </span>
             </div>
           </div>
 
-          {/* Navigasi Cepat */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold text-ink-900 uppercase tracking-wider">Navigasi</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/" className="hover:text-brand-700 transition">
-                  Beranda
-                </Link>
-              </li>
-              <li>
-                <Link to="/catalog" className="hover:text-brand-700 transition">
-                  Katalog Naskah
-                </Link>
-              </li>
-              <li>
-                <Link to="/pro" className="hover:text-brand-700 transition">
-                  Keanggotaan Pro
-                </Link>
-              </li>
-              <li>
-                <Link to="/about" className="hover:text-brand-700 transition">
-                  Tentang Kami
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Dukungan & Kontak */}
+          {/* Quick Anchor Navigation */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold text-ink-900 uppercase tracking-wider">
-              Bantuan & Layanan
+              Navigasi Laman
             </h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/help" className="hover:text-brand-700 transition">
-                  Pusat Bantuan & FAQ
-                </Link>
+                <a href="#fitur" className="hover:text-brand-700 transition">
+                  Fitur Utama
+                </a>
               </li>
-              <li className="flex items-center gap-2 text-xs text-ink-500 pt-1">
-                <Mail className="w-4 h-4 text-brand-700 shrink-0" />
-                <span>support@bukuku.id</span>
+              <li>
+                <a href="#preview" className="hover:text-brand-700 transition">
+                  Tampilan Aplikasi
+                </a>
+              </li>
+              <li>
+                <a href="#panduan" className="hover:text-brand-700 transition">
+                  Panduan Pemasangan APK
+                </a>
+              </li>
+              <li>
+                <a href="#faq" className="hover:text-brand-700 transition">
+                  Tentang & Tanya Jawab (FAQ)
+                </a>
               </li>
             </ul>
           </div>
+
+          {/* Download & Version Details */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-ink-900 uppercase tracking-wider">Unduh Resmi</h4>
+            <div className="space-y-2 text-sm">
+              <a
+                href={APK_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand-700 text-white font-semibold text-xs hover:bg-brand-800 transition"
+              >
+                <Download className="w-3.5 h-3.5 text-gold-300" />
+                <span>Unduh APK v0.1.0</span>
+              </a>
+              <p className="text-xs text-ink-500 pt-1">Rilis Alpha v0.1.0 • Ukuran ~60 MB</p>
+              <p className="text-xs text-ink-500">Didukung oleh Yayasan Perjuangan Wahidiyah</p>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-12 pt-6 border-t border-cream-200/80 flex flex-col sm:flex-row items-center justify-between text-xs text-ink-400 gap-4">
+        <div className="mt-12 pt-6 border-t border-cream-200/80 flex flex-col sm:flex-row items-center justify-between text-xs text-ink-500 gap-4">
           <p>&copy; {new Date().getFullYear()} Wahidiyah Book. Hak Cipta Dilindungi.</p>
           <p className="flex items-center gap-1">
             Dibangun dengan penuh khidmah{' '}
-            <Heart className="w-3 h-3 text-semantic-danger fill-semantic-danger" /> untuk Pengamal
-            Wahidiyah
+            <Heart className="w-3.5 h-3.5 text-semantic-danger fill-semantic-danger" /> untuk
+            Pengamal Sholawat Wahidiyah
           </p>
         </div>
       </div>

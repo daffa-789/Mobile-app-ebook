@@ -32,23 +32,11 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (id.includes('node_modules/pdfjs-dist')) {
-              return 'pdfjs';
-            }
-            if (id.includes('node_modules/docx-preview') || id.includes('node_modules/mammoth')) {
-              return 'docx';
-            }
-            if (id.includes('node_modules/@supabase/')) {
-              return 'supabase-sdk';
-            }
-            if (id.includes('node_modules/@headlessui/')) {
-              return 'headlessui';
-            }
-            if (id.includes('node_modules/sonner')) {
-              return 'sonner';
-            }
             if (id.includes('node_modules/lucide-react')) {
               return 'icons';
+            }
+            if (id.includes('node_modules/qrcode.react')) {
+              return 'qrcode';
             }
             if (
               id.includes('node_modules/react/') ||

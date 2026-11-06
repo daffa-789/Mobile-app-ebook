@@ -1,5 +1,15 @@
 import { useState, useCallback, useRef } from 'react';
-import { ArrowRight, BookOpen, Crown, Download, FileText, Lock, ShieldCheck, Smartphone, Sparkles } from 'lucide-react';
+import {
+  ArrowRight,
+  BookOpen,
+  Crown,
+  Download,
+  FileText,
+  Lock,
+  ShieldCheck,
+  Smartphone,
+  Sparkles,
+} from 'lucide-react';
 import { useApp } from '@context/AppContext';
 import { useDialogFocusTrap } from '@lib/useDialogFocusTrap';
 import { HeroCarousel } from './HeroCarousel';

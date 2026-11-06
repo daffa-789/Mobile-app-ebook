@@ -61,7 +61,10 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenAuth }) => {
                     ],
                   );
                 } catch (e) {
-                  Alert.alert('Gagal Mengunduh', 'Gagal mengunduh pembaruan. Silakan periksa koneksi internet Anda dan coba lagi.');
+                  Alert.alert(
+                    'Gagal Mengunduh',
+                    'Gagal mengunduh pembaruan. Silakan periksa koneksi internet Anda dan coba lagi.',
+                  );
                 } finally {
                   setIsCheckingUpdate(false);
                 }
@@ -268,7 +271,9 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenAuth }) => {
                 <View>
                   <Text style={styles.menuLabel}>Pembaruan Aplikasi</Text>
                   <Text style={styles.menuSubLabel}>
-                    {isCheckingUpdate ? 'Memeriksa pembaruan...' : 'v0.1.0 (Alpha) • Ketuk untuk cek versi baru'}
+                    {isCheckingUpdate
+                      ? 'Memeriksa pembaruan...'
+                      : 'v0.1.0 (Alpha) • Ketuk untuk cek versi baru'}
                   </Text>
                 </View>
               </View>

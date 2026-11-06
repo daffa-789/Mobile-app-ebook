@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
+import * as Updates from 'expo-updates';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
@@ -20,6 +22,68 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenAuth }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+
+  const handleCheckUpdate = async () => {
+    if (isCheckingUpdate) return;
+    setIsCheckingUpdate(true);
+    try {
+      if (__DEV__) {
+        Alert.alert(
+          'Mode Development',
+          'Pemeriksaan pembaruan OTA (EAS Update) hanya aktif pada aplikasi yang terinstal (.apk), bukan di Expo Go / Development server.',
+        );
+        return;
+      }
+      const update = await Updates.checkForUpdateAsync();
+      if (update.isAvailable) {
+        Alert.alert(
+          'Pembaruan Tersedia',
+          'Versi terbaru aplikasi telah dirilis dengan perbaikan dan peningkatan fitur. Unduh dan pasang pembaruan sekarang?',
+          [
+            { text: 'Nanti', style: 'cancel' },
+            {
+              text: 'Unduh Sekarang',
+              onPress: async () => {
+                try {
+                  setIsCheckingUpdate(true);
+                  await Updates.fetchUpdateAsync();
+                  Alert.alert(
+                    'Pembaruan Siap!',
+                    'Pembaruan telah berhasil diunduh. Muat ulang aplikasi sekarang untuk menerapkan perubahan?',
+                    [
+                      {
+                        text: 'Muat Ulang Sekarang',
+                        onPress: async () => {
+                          await Updates.reloadAsync();
+                        },
+                      },
+                    ],
+                  );
+                } catch (e) {
+                  Alert.alert('Gagal Mengunduh', 'Gagal mengunduh pembaruan. Silakan periksa koneksi internet Anda dan coba lagi.');
+                } finally {
+                  setIsCheckingUpdate(false);
+                }
+              },
+            },
+          ],
+        );
+      } else {
+        Alert.alert(
+          'Aplikasi Sudah Versi Terbaru',
+          'Anda sudah menggunakan versi terbaru (v1.0.0). Tidak ada pembaruan baru saat ini.',
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        'Pemeriksaan Pembaruan',
+        'Tidak dapat memeriksa pembaruan saat ini. Pastikan perangkat Anda terhubung ke internet.',
+      );
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -183,6 +247,30 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenAuth }) => {
                   <Feather name="help-circle" size={18} color="#5A544C" />
                 </View>
                 <Text style={styles.menuLabel}>Pusat Bantuan</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color="#CFCAC2" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.menuRow, styles.menuRowBorder]}
+              onPress={handleCheckUpdate}
+              disabled={isCheckingUpdate}
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={styles.menuIconBoxBrand}>
+                  {isCheckingUpdate ? (
+                    <ActivityIndicator size="small" color="#14523A" />
+                  ) : (
+                    <Feather name="refresh-cw" size={18} color="#14523A" />
+                  )}
+                </View>
+                <View>
+                  <Text style={styles.menuLabel}>Pembaruan Aplikasi</Text>
+                  <Text style={styles.menuSubLabel}>
+                    {isCheckingUpdate ? 'Memeriksa pembaruan...' : 'v1.0.0 • Ketuk untuk cek versi baru'}
+                  </Text>
+                </View>
               </View>
               <Feather name="chevron-right" size={18} color="#CFCAC2" />
             </TouchableOpacity>
@@ -476,6 +564,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#1D1B17',
+  },
+  menuSubLabel: {
+    fontSize: 11,
+    color: '#7C756C',
+    marginTop: 2,
   },
 
   // Logout Modal Styles (1:1 with LogoutConfirmDialog)

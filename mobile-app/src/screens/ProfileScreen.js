@@ -72,7 +72,7 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenAuth }) => {
       } else {
         Alert.alert(
           'Aplikasi Sudah Versi Terbaru',
-          'Anda sudah menggunakan versi terbaru (v1.0.0). Tidak ada pembaruan baru saat ini.',
+          'Anda sudah menggunakan versi terbaru (v0.1.0 Alpha). Tidak ada pembaruan baru saat ini.',
         );
       }
     } catch (error) {
@@ -268,7 +268,7 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenAuth }) => {
                 <View>
                   <Text style={styles.menuLabel}>Pembaruan Aplikasi</Text>
                   <Text style={styles.menuSubLabel}>
-                    {isCheckingUpdate ? 'Memeriksa pembaruan...' : 'v1.0.0 • Ketuk untuk cek versi baru'}
+                    {isCheckingUpdate ? 'Memeriksa pembaruan...' : 'v0.1.0 (Alpha) • Ketuk untuk cek versi baru'}
                   </Text>
                 </View>
               </View>
@@ -280,7 +280,7 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenAuth }) => {
               onPress={() =>
                 Alert.alert(
                   'Tentang Aplikasi',
-                  'E-Book Wahidiyah v1.0.0 — Perpustakaan Digital Sholawat Wahidiyah resmi untuk membaca lembaran Sholawat dan khazanah literatur Islam.',
+                  'E-Book Wahidiyah v0.1.0 (Alpha) — Perpustakaan Digital Sholawat Wahidiyah resmi untuk membaca lembaran Sholawat dan khazanah literatur Islam.',
                 )
               }
               activeOpacity={0.7}

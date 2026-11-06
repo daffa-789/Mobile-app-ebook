@@ -1,7 +1,7 @@
 {
   "name": "aplikasi-buku-wahidiyah",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.1.0-alpha",
   "type": "module",
   "main": "mobile-app/index.js",
   "description": "Perpustakaan digital Wahidiyah — katalog buku, membership Pro, dan pembayaran QRIS via Midtrans Core API.",

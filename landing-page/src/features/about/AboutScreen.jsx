@@ -33,7 +33,7 @@ export const AboutScreen = () => {
           <div className="flex justify-between items-center py-1.5 border-b border-cream-200">
             <span className="text-ink-500">Versi Portal Web</span>
             <span className="font-bold text-ink-900 bg-brand-100 text-brand-700 text-caption px-2.5 py-0.5 rounded-full">
-              v1.0.0
+              v0.1.0 (Alpha)
             </span>
           </div>
 

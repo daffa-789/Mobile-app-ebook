@@ -11,6 +11,8 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "id.wahidiyah.book",
+      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#067554",
         "foregroundImage": "./assets/android-icon-foreground.png",

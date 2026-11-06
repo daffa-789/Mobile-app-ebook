@@ -134,10 +134,10 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
     try {
       const clientId =
         process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ||
-        '8108075809-5lfbtqmkq9gkbn869jmvd8hhajinl1k2.apps.googleusercontent.com';
+        '8108075809-kpcgb73h2d1t7klg785svrlqc9to3n9t.apps.googleusercontent.com';
 
       const isWeb = Platform.OS === 'web';
-      let redirectUri = 'https://wahidiyah-book.vercel.app/api/auth/google/callback';
+      let redirectUri = 'https://mobile-app-expo-sooty.vercel.app/api/auth/google/callback';
       if (isWeb && typeof window !== 'undefined') {
         const origin = window.location.origin;
         if (origin.includes('localhost') || origin.includes('127.0.0.1')) {

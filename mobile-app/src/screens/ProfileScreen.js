@@ -1,110 +1,211 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
 
-export const ProfileScreen = ({ onOpenAuth }) => {
-  const { user, isPro, logout } = useAuth();
+export const ProfileScreen = ({ onOpenRiwayat, onOpenAuth }) => {
+  const { user, updateUser, logout } = useAuth();
+  const [fullName, setFullName] = useState(
+    user?.name || user?.fullName || 'Ghazalah Ramadhan Daffa Firjatullah',
+  );
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [isSaving, setIsSaving] = useState(false);
+
+  const email = user?.email || 'ghazalahramadhan6@gmail.com';
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    await updateUser({ name: fullName, fullName, phone });
+    setIsSaving(false);
+    Alert.alert('Sukses', 'Data profil Anda berhasil diperbarui!');
+  };
 
   const handleLogout = () => {
-    Alert.alert('Konfirmasi Keluar', 'Apakah Anda yakin ingin keluar dari akun?', [
+    Alert.alert('Konfirmasi Keluar', 'Apakah Anda yakin ingin keluar dari sesi akun ini?', [
       { text: 'Batal', style: 'cancel' },
-      { text: 'Keluar', style: 'destructive', onPress: logout },
+      {
+        text: 'Keluar',
+        style: 'destructive',
+        onPress: async () => {
+          await logout();
+          onOpenAuth?.();
+        },
+      },
     ]);
   };
 
-  const handleOpenProWebsite = () => {
-    // Jalur resmi sesuai spesifikasi: Pembayaran QRIS tetap diarahkan ke browser/web
-    Linking.openURL('https://wahidiyahbook.com/pro').catch(() => {
-      Alert.alert(
-        'Buka Web',
-        'Silakan buka halaman pembayaran Pro melalui browser di https://wahidiyahbook.com/pro',
-      );
-    });
-  };
-
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header Profil */}
       <View style={styles.header}>
-        <Text style={styles.subtitle}>PENGATURAN AKUN</Text>
-        <Text style={styles.title}>Profil Pengguna</Text>
+        <Text style={styles.headerTitle}>Profil</Text>
       </View>
 
-      {/* Card Info Pengguna */}
-      {user ? (
-        <View style={styles.profileCard}>
-          <View style={styles.avatarLarge}>
-            <Text style={styles.avatarLargeText}>
-              {user.fullName ? user.fullName[0].toUpperCase() : 'U'}
-            </Text>
+      {/* 1:1 SECTION: DATA AKUN */}
+      <View style={styles.sectionWrap}>
+        <Text style={styles.sectionCaption}>DATA AKUN</Text>
+
+        <View style={styles.card}>
+          {/* Field: Nama Lengkap */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>NAMA LENGKAP</Text>
+            <View style={styles.inputWrap}>
+              <Feather name="user" size={16} color="#7C756C" style={styles.inputIcon} />
+              <TextInput
+                style={styles.textInput}
+                value={fullName}
+                onChangeText={setFullName}
+                placeholder="Nama Lengkap"
+                placeholderTextColor="#A8A199"
+              />
+            </View>
           </View>
 
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user.fullName || 'Pengamal Wahidiyah'}</Text>
-            <Text style={styles.userEmail}>{user.email || 'user@wahidiyah.org'}</Text>
-            {user.phone ? <Text style={styles.userPhone}>📱 {user.phone}</Text> : null}
-
-            <View style={styles.badgeWrap}>
-              <View style={[styles.roleBadge, isPro && styles.roleBadgePro]}>
-                <Text style={[styles.roleBadgeText, isPro && styles.roleBadgeTextPro]}>
-                  {isPro ? '★ MEMBER PRO' : 'ANGGOTA REGULER'}
-                </Text>
+          {/* Field: Email Akun (Terproteksi + Badge Terverifikasi) */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>EMAIL AKUN</Text>
+            <View style={styles.inputWrapDisabled}>
+              <Feather name="mail" size={16} color="#7C756C" style={styles.inputIcon} />
+              <TextInput
+                style={[styles.textInput, styles.textInputDisabled]}
+                value={email}
+                editable={false}
+                placeholder="nama@email.com"
+              />
+              <View style={styles.verifiedBadge}>
+                <Text style={styles.verifiedBadgeText}>Terverifikasi</Text>
               </View>
             </View>
           </View>
-        </View>
-      ) : (
-        <View style={styles.loginBanner}>
-          <Text style={styles.loginBannerTitle}>Belum Masuk Akun</Text>
-          <Text style={styles.loginBannerDesc}>
-            Masuk dengan akun Wahidiyah Book Anda untuk menyinkronkan data bacaan dan mengakses
-            seluruh koleksi.
-          </Text>
-          <TouchableOpacity style={styles.loginBannerBtn} onPress={onOpenAuth}>
-            <Text style={styles.loginBannerBtnText}>Masuk / Daftar Akun</Text>
+
+          {/* Field: Nomor WhatsApp */}
+          <View style={styles.fieldGroup}>
+            <Text style={styles.fieldLabel}>NOMOR WHATSAPP</Text>
+            <View style={styles.inputWrap}>
+              <Feather name="phone" size={16} color="#7C756C" style={styles.inputIcon} />
+              <TextInput
+                style={styles.textInput}
+                value={phone}
+                onChangeText={setPhone}
+                placeholder="-"
+                placeholderTextColor="#A8A199"
+                keyboardType="phone-pad"
+              />
+              <View style={styles.linkedBadge}>
+                <Text style={styles.linkedBadgeText}>Terkait</Text>
+              </View>
+            </View>
+            <Text style={styles.helperText}>
+              Nomor WhatsApp digunakan untuk pemulihan akun dan notifikasi resmi.
+            </Text>
+          </View>
+
+          {/* Tombol Simpan Perubahan */}
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSave}
+            disabled={isSaving}
+            activeOpacity={0.85}
+          >
+            <Feather name="save" size={15} color="#FFFFFF" />
+            <Text style={styles.saveButtonText}>
+              {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
+            </Text>
           </TouchableOpacity>
         </View>
-      )}
-
-      {/* Promo Membership Pro */}
-      <View style={styles.proCard}>
-        <View style={styles.proHeader}>
-          <Text style={styles.proTag}>MEMBERSHIP PRO</Text>
-          <Text style={styles.proTitle}>Akses Seluruh Khazanah Naskah</Text>
-        </View>
-        <Text style={styles.proDesc}>
-          Dapatkan akses tanpa batas ke naskah langka, kuliah tasawuf, dan fadhilah wirid khusus
-          melalui keanggotaan Pro.
-        </Text>
-        <TouchableOpacity style={styles.proBtn} onPress={handleOpenProWebsite}>
-          <Text style={styles.proBtnText}>
-            {isPro ? 'Perpanjang Masa Aktif di Web' : 'Berlangganan Pro via QRIS Web'}
-          </Text>
-        </TouchableOpacity>
       </View>
 
-      {/* Menu Pengaturan */}
-      <View style={styles.menuSection}>
-        <Text style={styles.menuSectionTitle}>Aplikasi</Text>
+      {/* 1:1 SECTION: LAYANAN & LANGGANAN */}
+      <View style={styles.sectionWrap}>
+        <Text style={styles.sectionCaption}>LAYANAN & LANGGANAN</Text>
 
-        <View style={styles.menuItem}>
-          <Text style={styles.menuItemLabel}>Versi Aplikasi</Text>
-          <Text style={styles.menuItemValue}>v1.0.0 (Expo SDK 58)</Text>
-        </View>
-
-        <View style={styles.menuItem}>
-          <Text style={styles.menuItemLabel}>Katalog Naskah</Text>
-          <Text style={styles.menuItemValue}>Tersinkronisasi</Text>
-        </View>
-
-        {user && (
-          <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
-            <Text style={styles.logoutBtnText}>Keluar dari Akun</Text>
+        <View style={styles.menuCard}>
+          <TouchableOpacity style={styles.menuRow} onPress={onOpenRiwayat} activeOpacity={0.7}>
+            <View style={styles.menuRowLeft}>
+              <View style={styles.menuIconBoxBrand}>
+                <Feather name="file-text" size={18} color="#14523A" />
+              </View>
+              <Text style={styles.menuLabel}>Riwayat Langganan</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color="#CFCAC2" />
           </TouchableOpacity>
-        )}
+        </View>
       </View>
 
-      <View style={{ height: 40 }} />
+      {/* 1:1 SECTION: BANTUAN & INFO */}
+      <View style={styles.sectionWrap}>
+        <Text style={styles.sectionCaption}>BANTUAN & INFO</Text>
+
+        <View style={styles.menuCard}>
+          <TouchableOpacity
+            style={[styles.menuRow, styles.menuRowBorder]}
+            onPress={() =>
+              Alert.alert(
+                'Pusat Bantuan',
+                'Untuk bantuan, pertanyaan seputar Sholawat Wahidiyah, atau transaksi, silakan hubungi tim sekretariat kami di info@wahidiyah.org.',
+              )
+            }
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuRowLeft}>
+              <View style={styles.menuIconBoxMuted}>
+                <Feather name="help-circle" size={18} color="#5A544C" />
+              </View>
+              <Text style={styles.menuLabel}>Pusat Bantuan</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color="#CFCAC2" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuRow}
+            onPress={() =>
+              Alert.alert(
+                'Tentang Aplikasi',
+                'E-Book Wahidiyah v1.0.0 — Perpustakaan Digital Sholawat Wahidiyah resmi untuk membaca lembaran Sholawat dan khazanah literatur Islam.',
+              )
+            }
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuRowLeft}>
+              <View style={styles.menuIconBoxMuted}>
+                <Feather name="info" size={18} color="#5A544C" />
+              </View>
+              <Text style={styles.menuLabel}>Tentang</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color="#CFCAC2" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* 1:1 SECTION: PENGATURAN & SESI */}
+      <View style={styles.sectionWrap}>
+        <Text style={styles.sectionCaption}>PENGATURAN & SESI</Text>
+
+        <View style={styles.menuCard}>
+          <TouchableOpacity style={styles.menuRow} onPress={handleLogout} activeOpacity={0.7}>
+            <View style={styles.menuRowLeft}>
+              <View style={styles.menuIconBoxDanger}>
+                <Feather name="log-out" size={18} color="#C00511" />
+              </View>
+              <Text style={[styles.menuLabel, { color: '#C00511' }]}>Keluar dari Sesi</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color="#CFCAC2" />
+          </TouchableOpacity>
+        </View>
+      </View>
     </ScrollView>
   );
 };
@@ -112,204 +213,187 @@ export const ProfileScreen = ({ onOpenAuth }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: theme.spacing.md,
+    backgroundColor: '#FBF8F3', // 1:1 Canvas Cream Hangat
+  },
+  contentContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 96,
   },
   header: {
-    paddingTop: theme.spacing.xl + 10,
-    paddingBottom: theme.spacing.md,
+    marginBottom: 16,
   },
-  subtitle: {
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1D1B17',
+  },
+  sectionWrap: {
+    marginBottom: 20,
+  },
+  sectionCaption: {
     fontSize: 10,
-    letterSpacing: 2,
-    color: theme.colors.primary,
-    fontWeight: '700',
-  },
-  title: {
-    fontSize: 22,
     fontWeight: '800',
-    color: theme.colors.ink,
-    fontFamily: theme.typography.serif,
+    color: '#7C756C',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+    paddingLeft: 4,
   },
-  profileCard: {
-    flexDirection: 'row',
-    backgroundColor: theme.colors.surfaceLight,
-    padding: theme.spacing.md,
-    borderRadius: theme.radius.lg,
+  card: {
+    backgroundColor: '#FFFDF9',
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    alignItems: 'center',
+    borderColor: '#E4D9C6',
+    padding: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
     gap: 14,
-    marginBottom: theme.spacing.md,
   },
-  avatarLarge: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: theme.colors.primary,
+  fieldGroup: {
+    gap: 6,
+  },
+  fieldLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#5A544C',
+    letterSpacing: 0.6,
+  },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FBF8F3',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E4D9C6',
+    paddingHorizontal: 12,
+    height: 46,
+  },
+  inputWrapDisabled: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0E8DA',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E4D9C6',
+    paddingHorizontal: 12,
+    height: 46,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1D1B17',
+  },
+  textInputDisabled: {
+    color: '#5A544C',
+  },
+  verifiedBadge: {
+    backgroundColor: '#DCEDE4',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  verifiedBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#14523A',
+  },
+  linkedBadge: {
+    backgroundColor: '#F0E8DA',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  linkedBadgeText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#5A544C',
+  },
+  helperText: {
+    fontSize: 11,
+    color: '#8C857B',
+    lineHeight: 15,
+    marginTop: 2,
+  },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#1E6B4A', // Brand Green
+    borderRadius: 14,
+    paddingVertical: 13,
+    marginTop: 4,
+  },
+  saveButtonText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+
+  // Menu List Cards
+  menuCard: {
+    backgroundColor: '#FFFDF9',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: '#E4D9C6',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  menuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  menuRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0E8DA',
+  },
+  menuRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  menuIconBoxBrand: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#DCEDE4',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarLargeText: {
-    color: '#FFF',
-    fontSize: 24,
-    fontWeight: '800',
-  },
-  userInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: theme.colors.ink,
-  },
-  userEmail: {
-    fontSize: 12,
-    color: theme.colors.inkSecondary,
-  },
-  userPhone: {
-    fontSize: 11,
-    color: theme.colors.inkMuted,
-    marginTop: 2,
-  },
-  badgeWrap: {
-    marginTop: 6,
-  },
-  roleBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: theme.colors.primary50,
-    borderWidth: 1,
-    borderColor: theme.colors.primaryLight,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  roleBadgePro: {
-    backgroundColor: theme.colors.goldBg,
-    borderColor: theme.colors.gold,
-  },
-  roleBadgeText: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: theme.colors.primary,
-  },
-  roleBadgeTextPro: {
-    color: theme.colors.goldDark,
-  },
-  loginBanner: {
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.lg,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  menuIconBoxMuted: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#F0E8DA',
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
+    justifyContent: 'center',
   },
-  loginBannerTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: theme.colors.ink,
-  },
-  loginBannerDesc: {
-    fontSize: 12,
-    color: theme.colors.inkMuted,
-    textAlign: 'center',
-    marginVertical: 8,
-    lineHeight: 18,
-  },
-  loginBannerBtn: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: theme.radius.sm,
-  },
-  loginBannerBtnText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  proCard: {
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.lg,
-    borderRadius: theme.radius.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.gold,
-    marginBottom: theme.spacing.md,
-  },
-  proHeader: {
-    gap: 2,
-  },
-  proTag: {
-    fontSize: 10,
-    letterSpacing: 1.5,
-    fontWeight: '800',
-    color: theme.colors.gold,
-  },
-  proTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: theme.colors.ink,
-    fontFamily: theme.typography.serif,
-  },
-  proDesc: {
-    fontSize: 12,
-    color: theme.colors.inkSecondary,
-    marginVertical: 8,
-    lineHeight: 18,
-  },
-  proBtn: {
-    backgroundColor: theme.colors.gold,
-    paddingVertical: 8,
-    borderRadius: theme.radius.sm,
+  menuIconBoxDanger: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#FDE8E8',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  proBtnText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  menuSection: {
-    backgroundColor: theme.colors.surfaceLight,
-    padding: theme.spacing.md,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    gap: 12,
-  },
-  menuSectionTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1,
-    color: theme.colors.inkMuted,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surfaceSubtle,
-  },
-  menuItemLabel: {
-    fontSize: 13,
-    color: theme.colors.ink,
-  },
-  menuItemValue: {
-    fontSize: 12,
-    color: theme.colors.inkMuted,
-  },
-  logoutBtn: {
-    marginTop: 8,
-    paddingVertical: 10,
-    backgroundColor: '#FFF0F0',
-    borderRadius: theme.radius.sm,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#FFD0D0',
-  },
-  logoutBtnText: {
-    color: theme.colors.error,
-    fontSize: 13,
-    fontWeight: '700',
+  menuLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#1D1B17',
   },
 });

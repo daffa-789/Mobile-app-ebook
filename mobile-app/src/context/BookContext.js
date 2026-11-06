@@ -1,73 +1,204 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
 import { apiRequest } from '../api/client';
 
 const BookContext = createContext(null);
 
-const DEFAULT_BOOKS = [
+export const DEFAULT_BOOKS = [
   {
-    id: 'buku-1',
-    title: 'Kitab Sholawat Wahidiyah Lengkap',
-    author: 'Penyusun Wahidiyah',
-    category: 'Sholawat',
-    cover_url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80',
+    id: 'buku-arbain',
+    title: "Hadits Arba'in An-Nawawiyah",
+    author: 'Imam An-Nawawi',
+    category: 'Hadits',
+    cover_local: require('../../assets/covers/hadits-arbain.jpg'),
+    cover_url: null,
+    is_locked: false,
+    pages_count: 42,
     description:
-      'Panduan lengkap bacaan Sholawat Wahidiyah, doa-doa, dan adab pengamalan lahir dan batin.',
-    is_pro: false,
-    pages_count: 120,
-    sample_text: `BISMILLAAHIR RAHMAANIR RAHIIM\n\nYAA SYAFII'AL KHOLQIS-SHOLAATU WASSALAAM\n'ALAIKA NUUROL KHOLQI HAADIL ANAAM\nWA ASHLUHU WA RUUHUHU ADRIKNI\nFAQOD GHORIQTU FII BAHRIDZ-DZUNUUB\n\nYAA AYYUHAL GHOUTSU SALAAMULLOOHI\n'ALAIKA ROBBINII BI-IDZNILLAAHI\nWANDZUR ILAYYA NADZROTAN JALIYYAH\nTUHDZILU BII KULLA 'ANAAN DANIYYAH\n\nFadhilah Sholawat Wahidiyah:\nMembersihkan hati, mendekatkan diri kepada Allah SWT wa Rosuulihi SAW, dan memperoleh ketenangan jiwa.`,
+      'Kumpulan empat puluh dua hadits pokok karya Imam An-Nawawi yang merangkum sendi-sendi utama syariat dan akhlak Islam.',
+    content_name: 'terjemah-hadits-arbain-nawawi.pdf',
+    sample_text: `HADITS KE-1 (NIAT):\n\nDari Amirul Mu'minin Abu Hafsh Umar bin Khaththab radhiyallahu 'anhu, ia berkata: Aku mendengar Rasulullah shallallahu 'alaihi wa sallam bersabda:\n\n"Sesungguhnya setiap amalan tergantung pada niatnya, dan sesungguhnya setiap orang akan mendapatkan sesuai dengan apa yang ia niatkan..." (HR. Bukhari & Muslim)\n\nFaidah Hadits:\n1. Niat adalah syarat sah dan pembeda setiap amal perbuatan.\n2. Keikhlasan semata-mata karena Allah SWT (Lillah) adalah pondasi keselamatan jiwa.`,
   },
   {
-    id: 'buku-2',
-    title: 'Kuliah Wahidiyah & Pokok Ajaran',
-    author: 'Dewan Pakar Wahidiyah',
-    category: 'Tasawuf',
-    cover_url: 'https://images.unsplash.com/photo-1532012164546-f432f2e3777a?w=400&q=80',
-    description:
-      'Ulasan mendalam tentang Lillah-Billah, Lirrosul-Birrosul, dan Lilghouts-Bilghouts dalam laku kehidupan.',
-    is_pro: true,
-    pages_count: 240,
-    sample_text: `AJARAN WAHIDIYAH (LILLAH BILLAH):\n\n1. Lillah: Segala amal perbuatan apa saja, baik yang berhubungan dengan ibadah mahdhoh maupun ghairu mahdhoh, ditujukan semata-mata mencari ridho Allah SWT.\n\n2. Billah: Menyadari sedalam-dalamnya bahwa segala gerak-gerik dan kemampuan semata-mata adalah pertolongan dan qudrot-irodat Allah SWT (Laa haula walaa quwwata illaa billaah).`,
-  },
-  {
-    id: 'buku-3',
-    title: 'Tuntunan Mujahadah & Doa-doa',
-    author: 'Sekretariat DPP PSW',
+    id: 'buku-mujahadah',
+    title: 'Panduan Mujahadah Usbuiyah & Syahriyah',
+    author: 'Penyiar Sholawat Wahidiyah',
     category: 'Mujahadah',
-    cover_url: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80',
+    cover_local: require('../../assets/covers/panduan-mujahadah.jpg'),
+    cover_url: null,
+    is_locked: false,
+    pages_count: 28,
     description:
-      'Panduan tata cara Mujahadah Yaumiyah, Usbuiyyah, Syahriyyah, dan Mujahadah Kubro.',
-    is_pro: false,
-    pages_count: 85,
-    sample_text: `TATA CARA MUJAHADAH:\n\n1. Menghadap kiblat dalam keadaan suci dari hadats.\n2. Duduk khusyuk dan tawadhuk.\n3. Hati tertuju kepada Allah SWT dan berwashilah kepada Rosulullah SAW.\n4. Membaca fatihah dan wirid sholawat dengan tartil.`,
+      'Tuntunan tata tertib dan adab mujahadah mingguan serta bulanan bagi segenap pengamal Sholawat Wahidiyah.',
+    content_name: 'panduan-mujahadah-usbuiyah-syahriyah.pdf',
+    sample_text: `TUNTUNAN MUJAHADAH:\n\n1. Dilaksanakan dengan adab lahir batin yang khusyuk, tawadhuk, dan menghadap kiblat.\n2. Menyadari diri dipenuhi dosa di hadapan Allah SWT serta berwashilah kepada Baginda Rosulullah SAW dan Ghoutsu Hadzaz-Zaman RA.\n3. Membaca fatihah dan untaian bait Sholawat Wahidiyah dengan penuh permohonan syafaat dan hidayah.`,
+  },
+  {
+    id: 'buku-lembaran',
+    title: 'Lembaran Sholawat Wahidiyah',
+    author: 'Muallif Sholawat Wahidiyah RA',
+    category: 'Sholawat',
+    cover_local: require('../../assets/covers/lembaran-sholawat.jpg'),
+    cover_url: null,
+    is_locked: false,
+    pages_count: 3,
+    description:
+      'Teks resmi Sholawat Wahidiyah lengkap dengan naskah Arab, transliterasi Latin, dan terjemahan maknawiyah.',
+    content_name: 'sholawat-wahidiyah-arab-latin.pdf',
+    sample_text: `BISMILLAAHIR RAHMAANIR RAHIIM\n\n(1) YAA SYAFII'AL KHOLQIS-SHOLAATU WASSALAAM\n'ALAIKA NUUROL KHOLQI HAADIL ANAAM\nWA ASHLUHU WA RUUHUHU ADRIKNI\nFAQOD GHORIQTU FII BAHRIDZ-DZUNUUB\n\n(2) YAA AYYUHAL GHOUTSU SALAAMULLOOHI\n'ALAIKA ROBBINII BI-IDZNILLAAHI\nWANDZUR ILAYYA NADZROTAN JALIYYAH\nTUHDZILU BII KULLA 'ANAAN DANIYYAH\n\n(3) YAA AYYUHAL AMANU SIKNAL WAATHI'I\nMIN KULLI KHOOFIN WA LI-A'DOO DAFI'I\n\nFadhilah Sholawat Wahidiyah:\nMembersihkan hati, menggapai ketenangan batin, serta membimbing jiwa menuju ma'rifat Billah wa Rosuulihi SAW.`,
   },
 ];
 
-const DEFAULT_EVENTS = [
+export const CAROUSEL_SLIDES = [
   {
-    id: 'ev-1',
-    title: 'Mujahadah Kubro Wahidiyah',
-    date: '15 Syawal 1448 H',
-    location: 'Pesantren Kedunglo, Kediri',
-    description: 'Peringatan haul akbar dan doa bersama untuk keselamatan umat dan bangsa.',
+    id: 'crs-1',
+    eventDate: '2026-10-29',
+    dateLabel: '29 OKT 2026',
+    title: 'Perpustakaan Digital Sholawat Wahidiyah',
+    description:
+      'Satu wadah terpadu membaca lembaran Sholawat Wahidiyah resmi, tuntunan amalan mujahadah, dan kitab klasik Islam di mana saja dan kapan saja.',
   },
   {
-    id: 'ev-2',
-    title: 'Mujahadah Usbuiyyah Serentak',
-    date: 'Malam Jumat Legi',
-    location: 'Seluruh Cabang Kabupaten/Kota',
-    description: 'Mujahadah rutin mingguan pengamal Wahidiyah.',
+    id: 'crs-2',
+    eventDate: '2026-10-29',
+    dateLabel: '29 OKT 2026',
+    title: 'Mujahadah Usbuiyah Berjamaah',
+    description:
+      'Pelaksanaan mujahadah mingguan bersama para pengamal Wahidiyah untuk mempererat silaturahmi dan menjernihkan hati.',
+  },
+  {
+    id: 'crs-3',
+    eventDate: '2026-11-01',
+    dateLabel: '01 NOV 2026',
+    title: 'Kajian Tasawuf & Bedah Kitab Al-Hikam',
+    description:
+      'Bedah mendalam hikmah Syaikh Ibnu Athaillah as-Sakandari tentang maqam ikhlas, fana, dan marifatullah.',
+  },
+  {
+    id: 'crs-4',
+    eventDate: '2026-11-22',
+    dateLabel: '22 NOV 2026',
+    title: 'Mujahadah Nisfus Sanah (Semesteran)',
+    description:
+      'Doa bersama permohonan ketentraman, keamanan bangsa, dan kedamaian dunia yang dihadiri ribuan jamaah.',
+  },
+];
+
+export const DEFAULT_EVENTS = [
+  {
+    id: 'evt-1',
+    title: 'Mujahadah Usbuiyah Berjamaah',
+    event_date: '2026-10-29',
+    dateDisplay: '29 Okt 2026',
+    time_start: '19:30',
+    time_end: '21:00',
+    location: 'NEKA KEDIRI',
+    mapsUrl: 'https://maps.app.goo.gl/ZJHAfwmXwedLJquQ7',
+    category: 'Mujahadah',
+    description:
+      'Pelaksanaan mujahadah mingguan (usbuiyah) bersama para pengamal Wahidiyah untuk mempererat tali silaturahmi dan menjernihkan hati.',
+  },
+  {
+    id: 'evt-2',
+    title: 'Kajian Tasawuf & Bedah Kitab Al-Hikam',
+    event_date: '2026-11-01',
+    dateDisplay: '01 Nov 2026',
+    time_start: '09:00',
+    time_end: '11:30',
+    location: 'Ponpes Kedunglo Kediri',
+    mapsUrl: 'https://maps.google.com',
+    category: 'Pengajian',
+    description:
+      'Bedah mendalam hikmah-hikmah Syaikh Ibnu Athaillah as-Sakandari tentang maqam ikhlas, fana, dan marifatullah.',
+  },
+  {
+    id: 'evt-3',
+    title: 'Mujahadah Syahriyah Tingkat Kecamatan',
+    event_date: '2026-11-08',
+    dateDisplay: '08 Nov 2026',
+    time_start: '08:30',
+    time_end: '11:30',
+    location: 'Masjid Agung Kota Kediri',
+    mapsUrl: 'https://maps.google.com',
+    category: 'Mujahadah',
+    description:
+      'Mujahadah bulanan bersama seluruh jamaah pengamal Sholawat Wahidiyah se-Kecamatan.',
+  },
+  {
+    id: 'evt-4',
+    title: 'Kuliah Wahidiyah & Bimbingan Pengamal Baru',
+    event_date: '2026-11-15',
+    dateDisplay: '15 Nov 2026',
+    time_start: '08:00',
+    time_end: '11:00',
+    location: 'Gedung Yayasan Perjuangan Wahidiyah',
+    mapsUrl: 'https://maps.google.com',
+    category: 'Bimbingan',
+    description:
+      'Pembekalan ajaran Lillah, Billah, Lirrosul, Birrosul, dan Lilghouts bagi para simpatisan dan pengamal pemula.',
+  },
+  {
+    id: 'evt-5',
+    title: 'Mujahadah Nisfus Sanah (Semesteran)',
+    event_date: '2026-11-22',
+    dateDisplay: '22 Nov 2026',
+    time_start: '19:30',
+    time_end: '23:00',
+    location: 'Stadion Brawijaya Kediri',
+    mapsUrl: 'https://maps.google.com',
+    category: 'Mujahadah',
+    description:
+      'Doa bersama permohonan ketentraman, keamanan bangsa, dan kedamaian dunia yang dihadiri ribuan jamaah.',
+  },
+  {
+    id: 'evt-6',
+    title: 'Mujahadah Kubro Gelombang I (Puncak Acara)',
+    event_date: '2026-12-10',
+    dateDisplay: '10 Des 2026',
+    time_start: '19:30',
+    time_end: '23:30',
+    location: 'Pesantren Kedunglo Al-Munadhdharah Kediri',
+    mapsUrl: 'https://maps.google.com',
+    category: 'Kubro',
+    description:
+      'Perhelatan akbar Mujahadah Kubro dihadiri jamaah Wahidiyah dari pelosok nusantara dan mancanegara.',
+  },
+  {
+    id: 'evt-7',
+    title: 'Mujahadah Kubro Gelombang II (Khusus Kaum Ibu & Remaja)',
+    event_date: '2026-12-12',
+    dateDisplay: '12 Des 2026',
+    time_start: '08:00',
+    time_end: '12:00',
+    location: 'Pesantren Kedunglo Al-Munadhdharah Kediri',
+    mapsUrl: 'https://maps.google.com',
+    category: 'Kubro',
+    description:
+      'Doa bersama dan pembinaan mental spiritual khusus bagi ibu-ibu, wanita, remaja putri, dan santriwati.',
+  },
+];
+
+export const SUBSCRIPTIONS_DATA = [
+  {
+    id: 'sub-active',
+    planName: 'Paket Bulanan',
+    price: 'Rp 25.000',
+    rawPrice: 25000,
+    ref: 'REF-88764885',
+    createdAt: '2026-11-03T20:12:00.000Z',
+    status: 'Aktif',
+    period: '1 Bulan Langganan Pro',
   },
 ];
 
 export const BookProvider = ({ children }) => {
   const [books, setBooks] = useState(DEFAULT_BOOKS);
+  const [carouselSlides] = useState(CAROUSEL_SLIDES);
   const [events, setEvents] = useState(DEFAULT_EVENTS);
+  const [subscriptions] = useState(SUBSCRIPTIONS_DATA);
   const [downloadedBooks, setDownloadedBooks] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Muat daftar buku offline dari local storage
   useEffect(() => {
     const loadOfflineBooks = async () => {
       try {
@@ -90,7 +221,7 @@ export const BookProvider = ({ children }) => {
         setBooks(res.data);
       }
     } catch {
-      // Gunakan default catalog bila server offline
+      // Pertahankan buku default
     } finally {
       setLoading(false);
     }
@@ -102,27 +233,9 @@ export const BookProvider = ({ children }) => {
 
   const downloadBook = async (book) => {
     try {
-      const bookData = {
-        ...book,
-        downloadedAt: new Date().toISOString(),
-        fileSizeMb: (book.pages_count * 0.05).toFixed(1),
-        localContent: book.sample_text || 'Teks buku lengkap tersimpan aman di perangkat lokal.',
-      };
-
-      const updated = [...downloadedBooks.filter((b) => b.id !== book.id), bookData];
-      await AsyncStorage.setItem('@offline_books_manifest', JSON.stringify(updated));
-      setDownloadedBooks(updated);
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  };
-
-  const deleteDownloadedBook = async (bookId) => {
-    try {
-      const updated = downloadedBooks.filter((b) => b.id !== bookId);
-      await AsyncStorage.setItem('@offline_books_manifest', JSON.stringify(updated));
-      setDownloadedBooks(updated);
+      const nextDownloads = [...downloadedBooks, book];
+      setDownloadedBooks(nextDownloads);
+      await AsyncStorage.setItem('@offline_books_manifest', JSON.stringify(nextDownloads));
       return { success: true };
     } catch (err) {
       return { success: false, error: err.message };
@@ -133,13 +246,14 @@ export const BookProvider = ({ children }) => {
     <BookContext.Provider
       value={{
         books,
+        carouselSlides,
         events,
+        subscriptions,
         downloadedBooks,
         loading,
         refreshBooks,
         isDownloaded,
         downloadBook,
-        deleteDownloadedBook,
       }}
     >
       {children}

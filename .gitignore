@@ -3,6 +3,8 @@ node_modules/
 server/node_modules/
 .pnp
 .pnp.js
+.expo/
+.expo-shared/
 
 # Production Build
 dist/

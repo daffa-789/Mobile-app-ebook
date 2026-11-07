@@ -8,7 +8,7 @@ export const LandingNavbar = () => {
 
   const navLinks = [
     { label: 'Fitur', href: '#fitur' },
-    { label: 'Tampilan', href: '#preview' },
+    { label: 'Preview', href: '#preview' },
     { label: 'Cara Pasang', href: '#panduan' },
     { label: 'Tentang & FAQ', href: '#faq' },
   ];

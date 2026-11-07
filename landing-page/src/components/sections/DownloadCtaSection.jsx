@@ -39,9 +39,9 @@ export const DownloadCtaSection = () => {
               >
                 <Download className="w-5 h-5 text-ink-950 stroke-[2.5]" />
                 <div className="text-left">
-                  <div className="leading-tight">Unduh Berkas APK (.apk)</div>
+                  <div className="leading-tight">Unduh APK Langsung (.apk)</div>
                   <div className="text-[11px] font-semibold text-ink-800">
-                    Versi 0.1.0 Alpha • ~60 MB
+                    v0.1.0 (Alpha) • ~60 MB • Android 8.0+
                   </div>
                 </div>
               </a>

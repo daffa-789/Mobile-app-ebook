@@ -9,6 +9,8 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
+const APK_URL = 'https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk';
+
 export const PreviewSection = () => {
   const [activeTab, setActiveTab] = useState(0);
 
@@ -82,21 +84,21 @@ export const PreviewSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-brand-100 text-brand-800 border border-brand-200">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase bg-brand-100 text-brand-800 border border-brand-200/80 shadow-xs">
             <Smartphone className="w-3.5 h-3.5 text-brand-700" />
-            <span>Tampilan Nyata Aplikasi</span>
+            <span>Preview Antarmuka Aplikasi</span>
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-ink-900 leading-tight">
-            Antarmuka Bersih, Elegan & Mudah Digunakan
+            Preview Antarmuka: Bersih, Khusyuk & Minimalis
           </h2>
           <p className="text-base sm:text-lg text-ink-600">
-            Lihat langsung cuplikan layar aplikasi Android Wahidiyah Book. Klik tab di bawah untuk
-            mengeksplorasi setiap bagian.
+            Lihat langsung preview tangkapan layar aplikasi Android Wahidiyah Book. Klik tab di
+            bawah untuk mengeksplorasi setiap bagian.
           </p>
         </div>
 
         {/* Tab Switcher Buttons */}
-        <div className="mt-10 flex flex-wrap justify-center gap-2 sm:gap-3">
+        <div className="mt-10 flex flex-wrap justify-center gap-2.5 sm:gap-3">
           {tabs.map((tab, idx) => {
             const Icon = tab.icon;
             const active = activeTab === idx;
@@ -107,7 +109,7 @@ export const PreviewSection = () => {
                 onClick={() => setActiveTab(idx)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition duration-200 cursor-pointer ${
                   active
-                    ? 'bg-brand-700 text-white shadow-md shadow-brand-900/15 scale-105'
+                    ? 'bg-brand-700 text-white shadow-md shadow-brand-900/15 ring-2 ring-brand-700/20'
                     : 'bg-cream-100/90 text-ink-700 hover:bg-cream-200 hover:text-ink-900 border border-cream-200'
                 }`}
               >
@@ -124,7 +126,7 @@ export const PreviewSection = () => {
           <div className="lg:col-span-6 flex justify-center">
             <div className="relative mx-auto">
               {/* Outer Phone Mockup Frame */}
-              <div className="relative w-[280px] sm:w-[320px] h-[580px] sm:h-[650px] bg-ink-900 rounded-[48px] p-3 shadow-2xl shadow-ink-900/30 border-4 border-ink-800 ring-1 ring-white/10">
+              <div className="relative w-[280px] sm:w-[320px] max-w-full h-[580px] sm:h-[650px] bg-ink-900 rounded-[48px] p-3 shadow-2xl shadow-ink-900/30 border-4 border-ink-800 ring-1 ring-white/10">
                 {/* Camera punch-hole notch */}
                 <div className="absolute top-5 left-1/2 -translate-x-1/2 w-20 h-4 bg-ink-950 rounded-full z-20 flex items-center justify-center">
                   <div className="w-2.5 h-2.5 rounded-full bg-ink-800 ring-1 ring-white/20" />
@@ -157,9 +159,9 @@ export const PreviewSection = () => {
 
           {/* Right: Screen Details & Key Highlights */}
           <div className="lg:col-span-6 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-gold-400/20 text-gold-800 border border-gold-400/40">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-800 border border-brand-200/70">
               <Sparkles className="w-3.5 h-3.5 text-gold-600" />
-              <span>{currentTab.label}</span>
+              <span>Preview • {currentTab.label}</span>
             </div>
 
             <h3 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-ink-900 leading-snug">
@@ -185,7 +187,7 @@ export const PreviewSection = () => {
             {/* Quick jump to direct download */}
             <div className="pt-6 border-t border-cream-200">
               <a
-                href="https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk"
+                href={APK_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm font-bold text-brand-700 hover:text-brand-900 underline underline-offset-4"

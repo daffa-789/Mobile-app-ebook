@@ -6,7 +6,7 @@ export const InstallGuideSection = () => {
       step: '01',
       title: 'Unduh Berkas APK',
       icon: Download,
-      desc: 'Klik tombol "Unduh APK" atau pindai kode QR di laman ini. File installer resmi berekstensi .apk (~60 MB) akan otomatis terunduh ke perangkat Anda.',
+      desc: 'Klik tombol "Unduh APK Langsung" di laman ini. Berkas installer resmi berekstensi .apk (~60 MB) akan otomatis terunduh ke perangkat Anda.',
     },
     {
       step: '02',

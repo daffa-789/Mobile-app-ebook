@@ -50,7 +50,7 @@ export const LandingFooter = () => {
               </li>
               <li>
                 <a href="#preview" className="hover:text-brand-700 transition">
-                  Tampilan Aplikasi
+                  Preview Aplikasi
                 </a>
               </li>
               <li>

@@ -4,7 +4,6 @@ import { OverviewTab } from './features/admin/OverviewTab';
 import { BooksTab } from './features/admin/BooksTab';
 import { UsersTab } from './features/admin/UsersTab';
 import { EventsTab } from './features/admin/EventsTab';
-import { CarouselTab } from './features/admin/CarouselTab';
 import { LogsTab } from './features/admin/LogsTab';
 import { BookModal } from './features/admin/BookModal';
 import { AdminSidebar } from './features/admin/components/AdminSidebar';
@@ -12,26 +11,16 @@ import { AdminHeader } from './features/admin/components/AdminHeader';
 import { useAdminDashboardData } from './features/admin/hooks/useAdminDashboardData';
 import { useAdminEventEditor } from './features/admin/hooks/useAdminEventEditor';
 import { useAdminBookEditor } from './features/admin/hooks/useAdminBookEditor';
-import { apiJsonSend } from '@lib/api';
 import { withToast, withToastSync } from '@lib/withToast';
 import { Toaster } from 'sonner';
 import { AdminLogin } from './features/admin/AdminLogin';
-import {
-  LayoutDashboard,
-  BookOpen,
-  Users,
-  CalendarDays,
-  GalleryHorizontalEnd,
-  Activity,
-  RefreshCw,
-} from 'lucide-react';
+import { LayoutDashboard, BookOpen, Users, CalendarDays, Activity } from 'lucide-react';
 
 const ADMIN_NAV_ITEMS = [
   { id: 'overview', label: 'Ringkasan', icon: LayoutDashboard },
   { id: 'books', label: 'Manajemen Buku', icon: BookOpen },
   { id: 'users', label: 'Manajemen Pengguna', icon: Users },
   { id: 'events', label: 'Agenda & Kegiatan', icon: CalendarDays },
-  { id: 'carousel', label: 'Banner Carousel', icon: GalleryHorizontalEnd },
   { id: 'logs', label: 'Log & Transaksi', icon: Activity },
 ];
 
@@ -46,22 +35,12 @@ function AdminDashboardContent() {
     refreshBooks,
     refreshEvents,
     updateUserRole,
-    carouselSlides,
     refreshCarousel,
     logout,
   } = useApp();
 
-  const {
-    stats,
-    loadingDashboard,
-    users,
-    transactions,
-    events,
-    error,
-    carouselReady,
-    headers,
-    loadDashboard,
-  } = useAdminDashboardData({ sessionToken, refreshBooks, refreshEvents, refreshCarousel });
+  const { stats, users, transactions, events, error, headers, loadDashboard } =
+    useAdminDashboardData({ sessionToken, refreshBooks, refreshEvents, refreshCarousel });
 
   const eventEditor = useAdminEventEditor({ headers, loadDashboard });
   const bookEditor = useAdminBookEditor({ headers, loadDashboard });
@@ -110,8 +89,6 @@ function AdminDashboardContent() {
         onToggleCollapse={() => setSidebarCollapsed((value) => !value)}
         mobileOpen={mobileNavOpen}
         onCloseMobile={() => setMobileNavOpen(false)}
-        onExportFull={handleExportFull}
-        bookCount={books.length}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -120,22 +97,19 @@ function AdminDashboardContent() {
           user={user}
           onLogout={logout}
           onOpenMenu={() => setMobileNavOpen(true)}
-          onRefresh={loadDashboard}
-          isLoading={loadingDashboard}
-          hasError={Boolean(error)}
         />
 
         <main className="relative flex-1 overflow-y-auto bg-cream-50">
           <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             {error && (
-              <div className="mb-5 flex items-center justify-between gap-3 rounded-2xl border border-semantic-danger/30 bg-semantic-dangerLight px-4 py-3 text-sm text-semantic-danger">
+              <div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-semantic-danger/30 bg-semantic-dangerLight px-4 py-3 text-sm text-semantic-danger">
                 <span>{error}</span>
                 <button
                   type="button"
                   onClick={loadDashboard}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-semantic-danger/30 bg-ui-card px-3 py-1.5 text-xs font-bold transition hover:bg-cream-100 cursor-pointer"
+                  className="shrink-0 rounded-lg border border-semantic-danger/30 bg-ui-card px-3 py-1.5 text-xs font-semibold transition hover:bg-cream-100 cursor-pointer"
                 >
-                  <RefreshCw className="h-3.5 w-3.5" /> Muat Ulang
+                  Muat ulang
                 </button>
               </div>
             )}
@@ -189,23 +163,9 @@ function AdminDashboardContent() {
               />
             )}
 
-            {activeTab === 'carousel' && (
-              <CarouselTab
-                slides={carouselSlides}
-                carouselReady={carouselReady}
-                refreshCarousel={refreshCarousel}
-                sessionToken={sessionToken}
-              />
-            )}
-
             {activeTab === 'logs' && <LogsTab sessionToken={sessionToken} />}
           </div>
         </main>
-
-        <footer className="flex shrink-0 items-center justify-between gap-2 border-t border-cream-200 bg-cream-50/80 px-4 py-3 text-[11px] text-ink-400 sm:px-6">
-          <span>Wahidiyah Book • Panel Administrasi</span>
-          <span className="hidden sm:inline">Perpustakaan Digital Wahidiyah</span>
-        </footer>
       </div>
 
       {bookEditor.isBookModalOpen && (
@@ -228,13 +188,9 @@ function AdminRoot() {
 
   if (!authReady) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-gradient-to-br from-brand-950 via-brand-900 to-brand-800 font-sans">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 shadow-lg">
-          <span className="h-6 w-6 animate-spin rounded-full border-2 border-brand-950/30 border-t-brand-950" />
-        </div>
-        <p className="font-serif text-sm tracking-wide text-cream-100">
-          Memeriksa Sesi Administrator...
-        </p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-cream-50 font-sans">
+        <span className="h-7 w-7 animate-spin rounded-full border-2 border-cream-300 border-t-brand-700" />
+        <p className="text-sm text-ink-500">Memeriksa sesi…</p>
       </div>
     );
   }

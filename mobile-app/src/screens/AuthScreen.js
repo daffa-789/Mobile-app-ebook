@@ -16,6 +16,7 @@ import {
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { useAuth, DEFAULT_USER } from '../context/AuthContext';
+import { OAUTH_CONFIG, APP_CONFIG } from '../config/constants';
 
 export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
   const { login, register, loginWithUser } = useAuth();
@@ -132,12 +133,10 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
     setErrorMessage('');
     setIsSubmitting(true);
     try {
-      const clientId =
-        process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID ||
-        '8108075809-kpcgb73h2d1t7klg785svrlqc9to3n9t.apps.googleusercontent.com';
+      const clientId = OAUTH_CONFIG.googleClientId;
 
       const isWeb = Platform.OS === 'web';
-      let redirectUri = 'https://mobile-app-expo-sooty.vercel.app/api/auth/google/callback';
+      let redirectUri = OAUTH_CONFIG.redirectUri;
       if (isWeb && typeof window !== 'undefined') {
         const origin = window.location.origin;
         if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
@@ -154,7 +153,7 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
 
       // URL OAuth Google dengan prompt=select_account agar pengguna dapat memilih akun Google
       const authUrl =
-        `https://accounts.google.com/o/oauth2/v2/auth` +
+        `${OAUTH_CONFIG.authUrl}` +
         `?client_id=${encodeURIComponent(clientId)}` +
         `&redirect_uri=${encodeURIComponent(redirectUri)}` +
         `&response_type=code` +
@@ -177,7 +176,7 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
 
   const handleForgotPassword = () => {
     setNoticeMessage(
-      'Untuk memulihkan kata sandi, silakan hubungi tim sekretariat di info@wahidiyah.org atau buka portal web resmi.',
+      `Untuk memulihkan kata sandi, silakan hubungi tim sekretariat di ${APP_CONFIG.supportEmail} atau buka portal web resmi.`,
     );
   };
 

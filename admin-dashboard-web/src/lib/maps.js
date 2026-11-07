@@ -5,6 +5,8 @@
  * 100% Gratis & Native tanpa butuh Google Maps Platform API key / kartu kredit.
  */
 
+import { MAPS_CONFIG } from '@/config/constants';
+
 export function getMapUrl(location) {
   if (!location) return null;
   const trimmed = String(location).trim();
@@ -28,12 +30,12 @@ export function getMapUrl(location) {
   // 3. Titik Koordinat Latitude, Longitude (contoh: -7.8279855, 112.0081854)
   const coordMatch = trimmed.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
   if (coordMatch) {
-    return `https://www.google.com/maps/search/?api=1&query=${coordMatch[1]},${coordMatch[2]}`;
+    return `${MAPS_CONFIG.searchBaseUrl}${coordMatch[1]},${coordMatch[2]}`;
   }
 
   // 4. Jika nama tempat teks biasa: arahkan langsung ke Mode Rute (Directions API 1)
   // Pengguna langsung melihat rute navigasi dari posisi mereka ke tujuan
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(trimmed)}`;
+  return `${MAPS_CONFIG.dirBaseUrl}${encodeURIComponent(trimmed)}`;
 }
 
 export function getDisplayLocation(location) {

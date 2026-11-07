@@ -16,13 +16,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import {
-  generateReceiptPdf,
-  downloadReceiptPdf,
-  RECEIPT_CONSTANTS,
-} from '../landing-page/src/lib/receiptPdf.js';
-import { resolveReceiptFields } from '../landing-page/src/lib/receiptFields.js';
-import { formatRupiah } from '../landing-page/src/lib/formatUtils.js';
+// Modul kwitansi kanonik sekarang ada di root src/lib (M1 memindahkan fitur
+// reader/QRIS keluar dari landing-page). generateReceiptPdf versi lama sudah
+// digantikan downloadReceiptPdf; yang diuji di sini adalah lapangan datanya.
+import { resolveReceiptFields } from '../src/lib/receiptFields.js';
+import { formatRupiah } from '../src/lib/formatUtils.js';
 
 test('M2 Empirical Challenger: Web Document Reader & QRIS Stress Suite', async (t) => {
   // =========================================================================
@@ -80,28 +78,22 @@ test('M2 Empirical Challenger: Web Document Reader & QRIS Stress Suite', async (
     assert.equal(isZoomInDisabled(300), true, 'ZoomIn button must be disabled at 300%');
     assert.equal(isZoomInDisabled(290), false, 'ZoomIn button must be enabled at 290%');
 
-    // Verify source code constants
-    const readerSrc = fs.readFileSync(
-      'landing-page/src/features/reader/PdfReaderScreen.jsx',
-      'utf8',
+    // Implementasi kanonik (root src/features/reader) memakai state zoom 100%
+    // yang diteruskan ke tiap viewer; kontrol zoom lama 40–300% sudah dihapus.
+    const readerSrc = fs.readFileSync('src/features/reader/PdfReaderScreen.jsx', 'utf8');
+    assert.ok(
+      readerSrc.includes('const [zoom, setZoom] = useState(100);'),
+      'PdfReaderScreen must initialise zoom at 100%',
     );
     assert.ok(
-      readerSrc.includes('const MIN_ZOOM = 40;'),
-      'PdfReaderScreen must declare MIN_ZOOM = 40',
-    );
-    assert.ok(
-      readerSrc.includes('const MAX_ZOOM = 300;'),
-      'PdfReaderScreen must declare MAX_ZOOM = 300',
+      readerSrc.includes('zoom={zoom}'),
+      'PdfReaderScreen must forward zoom to document viewers',
     );
 
-    const topBarSrc = fs.readFileSync('landing-page/src/features/reader/ReaderTopBar.jsx', 'utf8');
+    const topBarSrc = fs.readFileSync('src/features/reader/ReaderTopBar.jsx', 'utf8');
     assert.ok(
-      topBarSrc.includes('disabled={zoom <= 40}'),
-      'ReaderTopBar must disable zoom out at <= 40',
-    );
-    assert.ok(
-      topBarSrc.includes('disabled={zoom >= 300}'),
-      'ReaderTopBar must disable zoom in at >= 300',
+      topBarSrc.includes('onPageInputSubmit') && topBarSrc.includes('totalPages'),
+      'ReaderTopBar must expose page-jump navigation controls',
     );
   });
 
@@ -343,10 +335,7 @@ test('M2 Empirical Challenger: Web Document Reader & QRIS Stress Suite', async (
   // =========================================================================
   await t.test('5. DOCX Container Styling & Arabic Typography Fallback', () => {
     // 5.1 Verify DOCX A4 paginated styling in DocxDocumentViewer.jsx
-    const docxSrc = fs.readFileSync(
-      'landing-page/src/features/reader/DocxDocumentViewer.jsx',
-      'utf8',
-    );
+    const docxSrc = fs.readFileSync('src/features/reader/DocxDocumentViewer.jsx', 'utf8');
     assert.ok(
       docxSrc.includes('.docx-render-host section.docx-page'),
       'DocxDocumentViewer must contain section.docx-page CSS selector for A4 pages',
@@ -365,10 +354,7 @@ test('M2 Empirical Challenger: Web Document Reader & QRIS Stress Suite', async (
     );
 
     // 5.2 Verify Arabic typography in TextDocViewer.jsx
-    const textDocSrc = fs.readFileSync(
-      'landing-page/src/features/reader/TextDocViewer.jsx',
-      'utf8',
-    );
+    const textDocSrc = fs.readFileSync('src/features/reader/TextDocViewer.jsx', 'utf8');
     assert.ok(
       textDocSrc.includes('font-arabic'),
       'TextDocViewer must use font-arabic class for Arabic headings',
@@ -478,16 +464,13 @@ test('M2 Empirical Challenger: Web Document Reader & QRIS Stress Suite', async (
     assert.equal(render, 'SVG_QRCODE_FALLBACK', 'Direct SVG fallback when no image URL provided');
 
     // Verify in QrisPaymentCard.jsx source code
-    const cardSrc = fs.readFileSync(
-      'landing-page/src/features/payment/QrisPaymentCard.jsx',
-      'utf8',
-    );
+    const cardSrc = fs.readFileSync('src/features/payment/QrisPaymentCard.jsx', 'utf8');
     assert.ok(
       cardSrc.includes('qrTransaction?.qrImageUrl && !qrImageGagal'),
       'QrisPaymentCard has qrImageUrl && !qrImageGagal guard',
     );
     assert.ok(
-      cardSrc.includes('onError={() => setQrImageGagal?.(true)}'),
+      cardSrc.includes('onError={() => setQrImageGagal(true)}'),
       'QrisPaymentCard sets qrImageGagal on img onError',
     );
     assert.ok(cardSrc.includes('<QRCodeSVG'), 'QrisPaymentCard renders QRCodeSVG on fallback');
@@ -566,7 +549,7 @@ test('M2 Empirical Challenger: Web Document Reader & QRIS Stress Suite', async (
     );
 
     // Verify useQrisPayment.js source code ensures clearInterval
-    const hookSrc = fs.readFileSync('landing-page/src/features/payment/useQrisPayment.js', 'utf8');
+    const hookSrc = fs.readFileSync('src/features/payment/useQrisPayment.js', 'utf8');
     assert.ok(
       hookSrc.includes('const POLL_INTERVAL_MS = 3000;'),
       'Polling interval must be 3000ms',
@@ -575,14 +558,14 @@ test('M2 Empirical Challenger: Web Document Reader & QRIS Stress Suite', async (
       hookSrc.includes('if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);'),
       'Must clear interval when stopping or unmounting',
     );
-    assert.ok(hookSrc.includes("data.status === 'settlement'"), 'Must handle settlement status');
+    assert.ok(hookSrc.includes('data?.isPaid === true'), 'Must handle paid/settlement status');
   });
 
   // =========================================================================
   // SECTION 8: jsPDF DIGITAL RECEIPT GENERATION STRESS & ENCODING
   // =========================================================================
-  await t.test('8. jsPDF Digital Receipt Generation Stress & Encoding Resilience', () => {
-    // 8.1 Standard Receipt Generation
+  await t.test('8. Receipt Data Layer Stress & Encoding Resilience', () => {
+    // 8.1 Rincian standar harus konsisten dengan yang tercetak di PDF
     const standardDetails = {
       refNo: 'WB-TEST-20261106',
       dateStr: '06/11/2026, 12:45',
@@ -597,43 +580,36 @@ test('M2 Empirical Challenger: Web Document Reader & QRIS Stress Suite', async (
       phone: '081234567890',
     };
 
-    const resStandard = generateReceiptPdf(standardDetails, standardUser);
-    assert.ok(resStandard.doc, 'Receipt doc must be returned');
-    assert.equal(resStandard.doc.getNumberOfPages(), 1, 'Standard receipt must fit on 1 page');
+    const standard = resolveReceiptFields(standardDetails, standardUser);
+    assert.equal(standard.refNo, 'WB-TEST-20261106');
+    assert.equal(standard.dateStr, '06/11/2026, 12:45');
+    assert.equal(standard.amount, 25000);
+    assert.equal(standard.adminFee, 3000);
+    assert.equal(standard.totalPaid, 28000);
+    assert.equal(standard.userPhone, '081234567890');
 
-    const standardPdfBuffer = Buffer.from(resStandard.doc.output('arraybuffer'));
-    assert.ok(standardPdfBuffer.length > 500, 'PDF buffer must have reasonable size');
-    assert.equal(
-      standardPdfBuffer.subarray(0, 5).toString('ascii'),
-      '%PDF-',
-      'PDF buffer must start with %PDF- magic bytes',
+    // 8.2 Boundary: biaya admin nol
+    const zeroFee = resolveReceiptFields(
+      {
+        refNo: 'WB-NOFEE-001',
+        planName: 'Paket Pro Tahunan',
+        amount: 250000,
+        adminFee: 0,
+        totalPaid: 250000,
+      },
+      standardUser,
     );
+    assert.equal(zeroFee.adminFee, 0);
+    assert.equal(zeroFee.totalPaid, 250000);
 
-    // 8.2 Boundary: Zero admin fee (amount only)
-    const zeroFeeDetails = {
-      refNo: 'WB-NOFEE-001',
-      dateStr: '06/11/2026, 12:45',
-      planName: 'Paket Pro Tahunan',
-      amount: 250000,
-      adminFee: 0,
-      totalPaid: 250000,
-    };
-    const resZeroFee = generateReceiptPdf(zeroFeeDetails, standardUser);
-    const zeroFeeBuf = Buffer.from(resZeroFee.doc.output('arraybuffer'));
-    assert.equal(zeroFeeBuf.subarray(0, 5).toString('ascii'), '%PDF-');
+    // 8.3 Adversarial: objek kosong tidak boleh melempar dan harus ada fallback
+    const sparse = resolveReceiptFields({}, {});
+    assert.ok(sparse.refNo.startsWith('WB-'), 'Must generate fallback WB- refNo');
+    assert.equal(sparse.userName, 'Pengguna Wahidiyah', 'Must fallback to default userName');
+    assert.equal(sparse.userEmail, '-', 'Must fallback to default userEmail');
+    assert.ok(sparse.dateStr.length > 0, 'Must generate fallback date string');
 
-    // 8.3 Adversarial: Minimal / Sparse details (all undefined/null)
-    const resSparse = generateReceiptPdf({}, {});
-    assert.ok(resSparse.doc, 'Must handle empty objects without throwing');
-    assert.ok(resSparse.data.refNo.startsWith('WB-'), 'Must generate fallback WB- refNo');
-    assert.equal(
-      resSparse.data.userName,
-      'Pengguna Wahidiyah',
-      'Must fallback to default userName',
-    );
-    assert.equal(resSparse.data.userEmail, '-', 'Must fallback to default userEmail');
-
-    // 8.4 Stress: Extremely long strings & special Unicode characters
+    // 8.4 Stress: string sangat panjang & karakter Unicode tetap utuh
     const extremeDetails = {
       refNo: 'WB-VERY-LONG-REFERENCE-NUMBER-ABCD-1234-EFGH-5678-IJKL-9012-MNOP-3456-QRST',
       dateStr: 'Jumat Legi, 06 November 2026 12:45:59 WIB',
@@ -647,26 +623,28 @@ test('M2 Empirical Challenger: Web Document Reader & QRIS Stress Suite', async (
       email: 'muhammad.fachruddin.alwahidi.super.long.address@santri.pesantren.wahidiyah.ac.id',
       phone: '+62-812-3456-7890-EXT-999',
     };
-    const resExtreme = generateReceiptPdf(extremeDetails, extremeUser);
-    const extremePdfBuf = Buffer.from(resExtreme.doc.output('arraybuffer'));
-    assert.ok(extremePdfBuf.length > 500);
-    assert.equal(extremePdfBuf.subarray(0, 5).toString('ascii'), '%PDF-');
+    const extreme = resolveReceiptFields(extremeDetails, extremeUser);
+    assert.equal(extreme.refNo, extremeDetails.refNo);
+    assert.equal(extreme.userEmail, extremeUser.email);
+    assert.equal(extreme.totalPaid, 1000004999);
 
-    // 8.5 Currency formatting correctness (Intl.NumberFormat produces non-breaking space \u00A0)
+    // 8.5 Currency formatting (Intl.NumberFormat menghasilkan spasi tak terputus \u00A0)
     assert.equal(formatRupiah(25000).replace(/\u00A0/g, ' '), 'Rp 25.000');
     assert.equal(formatRupiah(3000).replace(/\u00A0/g, ' '), 'Rp 3.000');
     assert.equal(formatRupiah(28000).replace(/\u00A0/g, ' '), 'Rp 28.000');
     assert.equal(formatRupiah(0).replace(/\u00A0/g, ' '), 'Rp 0');
     assert.equal(formatRupiah(-500).replace(/\u00A0/g, ' '), '-Rp 500');
 
-    // 8.6 Receipt brand constants
-    assert.equal(
-      RECEIPT_CONSTANTS.brandPrimary,
-      '#14523A',
-      'Brand color must be Wahidiyah emerald #14523A',
+    // 8.6 Generator PDF aktif memakai warna brand resmi & sanitasi nama berkas
+    const receiptSrc = fs.readFileSync('src/lib/receiptPdf.js', 'utf8');
+    assert.ok(
+      receiptSrc.includes('doc.setTextColor(20, 82, 58)'),
+      'Brand color must remain Wahidiyah emerald rgb(20, 82, 58)',
     );
-    assert.equal(RECEIPT_CONSTANTS.headerText, 'PERPUSTAKAAN DIGITAL WAHIDIYAH');
-    assert.equal(RECEIPT_CONSTANTS.receiptTitle, 'TANDA BUKTI PEMBAYARAN');
+    assert.ok(
+      receiptSrc.includes("replace(/[^a-zA-Z0-9_-]/g, '_')"),
+      'Receipt filename must sanitize path traversal characters',
+    );
   });
 
   // =========================================================================

@@ -5,7 +5,7 @@
  * sebagai hardcode di layar (Pro, konfirmasi, struk, riwayat).
  */
 
-import { formatRupiah } from '@lib/formatUtils';
+import { formatRupiah } from './formatUtils.js';
 
 /** Biaya admin per transaksi pembayaran QRIS (Rp). */
 export const QRIS_ADMIN_FEE = 3000;

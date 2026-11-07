@@ -1,7 +1,6 @@
 import { Download, Smartphone, Sparkles } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-
-const APK_URL = 'https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk';
+import { APK_DOWNLOAD_URL } from '@/config/constants';
 
 export const DownloadCtaSection = () => {
   return (
@@ -32,7 +31,7 @@ export const DownloadCtaSection = () => {
 
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
               <a
-                href={APK_URL}
+                href={APK_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-8 py-4 rounded-2xl bg-gold-400 text-ink-950 font-extrabold text-base hover:bg-gold-300 shadow-xl shadow-gold-500/20 hover:shadow-gold-500/30 transition hover:-translate-y-0.5"
@@ -58,7 +57,7 @@ export const DownloadCtaSection = () => {
             <div className="bg-cream-50/10 backdrop-blur-md border border-white/15 rounded-3xl p-6 text-center space-y-3 max-w-xs w-full shadow-2xl">
               <div className="p-3 bg-white rounded-2xl inline-block shadow-inner">
                 <QRCodeSVG
-                  value={APK_URL}
+                  value={APK_DOWNLOAD_URL}
                   size={140}
                   bgColor="#FFFFFF"
                   fgColor="#14523A"

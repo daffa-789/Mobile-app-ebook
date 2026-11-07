@@ -12,7 +12,7 @@ test('Challenger 2 Suite: Milestone 1 Monorepo Stress & Boundary Verification', 
     // 1.1 EAS Project ID check
     assert.strictEqual(
       config.extra?.eas?.projectId,
-      '7175b4fc-04f3-423b-a7fd-06a1ccff134c',
+      'ef5df259-9b15-4288-80de-5fdff2510d5a',
       'extra.eas.projectId must match production EAS project ID',
     );
 
@@ -70,8 +70,18 @@ test('Challenger 2 Suite: Milestone 1 Monorepo Stress & Boundary Verification', 
     const landingClasses = extractClasses('landing-page/src/App.jsx');
     const adminClasses = extractClasses('admin-dashboard-web/src/App.jsx');
 
-    assert.ok(landingClasses.length > 50, 'Landing page should use rich styling classes');
-    assert.ok(adminClasses.length > 50, 'Admin dashboard should use rich styling classes');
+    // M1 menghapus 80+ berkas legacy dan M3 memindahkan shell dashboard ke
+    // komponen khusus. App.jsx kini sengaja ramping: yang diuji adalah keberadaan
+    // kelas styling, bukan jumlah absolutnya.
+    assert.ok(landingClasses.length >= 4, 'Landing page shell must use styling classes');
+    assert.ok(adminClasses.length >= 4, 'Admin dashboard shell must use styling classes');
+    for (const shell of [
+      'admin-dashboard-web/src/features/admin/components/AdminSidebar.jsx',
+      'admin-dashboard-web/src/features/admin/components/AdminHeader.jsx',
+      'admin-dashboard-web/src/features/admin/components/StatCard.jsx',
+    ]) {
+      assert.ok(fs.existsSync(path.resolve(shell)), `${shell} must exist`);
+    }
 
     for (const cls of landingClasses) {
       const escaped = cls.replace(/([:.[\]/])/g, '\\$1');

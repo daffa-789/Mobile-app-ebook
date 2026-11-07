@@ -91,13 +91,33 @@ test('Adversarial Suite 1: APK Download URL Network Validity & Uniformity', asyn
       'LandingFooter.jsx',
     ];
 
+    // M2: URL APK disentralisasi ke src/config/constants.js. Komponen tidak boleh
+    // lagi menyimpan URL hardcoded, melainkan mengimpor konstanta terpusat.
+    const constantsSrc = fs.readFileSync(
+      path.join(ROOT_DIR, 'landing-page/src/config/constants.js'),
+      'utf8',
+    );
+    assert.ok(
+      constantsSrc.includes(OFFICIAL_APK_URL),
+      'Centralized constants.js must expose the official APK URL',
+    );
+
     for (const comp of componentsWithApk) {
       const match = jsxFiles.find((f) => path.basename(f) === comp);
       assert.ok(match, `Component ${comp} must exist in landing-page/src`);
       const content = fs.readFileSync(match, 'utf8');
       assert.ok(
-        content.includes(OFFICIAL_APK_URL),
-        `Component ${comp} must reference the exact official APK URL without modification`,
+        content.includes('APK_DOWNLOAD_URL'),
+        `Component ${comp} must use the centralized APK_DOWNLOAD_URL constant`,
+      );
+      assert.ok(
+        content.includes('@/config/constants'),
+        `Component ${comp} must import APK_DOWNLOAD_URL from @/config/constants`,
+      );
+      assert.equal(
+        content.includes('expo.dev/artifacts/eas/'),
+        false,
+        `Component ${comp} must not hardcode the EAS artifact URL`,
       );
     }
   });

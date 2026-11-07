@@ -168,7 +168,7 @@ suite.test(
   async () => {
     // 1. Verify Expo configuration in app.json
     const appJson = JSON.parse(fs.readFileSync(path.resolve(rootDir, 'app.json'), 'utf-8'));
-    assert.equal(appJson.expo.extra.eas.projectId, '7175b4fc-04f3-423b-a7fd-06a1ccff134c');
+    assert.equal(appJson.expo.extra.eas.projectId, 'ef5df259-9b15-4288-80de-5fdff2510d5a');
     assert.ok(
       appJson.expo.android?.adaptiveIcon?.backgroundColor === '#067554' ||
         appJson.expo.android?.adaptiveIcon?.backgroundColor === '#E6F4FE',

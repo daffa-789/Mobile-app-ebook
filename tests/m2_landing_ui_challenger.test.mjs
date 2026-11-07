@@ -468,46 +468,38 @@ test('Challenger Suite 3: PaywallModal Lock Interaction & Dialog Focus Trap', as
     assert.strictEqual(r5.openedPaywallWith, null);
   });
 
-  await t.test('3.2 PaywallModal markup contracts in HomeScreen.jsx', () => {
-    const homeScreenContent = fs.readFileSync(
-      'landing-page/src/features/home/HomeScreen.jsx',
+  await t.test('3.2 Single-page landing showcase integrity (post-M1)', () => {
+    // M1 menghapus HomeScreen/PaywallModal/reader dari landing page. Landing kini
+    // murni halaman promosi statis dengan CTA unduh APK langsung.
+    const appContent = fs.readFileSync('landing-page/src/App.jsx', 'utf8');
+    for (const section of [
+      'HeroSection',
+      'PreviewSection',
+      'InstallGuideSection',
+      'DownloadCtaSection',
+    ]) {
+      assert.ok(appContent.includes(section), `Landing App.jsx must render ${section}`);
+    }
+    assert.equal(
+      appContent.includes('PdfReaderScreen') || appContent.includes('PaywallModal'),
+      false,
+      'Landing page must not mount reader or paywall (moved out in M1)',
+    );
+
+    const ctaContent = fs.readFileSync(
+      'landing-page/src/components/sections/DownloadCtaSection.jsx',
       'utf8',
     );
-
-    // Must have paywall-modal data-testid
     assert.ok(
-      homeScreenContent.includes('data-testid="paywall-modal"'),
-      'HomeScreen.jsx must contain data-testid="paywall-modal"',
-    );
-
-    // Must have paywall-upgrade-button data-testid
-    assert.ok(
-      homeScreenContent.includes('data-testid="paywall-upgrade-button"'),
-      'HomeScreen.jsx must contain data-testid="paywall-upgrade-button"',
-    );
-
-    // Must have paywall-close-button data-testid
-    assert.ok(
-      homeScreenContent.includes('data-testid="paywall-close-button"'),
-      'HomeScreen.jsx must contain data-testid="paywall-close-button"',
-    );
-
-    // Upgrade CTA must navigate to 'pro'
-    assert.ok(
-      homeScreenContent.includes("navigateTo('pro')"),
-      "Upgrade button click must call navigateTo('pro')",
-    );
-
-    // Accessibility attributes
-    assert.ok(
-      homeScreenContent.includes('role="dialog"') &&
-        homeScreenContent.includes('aria-modal="true"'),
-      'Modal must have role="dialog" and aria-modal="true"',
+      ctaContent.includes('APK_DOWNLOAD_URL'),
+      'DownloadCtaSection must expose the direct APK download CTA',
     );
   });
 
   await t.test('3.3 Dialog Focus Trap logic verification (useDialogFocusTrap.js)', () => {
-    const focusTrapContent = fs.readFileSync('landing-page/src/lib/useDialogFocusTrap.js', 'utf8');
+    // Implementasi kanonik sekarang hidup di root src/lib dan dipakai BookModal
+    // pada admin dashboard (duplikat di landing-page sudah dihapus di M1).
+    const focusTrapContent = fs.readFileSync('src/lib/useDialogFocusTrap.js', 'utf8');
 
     // Checks key requirements:
     // 1. Selects all focusable selectors

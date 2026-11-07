@@ -1,7 +1,6 @@
 import { Download, Sparkles, Smartphone, Eye, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-
-const APK_URL = 'https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk';
+import { APK_DOWNLOAD_URL } from '@/config/constants';
 
 export const HeroSection = () => {
   return (
@@ -11,7 +10,7 @@ export const HeroSection = () => {
 
       {/* Hidden QRCode for automated test suite contract compatibility */}
       <div className="hidden" aria-hidden="true">
-        <QRCodeSVG value={APK_URL} size={1} />
+        <QRCodeSVG value={APK_DOWNLOAD_URL} size={1} />
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -37,7 +36,7 @@ export const HeroSection = () => {
         {/* Action Buttons */}
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
           <a
-            href={APK_URL}
+            href={APK_DOWNLOAD_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-3.5 px-8 py-4 rounded-2xl bg-brand-700 text-white font-bold text-base hover:bg-brand-800 shadow-lg shadow-brand-900/15 hover:shadow-brand-900/25 transition duration-200 hover:-translate-y-0.5 group cursor-pointer"

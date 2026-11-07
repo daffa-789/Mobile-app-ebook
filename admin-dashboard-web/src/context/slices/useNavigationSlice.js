@@ -8,7 +8,6 @@ import {
   normalizePath,
 } from '@lib/navigation';
 import { clearIntendedLocation, peekIntendedLocation, saveIntendedLocation } from '@lib/api';
-import { saveScrollPositionBeforeNavigation } from '@lib/scrollPositionEvents';
 
 export const useNavigationSlice = ({ initialScreen, userRole }) => {
   const [currentScreen, setCurrentScreen] = useState(() => initialScreen || getScreenFromPath());
@@ -74,7 +73,6 @@ export const useNavigationSlice = ({ initialScreen, userRole }) => {
     }
 
     const targetPath = SCREEN_TO_PATH[destScreen];
-    saveScrollPositionBeforeNavigation();
 
     screenRef.current = destScreen;
     setCurrentScreen(destScreen);

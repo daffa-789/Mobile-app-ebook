@@ -523,8 +523,8 @@ suite.test('F32: Mobile Expo & EAS Configuration in app.json', async () => {
   const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf-8'));
   assert.equal(
     appJson.expo.extra?.eas?.projectId,
-    '7175b4fc-04f3-423b-a7fd-06a1ccff134c',
-    'EAS Project ID must be 7175b4fc-04f3-423b-a7fd-06a1ccff134c',
+    'ef5df259-9b15-4288-80de-5fdff2510d5a',
+    'EAS Project ID must be ef5df259-9b15-4288-80de-5fdff2510d5a',
   );
   assert.equal(appJson.expo.name, 'wahidiyah-book');
   assert.equal(appJson.expo.slug, 'wahidiyah-book');

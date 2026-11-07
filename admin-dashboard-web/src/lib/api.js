@@ -6,7 +6,9 @@
  * @module src/lib/api
  */
 
-export const API_FALLBACK_ORIGIN = 'http://localhost:5000';
+import { API_CONFIG, STORAGE_KEYS } from '@/config/constants';
+
+export const API_FALLBACK_ORIGIN = API_CONFIG.fallbackOrigin;
 
 const canUseApiFallback = (path) =>
   import.meta.env?.DEV === true &&
@@ -22,9 +24,9 @@ const offlineError = () => {
   return error;
 };
 
-const SESSION_STORAGE_KEY = 'buku-wahidiyah:auth-session';
+const SESSION_STORAGE_KEY = STORAGE_KEYS.session;
 
-const INTENDED_LOCATION_STORAGE_KEY = 'buku-wahidiyah:intended-location';
+const INTENDED_LOCATION_STORAGE_KEY = STORAGE_KEYS.intendedLocation;
 
 export const getStoredSession = () => {
   try {
@@ -113,7 +115,7 @@ export const clearIntendedLocation = () => {
 export const authHeaders = (token = getStoredSession()?.token) =>
   token ? { Authorization: `Bearer ${token}` } : {};
 
-const REQUEST_TIMEOUT_MS = 20000;
+const REQUEST_TIMEOUT_MS = API_CONFIG.timeoutMs;
 
 const timeoutError = () => {
   const error = new Error('Server tidak membalas dalam batas waktu.');

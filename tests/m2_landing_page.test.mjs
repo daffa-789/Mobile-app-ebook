@@ -77,7 +77,10 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
     assert.ok(content.includes('#preview'), 'LandingNavbar must have #preview anchor');
     assert.ok(content.includes('#panduan'), 'LandingNavbar must have #panduan anchor');
     assert.ok(content.includes('#faq'), 'LandingNavbar must have #faq anchor');
-    assert.ok(content.includes(EXPECTED_APK_URL), 'LandingNavbar must link directly to APK URL');
+    assert.ok(
+      content.includes('APK_DOWNLOAD_URL') || content.includes(EXPECTED_APK_URL),
+      'LandingNavbar must link directly to APK URL or centralized constant',
+    );
   });
 
   await t.test('HeroSection has badge, direct APK download, and QRCodeSVG', () => {
@@ -86,7 +89,10 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
     const content = fs.readFileSync(heroPath, 'utf8');
 
     assert.ok(content.includes('v0.1.0 (Alpha)'), 'HeroSection must state v0.1.0 (Alpha)');
-    assert.ok(content.includes(EXPECTED_APK_URL), 'HeroSection must link to official APK URL');
+    assert.ok(
+      content.includes('APK_DOWNLOAD_URL') || content.includes(EXPECTED_APK_URL),
+      'HeroSection must link to official APK URL or centralized constant',
+    );
     assert.ok(content.includes('QRCodeSVG'), 'HeroSection must use QRCodeSVG from qrcode.react');
     assert.ok(content.includes('qrcode.react'), 'HeroSection must import from qrcode.react');
   });
@@ -166,7 +172,10 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
     assert.ok(fs.existsSync(ctaPath), 'DownloadCtaSection.jsx must exist');
     const content = fs.readFileSync(ctaPath, 'utf8');
 
-    assert.ok(content.includes(EXPECTED_APK_URL), 'Must include expected APK URL');
+    assert.ok(
+      content.includes('APK_DOWNLOAD_URL') || content.includes(EXPECTED_APK_URL),
+      'Must include expected APK URL or centralized constant',
+    );
     assert.ok(content.includes('QRCodeSVG'), 'Must include QRCodeSVG');
     assert.ok(content.includes('id="unduh"'), 'Must have id="unduh" anchor');
   });
@@ -176,7 +185,10 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
     assert.ok(fs.existsSync(footerPath), 'LandingFooter.jsx must exist');
     const content = fs.readFileSync(footerPath, 'utf8');
 
-    assert.ok(content.includes(EXPECTED_APK_URL), 'Footer must link to APK URL');
+    assert.ok(
+      content.includes('APK_DOWNLOAD_URL') || content.includes(EXPECTED_APK_URL),
+      'Footer must link to APK URL or centralized constant',
+    );
     assert.ok(
       content.includes('Yayasan Perjuangan Wahidiyah'),
       'Footer must attribute Yayasan Perjuangan Wahidiyah',
@@ -280,4 +292,68 @@ test('M2-4: Build Output & Bundle Verification in dist/landing', async (t) => {
       assert.ok(size > 1000, `Screenshot ${s} must have real content (>1KB), was ${size} bytes`);
     }
   });
+});
+
+test('M2-5: Centralized Landing Configuration & Constants', async (t) => {
+  const constantsPath = path.join(ROOT_DIR, 'landing-page', 'src', 'config', 'constants.js');
+
+  await t.test(
+    'landing-page/src/config/constants.js exists and exports expected config',
+    async () => {
+      assert.ok(fs.existsSync(constantsPath), 'constants.js must exist');
+      const constants = await import(`file://${constantsPath}?t=${Date.now()}`);
+
+      assert.ok(constants.APK_DOWNLOAD_URL, 'APK_DOWNLOAD_URL must be exported');
+      assert.strictEqual(
+        constants.APK_DOWNLOAD_URL,
+        EXPECTED_APK_URL,
+        'Default APK_DOWNLOAD_URL must equal official EAS URL',
+      );
+
+      assert.ok(constants.API_CONFIG, 'API_CONFIG must be exported');
+      assert.strictEqual(constants.API_CONFIG.fallbackOrigin, 'http://localhost:5000');
+      assert.strictEqual(constants.API_CONFIG.timeoutMs, 20000);
+
+      assert.ok(constants.OAUTH_CONFIG, 'OAUTH_CONFIG must be exported');
+      assert.strictEqual(
+        constants.OAUTH_CONFIG.googleAuthUrl,
+        'https://accounts.google.com/o/oauth2/v2/auth',
+      );
+
+      assert.ok(constants.STORAGE_KEYS, 'STORAGE_KEYS must be exported');
+      assert.ok(constants.STORAGE_KEYS.session, 'STORAGE_KEYS.session must be defined');
+    },
+  );
+
+  await t.test(
+    'All landing components use centralized APK_DOWNLOAD_URL and have no inline APK_URL',
+    () => {
+      const componentPaths = [
+        path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'layout', 'LandingNavbar.jsx'),
+        path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'layout', 'LandingFooter.jsx'),
+        path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'sections', 'HeroSection.jsx'),
+        path.join(
+          ROOT_DIR,
+          'landing-page',
+          'src',
+          'components',
+          'sections',
+          'DownloadCtaSection.jsx',
+        ),
+        path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'sections', 'PreviewSection.jsx'),
+      ];
+
+      for (const compPath of componentPaths) {
+        const content = fs.readFileSync(compPath, 'utf8');
+        assert.ok(
+          content.includes('APK_DOWNLOAD_URL'),
+          `${path.basename(compPath)} must import or reference APK_DOWNLOAD_URL`,
+        );
+        assert.ok(
+          !content.includes(`const APK_URL = '${EXPECTED_APK_URL}'`),
+          `${path.basename(compPath)} must not declare hardcoded const APK_URL`,
+        );
+      }
+    },
+  );
 });

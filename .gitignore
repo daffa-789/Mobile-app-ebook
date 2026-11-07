@@ -99,4 +99,6 @@ supabase/.temp/
 
 .vercel
 .env*
+!**/.env.example
+!**/.env.*.example
 laptop_desktop_preview.png

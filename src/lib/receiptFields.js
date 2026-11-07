@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { DEFAULT_PLAN } from '@lib/plans';
+import { DEFAULT_PLAN } from './plans.js';
 
 /**
  * @file src/lib/receiptFields.js

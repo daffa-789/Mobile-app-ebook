@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { BookOpen, Download, Menu, X, Smartphone } from 'lucide-react';
-
-const APK_URL = 'https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk';
+import { APK_DOWNLOAD_URL } from '@/config/constants';
 
 export const LandingNavbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -56,7 +55,7 @@ export const LandingNavbar = () => {
           {/* Desktop Direct APK CTA */}
           <div className="hidden md:flex items-center gap-3">
             <a
-              href={APK_URL}
+              href={APK_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold bg-brand-700 text-white hover:bg-brand-800 shadow-sm shadow-brand-900/15 rounded-xl transition hover:-translate-y-0.5 cursor-pointer"
@@ -70,7 +69,7 @@ export const LandingNavbar = () => {
           {/* Mobile Menu Button */}
           <div className="flex md:hidden items-center gap-2">
             <a
-              href={APK_URL}
+              href={APK_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-brand-700 text-white rounded-lg shadow-xs"
@@ -108,7 +107,7 @@ export const LandingNavbar = () => {
           </nav>
           <div className="pt-3 border-t border-cream-200">
             <a
-              href={APK_URL}
+              href={APK_DOWNLOAD_URL}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setMobileMenuOpen(false)}

@@ -103,7 +103,11 @@ describe('Milestone 1: Monorepo Architecture & Workspace Setup', () => {
     const appJson = JSON.parse(fs.readFileSync(path.join(rootDir, 'app.json'), 'utf8'));
     assert.equal(appJson.expo.android.package, 'id.wahidiyah.book');
     assert.equal(appJson.expo.android.usesCleartextTraffic, true);
-    assert.equal(appJson.expo.extra.eas.projectId, '7175b4fc-04f3-423b-a7fd-06a1ccff134c');
+    assert.ok(
+      appJson.expo.extra?.eas?.projectId === 'ef5df259-9b15-4288-80de-5fdff2510d5a' ||
+        appJson.expo.extra?.eas?.projectId === 'ef5df259-9b15-4288-80de-5fdff2510d5a',
+      `Unexpected EAS project ID: ${appJson.expo.extra?.eas?.projectId}`,
+    );
   });
 
   test('Workspace scaffolding files exist', () => {

@@ -172,12 +172,25 @@ describe('CHALLENGER 2 — Integrated Monorepo, Build & Admin Auth Stress Harnes
       const ctaSrc = fs.readFileSync(ctaPath, 'utf8');
       const navSrc = fs.readFileSync(navPath, 'utf8');
 
-      assert.ok(heroSrc.includes(OFFICIAL_APK_URL), 'HeroSection must contain official APK URL');
-      assert.ok(
-        ctaSrc.includes(OFFICIAL_APK_URL),
-        'DownloadCtaSection must contain official APK URL',
+      // M2 memusatkan URL APK ke satu konstanta; komponen wajib memakainya.
+      const constantsSrc = fs.readFileSync(
+        path.join(rootDir, 'landing-page/src/config/constants.js'),
+        'utf8',
       );
-      assert.ok(navSrc.includes(OFFICIAL_APK_URL), 'LandingNavbar must contain official APK URL');
+      assert.ok(
+        constantsSrc.includes(OFFICIAL_APK_URL),
+        'Centralized constants.js must expose the official APK URL',
+      );
+      for (const [name, src] of [
+        ['HeroSection', heroSrc],
+        ['DownloadCtaSection', ctaSrc],
+        ['LandingNavbar', navSrc],
+      ]) {
+        assert.ok(
+          src.includes('APK_DOWNLOAD_URL') && src.includes('@/config/constants'),
+          `${name} must consume the centralized APK_DOWNLOAD_URL constant`,
+        );
+      }
     });
 
     test('Landing App.jsx is completely static without API polling or auth context bloat', () => {

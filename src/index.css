@@ -38,6 +38,7 @@
   --brand-700: 20 82 58;
   --brand-800: 14 61 44;
   --brand-900: 8 45 32;
+  --brand-950: 4 28 20;
 
   --gold-300: 229 200 119;
   --gold-400: 212 175 79;
@@ -84,6 +85,7 @@
   --primary-hover: 14 61 44;
   --primary-light: 220 237 228;
 
+  --color-brand-950: #041c14;
   --color-brand-primary: #14523a;
   --color-brand-primary-hover: #0e3d2c;
   --color-brand-primary-light: #dcede4;

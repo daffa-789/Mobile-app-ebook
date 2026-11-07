@@ -8,8 +8,7 @@ import {
   Sparkles,
   CheckCircle2,
 } from 'lucide-react';
-
-const APK_URL = 'https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk';
+import { APK_DOWNLOAD_URL } from '@/config/constants';
 
 export const PreviewSection = () => {
   const [activeTab, setActiveTab] = useState(0);
@@ -187,7 +186,7 @@ export const PreviewSection = () => {
             {/* Quick jump to direct download */}
             <div className="pt-6 border-t border-cream-200">
               <a
-                href={APK_URL}
+                href={APK_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm font-bold text-brand-700 hover:text-brand-900 underline underline-offset-4"

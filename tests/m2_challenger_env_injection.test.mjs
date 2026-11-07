@@ -1,0 +1,217 @@
+/**
+ * @file tests/m2_challenger_env_injection.test.mjs
+ * @description Adversarial empirical stress test for configuration resilience and environment variable handling across:
+ *  - landing-page/src/config/constants.js
+ *  - admin-dashboard-web/src/config/constants.js
+ *  - mobile-app/src/config/constants.js
+ */
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ROOT_DIR = path.resolve(__dirname, '..');
+
+const DEFAULT_APK =
+  'https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk';
+
+// Helper to run code in an isolated subprocess with specific env variables
+async function runInSubprocess(moduleRelativePath, envOverrides = {}) {
+  const scriptCode = `
+    import { register } from 'node:module';
+    register('./tests/helpers/rn_loader.mjs', import.meta.url);
+    const mod = await import('${moduleRelativePath}');
+    console.log(JSON.stringify(mod));
+  `;
+
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, ['--input-type=module', '-e', scriptCode], {
+      cwd: ROOT_DIR,
+      env: {
+        ...process.env,
+        ...envOverrides,
+      },
+    });
+
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => {
+      stdout += d.toString();
+    });
+    child.stderr.on('data', (d) => {
+      stderr += d.toString();
+    });
+
+    child.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`Subprocess exited with code ${code}: ${stderr}`));
+      } else {
+        try {
+          const lines = stdout.trim().split('\n');
+          const lastLine = lines[lines.length - 1];
+          resolve(JSON.parse(lastLine));
+        } catch (e) {
+          reject(new Error(`Failed to parse JSON output: ${stdout}\nError: ${e.message}`));
+        }
+      }
+    });
+  });
+}
+
+test('Landing Page Configuration Resilience & Env Injection', async (t) => {
+  await t.test('1. Default environment without custom env vars', async () => {
+    const config = await runInSubprocess('./landing-page/src/config/constants.js', {
+      VITE_APK_DOWNLOAD_URL: '',
+      VITE_API_URL: '',
+      VITE_API_FALLBACK_ORIGIN: '',
+      VITE_API_TIMEOUT_MS: '',
+    });
+
+    assert.strictEqual(config.APK_DOWNLOAD_URL, DEFAULT_APK, 'Fallback to official EAS APK');
+    assert.strictEqual(config.API_CONFIG.baseUrl, '', 'Default baseUrl is empty string');
+    assert.strictEqual(config.API_CONFIG.fallbackOrigin, 'http://localhost:5000');
+    assert.strictEqual(config.API_CONFIG.timeoutMs, 20000, 'Default timeout is 20000ms');
+    assert.ok(config.STORAGE_KEYS.session, 'Storage key session exists');
+  });
+
+  await t.test('2. Custom valid environment variables injected', async () => {
+    const customApk = 'https://custom-cdn.example.org/releases/wahidiyah-v2.apk';
+    const customApi = 'https://api.wahidiyah.org';
+    const customOrigin = 'https://portal.wahidiyah.org';
+    const customTimeout = '35000';
+    const customGoogleClientId = 'custom-client-id-12345.apps.googleusercontent.com';
+
+    const config = await runInSubprocess('./landing-page/src/config/constants.js', {
+      VITE_APK_DOWNLOAD_URL: customApk,
+      VITE_API_URL: customApi,
+      VITE_API_FALLBACK_ORIGIN: customOrigin,
+      VITE_API_TIMEOUT_MS: customTimeout,
+      VITE_GOOGLE_CLIENT_ID: customGoogleClientId,
+    });
+
+    assert.strictEqual(config.APK_DOWNLOAD_URL, customApk);
+    assert.strictEqual(config.API_CONFIG.baseUrl, customApi);
+    assert.strictEqual(config.API_CONFIG.fallbackOrigin, customOrigin);
+    assert.strictEqual(config.API_CONFIG.timeoutMs, 35000);
+    assert.strictEqual(config.OAUTH_CONFIG.googleClientId, customGoogleClientId);
+  });
+
+  await t.test('3. Edge cases: empty string and NaN timeout', async () => {
+    const config = await runInSubprocess('./landing-page/src/config/constants.js', {
+      VITE_APK_DOWNLOAD_URL: '',
+      VITE_API_TIMEOUT_MS: 'not_a_number_abc',
+    });
+
+    assert.strictEqual(
+      config.APK_DOWNLOAD_URL,
+      DEFAULT_APK,
+      'Empty string falls back to default APK',
+    );
+    assert.strictEqual(config.API_CONFIG.timeoutMs, 20000, 'NaN timeout falls back to 20000ms');
+  });
+});
+
+test('Admin Dashboard Configuration Resilience & Env Injection', async (t) => {
+  await t.test('1. Default environment without custom env vars', async () => {
+    const config = await runInSubprocess('./admin-dashboard-web/src/config/constants.js', {
+      VITE_API_URL: '',
+      VITE_API_FALLBACK_ORIGIN: '',
+      VITE_API_TIMEOUT_MS: '',
+    });
+
+    assert.strictEqual(config.API_CONFIG.baseUrl, '');
+    assert.strictEqual(config.API_CONFIG.fallbackOrigin, 'http://localhost:5000');
+    assert.strictEqual(config.API_CONFIG.timeoutMs, 20000);
+    assert.deepStrictEqual(config.EVENT_CATEGORIES, [
+      'Mujahadah',
+      'Pengajian',
+      'Kubro',
+      'Peringatan',
+    ]);
+    assert.strictEqual(config.STORAGE_KEYS.session, 'buku-wahidiyah:auth-session');
+    assert.ok(config.MAPS_CONFIG.searchBaseUrl.includes('google.com/maps/search'));
+  });
+
+  await t.test('2. Custom valid environment variables injected', async () => {
+    const customApi = 'https://admin-api.wahidiyah.org';
+    const customOrigin = 'https://admin-api.wahidiyah.org:8443';
+    const customTimeout = '60000';
+
+    const config = await runInSubprocess('./admin-dashboard-web/src/config/constants.js', {
+      VITE_API_URL: customApi,
+      VITE_API_FALLBACK_ORIGIN: customOrigin,
+      VITE_API_TIMEOUT_MS: customTimeout,
+    });
+
+    assert.strictEqual(config.API_CONFIG.baseUrl, customApi);
+    assert.strictEqual(config.API_CONFIG.fallbackOrigin, customOrigin);
+    assert.strictEqual(config.API_CONFIG.timeoutMs, 60000);
+  });
+
+  await t.test('3. Edge case: zero timeoutMs falls back safely to 20000ms', async () => {
+    const config = await runInSubprocess('./admin-dashboard-web/src/config/constants.js', {
+      VITE_API_TIMEOUT_MS: '0',
+    });
+
+    assert.strictEqual(config.API_CONFIG.timeoutMs, 20000, '0 falls back to 20000ms');
+  });
+});
+
+test('Mobile App Configuration Resilience & Env Injection', async (t) => {
+  await t.test(
+    '1. Default environment without custom env vars (Android Platform mock)',
+    async () => {
+      const config = await runInSubprocess('./mobile-app/src/config/constants.js', {
+        EXPO_PUBLIC_API_URL: '',
+        EXPO_PUBLIC_API_TIMEOUT_MS: '',
+        EXPO_PUBLIC_GOOGLE_CLIENT_ID: '',
+        EXPO_PUBLIC_GOOGLE_REDIRECT_URI: '',
+        EXPO_PUBLIC_SUPPORT_EMAIL: '',
+      });
+
+      assert.strictEqual(config.API_CONFIG.baseUrl, 'http://10.0.2.2:5000/api');
+      assert.strictEqual(config.API_CONFIG.timeoutMs, 20000);
+      assert.ok(config.OAUTH_CONFIG.googleClientId.includes('apps.googleusercontent.com'));
+      assert.ok(config.OAUTH_CONFIG.redirectUri.includes('/api/auth/google/callback'));
+      assert.strictEqual(config.APP_CONFIG.supportEmail, 'info@wahidiyah.org');
+    },
+  );
+
+  await t.test('2. Custom valid environment variables injected', async () => {
+    const customApiUrl = 'https://prod-api.wahidiyah.org/api';
+    const customTimeout = '15000';
+    const customClientId = 'mobile-prod-9988.apps.googleusercontent.com';
+    const customRedirect = 'wahidiyah-app://oauth-callback';
+    const customEmail = 'helpdesk@wahidiyah.org';
+
+    const config = await runInSubprocess('./mobile-app/src/config/constants.js', {
+      EXPO_PUBLIC_API_URL: customApiUrl,
+      EXPO_PUBLIC_API_TIMEOUT_MS: customTimeout,
+      EXPO_PUBLIC_GOOGLE_CLIENT_ID: customClientId,
+      EXPO_PUBLIC_GOOGLE_REDIRECT_URI: customRedirect,
+      EXPO_PUBLIC_SUPPORT_EMAIL: customEmail,
+    });
+
+    assert.strictEqual(config.API_CONFIG.baseUrl, customApiUrl);
+    assert.strictEqual(config.API_CONFIG.timeoutMs, 15000);
+    assert.strictEqual(config.OAUTH_CONFIG.googleClientId, customClientId);
+    assert.strictEqual(config.OAUTH_CONFIG.redirectUri, customRedirect);
+    assert.strictEqual(config.APP_CONFIG.supportEmail, customEmail);
+  });
+
+  await t.test('3. Edge cases: invalid timeout string falls back safely', async () => {
+    const config = await runInSubprocess('./mobile-app/src/config/constants.js', {
+      EXPO_PUBLIC_API_TIMEOUT_MS: 'invalid_xyz',
+    });
+
+    assert.strictEqual(
+      config.API_CONFIG.timeoutMs,
+      20000,
+      'Non-numeric string safely yields 20000',
+    );
+  });
+});

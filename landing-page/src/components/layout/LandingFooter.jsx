@@ -1,6 +1,5 @@
 import { BookOpen, Download, Heart, Shield, Smartphone } from 'lucide-react';
-
-const APK_URL = 'https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk';
+import { APK_DOWNLOAD_URL } from '@/config/constants';
 
 export const LandingFooter = () => {
   return (
@@ -71,7 +70,7 @@ export const LandingFooter = () => {
             <h4 className="text-xs font-bold text-ink-900 uppercase tracking-wider">Unduh Resmi</h4>
             <div className="space-y-2 text-sm">
               <a
-                href={APK_URL}
+                href={APK_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand-700 text-white font-semibold text-xs hover:bg-brand-800 transition"

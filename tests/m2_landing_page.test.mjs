@@ -95,7 +95,7 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
     },
   );
 
-  await t.test('HeroSection has badge, direct APK download, and QRCodeSVG', () => {
+  await t.test('HeroSection has direct APK download and clean hero layout', () => {
     const heroPath = path.join(landingSrc, 'components', 'sections', 'HeroSection.jsx');
     assert.ok(fs.existsSync(heroPath), 'HeroSection.jsx must exist');
     const content = fs.readFileSync(heroPath, 'utf8');
@@ -105,8 +105,11 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
       content.includes('APK_DOWNLOAD_URL') || content.includes(EXPECTED_APK_URL),
       'HeroSection must link to official APK URL or centralized constant',
     );
-    assert.ok(content.includes('QRCodeSVG'), 'HeroSection must use QRCodeSVG from qrcode.react');
-    assert.ok(content.includes('qrcode.react'), 'HeroSection must import from qrcode.react');
+    assert.ok(!content.includes('href="#preview"'), 'HeroSection must not have #preview anchor');
+    assert.ok(
+      !content.includes('Rilis Resmi v0.1.0 (Alpha) untuk Android'),
+      'HeroSection must not have legacy badge',
+    );
   });
 
   await t.test('FeaturesSection has 4 feature cards', () => {

@@ -163,7 +163,6 @@ export const AdminDashboard = () => {
             editingEventId={eventEditor.editingEventId}
             editEvent={eventEditor.editEvent}
             cancelEditEvent={eventEditor.cancelEditEvent}
-            toggleEventCarousel={eventEditor.toggleEventCarousel}
           />
         )}
 

@@ -3,7 +3,6 @@ import { apiJson, authHeaders, getStoredSession } from '@lib/api';
 import { withToast } from '@lib/withToast';
 import { getTodayStr, getCalendarMonthGrid } from '@lib/date';
 import { surfaces } from '@lib/styles';
-import { PushStatusBanner } from './events/PushStatusBanner';
 import { EventCalendarPanel } from './events/EventCalendarPanel';
 import { SelectedDateAgenda } from './events/SelectedDateAgenda';
 import { EventFormPanel } from './events/EventFormPanel';
@@ -25,7 +24,6 @@ export const EventsTab = ({
   editingEventId,
   editEvent,
   cancelEditEvent,
-  toggleEventCarousel,
 }) => {
   const [pushStatus, setPushStatus] = useState({ enabled: false, subscribers: 0 });
   const [sendingId, setSendingId] = useState(null);
@@ -137,7 +135,6 @@ export const EventsTab = ({
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(340px,0.8fr)] items-start">
         <div className="space-y-5">
           <div className={surfaces.panel}>
-            <PushStatusBanner enabled={pushStatus.enabled} subscribers={pushStatus.subscribers} />
             <EventCalendarPanel
               calMonth={calMonth}
               calYear={calYear}
@@ -157,7 +154,6 @@ export const EventsTab = ({
             pushEnabled={pushStatus.enabled}
             subscribers={pushStatus.subscribers}
             sendingId={sendingId}
-            onToggleCarousel={toggleEventCarousel}
             onSendReminder={sendReminder}
             onEdit={editEvent}
             onDelete={deleteEvent}

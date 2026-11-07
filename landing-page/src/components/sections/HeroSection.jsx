@@ -1,15 +1,9 @@
 import { Download, Smartphone, ShieldCheck, CheckCircle2 } from 'lucide-react';
-import { QRCodeSVG } from 'qrcode.react';
 import { APK_DOWNLOAD_URL } from '@/config/constants';
 
 export const HeroSection = () => {
   return (
     <section className="relative overflow-hidden pt-16 pb-20 lg:pt-24 lg:pb-32">
-      {/* Hidden QRCode for automated test suite contract compatibility */}
-      <div className="hidden" aria-hidden="true">
-        <QRCodeSVG value={APK_DOWNLOAD_URL} size={1} />
-      </div>
-
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         {/* Main Headline — clean typography without wavy underline lines */}
         <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-ink-900 leading-[1.18] max-w-4xl mx-auto">

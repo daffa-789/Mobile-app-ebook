@@ -116,27 +116,17 @@ export const PreviewSection = () => {
           {/* Left: Device Mockup Frame */}
           <div className="lg:col-span-6 flex justify-center">
             <div className="relative mx-auto">
-              {/* Outer Phone Mockup Frame */}
-              <div className="relative w-[280px] sm:w-[320px] max-w-full h-[580px] sm:h-[650px] bg-ink-900 rounded-[48px] p-3 shadow-2xl shadow-ink-900/30 border-4 border-ink-800 ring-1 ring-white/10">
-                {/* Camera punch-hole notch */}
-                <div className="absolute top-5 left-1/2 -translate-x-1/2 w-20 h-4 bg-ink-950 rounded-full z-20 flex items-center justify-center">
-                  <div className="w-2.5 h-2.5 rounded-full bg-ink-800 ring-1 ring-white/20" />
-                </div>
-
-                {/* Speaker slit */}
-                <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-12 h-1 bg-ink-800 rounded-full z-20" />
-
-                {/* Inner Screen Display with real screenshot - cropped bottom to remove system gesture bar */}
-                <div className="relative w-full h-full bg-black rounded-[38px] overflow-hidden">
-                  <div className="w-full h-[calc(100%+24px)] overflow-hidden">
-                    <img
-                      key={currentTab.id}
-                      src={currentTab.image}
-                      alt={currentTab.alt}
-                      className="w-full h-full object-cover object-top animate-fadeIn select-none"
-                      loading="lazy"
-                    />
-                  </div>
+              {/* Outer Phone Mockup Frame - Flat rectangular frame without punch-hole / notch */}
+              <div className="relative w-[280px] sm:w-[320px] max-w-full h-[580px] sm:h-[650px] bg-ink-900 rounded-2xl p-2.5 shadow-2xl shadow-ink-900/30 border-2 border-ink-700 ring-1 ring-white/10">
+                {/* Inner Screen Display with real screenshot - 100% clean rectangular view without punch-hole or notch */}
+                <div className="relative w-full h-full bg-black rounded-xl overflow-hidden">
+                  <img
+                    key={currentTab.id}
+                    src={currentTab.image}
+                    alt={currentTab.alt}
+                    className="w-full h-full object-cover object-top animate-fadeIn select-none"
+                    loading="lazy"
+                  />
                   {/* Subtle glass reflection overlay */}
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 pointer-events-none" />
                 </div>

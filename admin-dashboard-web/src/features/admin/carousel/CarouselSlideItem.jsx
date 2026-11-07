@@ -46,7 +46,7 @@ export const CarouselSlideItem = ({
         isEditing ? 'border-brand-400 ring-1 ring-brand-200' : 'border-cream-300'
       }`}
     >
-      <div className="h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-brand-700 to-brand-900">
+      <div className="h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-brand-800">
         {slide.imageUrl ? (
           <img src={slide.imageUrl} alt="" className={layout.media} />
         ) : (

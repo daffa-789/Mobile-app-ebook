@@ -186,5 +186,10 @@ test('Milestone 3 — Admin Dashboard Web Configuration & Deployment Suite', asy
       appContent.includes('Toaster'),
       'App.jsx must include Toaster for feedback notifications',
     );
+    assert.ok(
+      appContent.includes("import { apiJsonSend } from '@lib/api'") ||
+        appContent.includes('apiJsonSend'),
+      'App.jsx must import apiJsonSend for user update mutations',
+    );
   });
 });

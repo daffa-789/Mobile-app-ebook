@@ -198,9 +198,9 @@ export const OverviewTab = ({ stats, books = [], users = [], transactions = [], 
         </div>
 
         {/* Ringkasan keuangan */}
-        <div className="flex flex-col justify-between gap-4 rounded-2xl border border-cream-200 bg-gradient-to-br from-brand-900 via-brand-800 to-brand-950 p-5 text-cream-50 shadow-md lg:col-span-2">
+        <div className="flex flex-col justify-between gap-4 rounded-2xl border border-brand-800 bg-brand-900 p-5 text-cream-50 shadow-xs lg:col-span-2">
           <div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-400/20 text-gold-300 ring-1 ring-gold-400/30">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-400/20 text-gold-300">
               <CreditCard className="h-5 w-5" />
             </div>
             <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-gold-300/90">

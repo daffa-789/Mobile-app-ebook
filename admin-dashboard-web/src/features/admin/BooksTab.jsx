@@ -147,7 +147,7 @@ export const BooksTab = ({ books = [], onAddBook, onEditBook, onDeleteBook }) =>
                 key={book.id}
                 className="flex flex-wrap items-center gap-4 px-4 py-3.5 transition hover:bg-cream-50"
               >
-                <div className="flex h-16 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-cream-200 bg-gradient-to-br from-brand-800 to-brand-950 text-cream-50 shadow-sm">
+                <div className="flex h-16 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-cream-200 bg-brand-900 text-cream-50 shadow-xs">
                   {book.coverUrl ? (
                     <img
                       src={book.coverUrl}

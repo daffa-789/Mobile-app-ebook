@@ -5,9 +5,6 @@ import { APK_DOWNLOAD_URL } from '@/config/constants';
 export const HeroSection = () => {
   return (
     <section className="relative overflow-hidden pt-16 pb-20 lg:pt-24 lg:pb-32">
-      {/* Background radial soft aura */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-5xl h-[420px] bg-gradient-to-b from-brand-100/50 via-cream-100/30 to-transparent -z-10 blur-3xl pointer-events-none" />
-
       {/* Hidden QRCode for automated test suite contract compatibility */}
       <div className="hidden" aria-hidden="true">
         <QRCodeSVG value={APK_DOWNLOAD_URL} size={1} />

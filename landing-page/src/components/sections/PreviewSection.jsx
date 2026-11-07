@@ -150,9 +150,6 @@ export const PreviewSection = () => {
                 {/* Home Indicator bar */}
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-28 h-1 bg-ink-700 rounded-full z-20" />
               </div>
-
-              {/* Decorative background glow under phone */}
-              <div className="absolute -inset-4 bg-gradient-to-r from-brand-300/30 via-gold-300/20 to-brand-400/20 blur-2xl -z-10 rounded-full pointer-events-none" />
             </div>
           </div>
 

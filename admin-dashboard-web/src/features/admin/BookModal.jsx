@@ -70,7 +70,7 @@ export const BookModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/60 p-4 backdrop-blur-sm page-transition"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/60 p-4 page-transition"
       role="dialog"
       aria-modal="true"
       aria-labelledby="book-modal-title"
@@ -83,7 +83,7 @@ export const BookModal = ({
         onClick={(event) => event.stopPropagation()}
       >
         {/* Header */}
-        <div className="relative flex items-start justify-between gap-4 border-b border-cream-200 bg-gradient-to-r from-brand-900 to-brand-800 px-5 py-4 sm:px-6">
+        <div className="relative flex items-start justify-between gap-4 border-b border-brand-800 bg-brand-900 px-5 py-4 sm:px-6">
           <div>
             <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gold-300">
               Koleksi Digital

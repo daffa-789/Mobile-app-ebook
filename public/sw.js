@@ -39,7 +39,35 @@
 //      belakang. Muat segar (`cache: 'no-store'`, mis. refresh admin) tidak
 //      dilayani dari cache tapi tetap memperbarui isinya. /api/carousel ikut
 //      masuk klaster data publik (sebelumnya jatuh ke cabang default tanpa cache).
-const CACHE_NAME = 'wahidiyah-app-shell-v24';
+const CACHE_NAME = 'wahidiyah-app-shell-v26';
+
+// Jika Service Worker berjalan di domain admin, bersihkan semua cache, bypass fetch, dan unregister otomatis
+const IS_ADMIN_ORIGIN =
+  typeof self !== 'undefined' &&
+  self.location &&
+  (self.location.hostname.includes('admin') || self.location.pathname.startsWith('/admin'));
+
+if (IS_ADMIN_ORIGIN) {
+  self.addEventListener('install', () => {
+    self.skipWaiting();
+  });
+  self.addEventListener('activate', (event) => {
+    event.waitUntil(
+      caches
+        .keys()
+        .then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+        .then(() => self.registration.unregister())
+        .then(() => self.clients.matchAll({ type: 'window' }))
+        .then((clients) => {
+          clients.forEach((client) => client.navigate(client.url));
+        }),
+    );
+  });
+  self.addEventListener('fetch', (event) => {
+    // Pada origin admin, jangan pernah halangi atau cache request navigasi
+    event.respondWith(fetch(event.request));
+  });
+} else {
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -248,3 +276,4 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+}

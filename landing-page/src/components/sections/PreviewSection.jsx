@@ -136,12 +136,12 @@ export const PreviewSection = () => {
 
                 {/* Inner Screen Display with real screenshot - cropped bottom to remove system gesture bar */}
                 <div className="relative w-full h-full bg-black rounded-[38px] overflow-hidden">
-                  <div className="w-full h-full overflow-hidden">
+                  <div className="w-full h-[calc(100%+24px)] overflow-hidden">
                     <img
                       key={currentTab.id}
                       src={currentTab.image}
                       alt={currentTab.alt}
-                      className="w-full h-[calc(100%+20px)] object-cover object-top animate-fadeIn select-none"
+                      className="w-full h-full object-cover object-top animate-fadeIn select-none"
                       loading="lazy"
                     />
                   </div>

@@ -4,11 +4,27 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
-    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#14523A" />
     <meta name="description" content="Mobile-app-ebook — Admin Management Dashboard" />
     <title>Mobile-app-ebook — Admin Dashboard</title>
+    <script>
+      // Bersihkan Service Worker dan CacheStorage dari kunjungan landing page sebelumnya pada origin ini
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+          for (var reg of registrations) {
+            reg.unregister();
+          }
+        });
+      }
+      if ('caches' in window) {
+        caches.keys().then(function (names) {
+          for (var name of names) {
+            caches.delete(name);
+          }
+        });
+      }
+    </script>
   </head>
   <body class="bg-cream-50 text-ink-800 antialiased min-h-screen">
     <div id="root"></div>

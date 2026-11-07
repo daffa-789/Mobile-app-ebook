@@ -1,7 +1,7 @@
 {
-  "name": "Buku Wahidiyah — Perpustakaan Digital",
-  "short_name": "Buku Wahidiyah",
-  "description": "Aplikasi Perpustakaan Digital Sholawat Wahidiyah, Kalender Agenda Spiritual, dan Layanan Pembaca Naskah",
+  "name": "Mobile-app-ebook",
+  "short_name": "Mobile-app-ebook",
+  "description": "Mobile-app-ebook — Aplikasi Mobile Digital Kitab & Agenda",
   "start_url": "/",
   "id": "/",
   "display": "standalone",

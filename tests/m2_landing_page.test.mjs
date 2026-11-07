@@ -216,9 +216,7 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
     const content = fs.readFileSync(htmlPath, 'utf8');
 
     assert.ok(
-      content.includes(
-        'Wahidiyah Book — Aplikasi Android Kitab Sholawat Wahidiyah (Official APK Download)',
-      ),
+      content.includes('Mobile-app-ebook — Aplikasi Android (Official APK Download)'),
       'index.html title must match requirement',
     );
     assert.ok(content.includes('content="#14523A"'), 'theme-color must be #14523A');
@@ -252,11 +250,7 @@ test('M2-4: Build Output & Bundle Verification in dist/landing', async (t) => {
     const htmlPath = path.join(distLanding, 'index.html');
     assert.ok(fs.existsSync(htmlPath), 'dist/landing/index.html must exist');
     const content = fs.readFileSync(htmlPath, 'utf8');
-    assert.ok(
-      content.includes(
-        'Wahidiyah Book — Aplikasi Android Kitab Sholawat Wahidiyah (Official APK Download)',
-      ),
-    );
+    assert.ok(content.includes('Mobile-app-ebook — Aplikasi Android (Official APK Download)'));
   });
 
   await t.test('No heavy PDF or DOCX chunks exist in dist/landing/assets', () => {

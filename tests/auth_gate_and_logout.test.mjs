@@ -107,7 +107,10 @@ describe('Auth Gate & Logout Behavior Verification', () => {
     const src = fs.readFileSync(authScreenPath, 'utf-8');
 
     // Brand header
-    assert.ok(src.includes('Wahidiyah Book'), 'Contains Wahidiyah Book header');
+    assert.ok(
+      src.includes('Mobile-app-ebook') || src.includes('Wahidiyah Book'),
+      'Contains brand header',
+    );
     assert.ok(
       src.includes('Masuk ke akun Anda untuk mengakses koleksi buku.'),
       'Contains login subtitle',

@@ -52,7 +52,7 @@ export const ReaderScreen = ({ book, onBack }) => {
 
           <Text style={[styles.bodyText, { fontSize, lineHeight: fontSize * 1.8 }]}>
             {book.sample_text ||
-              `Buku "${book.title}" karya ${book.author}.\n\nNaskah digital ini dilindungi hak cipta dan disajikan khusus untuk pengamal Wahidiyah melalui aplikasi Wahidiyah Book.`}
+              `Buku "${book.title}" karya ${book.author}.\n\nNaskah digital ini dilindungi hak cipta dan disajikan khusus untuk pengamal Wahidiyah melalui aplikasi Mobile-app-ebook.`}
           </Text>
 
           <View style={styles.watermark}>

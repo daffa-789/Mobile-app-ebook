@@ -17,7 +17,7 @@ export const LandingNavbar = () => {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="font-serif text-xl sm:text-2xl font-bold tracking-tight text-ink-900 group-hover:text-brand-700 transition">
-                  Wahidiyah Book
+                  Mobile-app-ebook
                 </span>
                 <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-100 text-brand-800 border border-brand-200">
                   <Smartphone className="w-3 h-3 mr-0.5" /> Mobile

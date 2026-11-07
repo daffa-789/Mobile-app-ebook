@@ -75,7 +75,7 @@ export function AdminLogin() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-cream-50 p-4 font-sans">
       <div className="w-full max-w-sm rounded-2xl border border-cream-200 bg-ui-card p-8">
-        <h1 className="font-serif text-xl font-bold text-ink-900">Wahidiyah Book</h1>
+        <h1 className="font-serif text-xl font-bold text-ink-900">Mobile-app-ebook</h1>
         <p className="mt-1 text-sm text-ink-500">Panel admin</p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">

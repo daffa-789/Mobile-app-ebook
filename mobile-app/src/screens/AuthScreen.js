@@ -192,9 +192,9 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.authCard}>
-          {/* 1:1 Header: Wahidiyah Book */}
+          {/* 1:1 Header: Mobile-app-ebook */}
           <View style={styles.brandHeader}>
-            <Text style={styles.brandTitle}>Wahidiyah Book</Text>
+            <Text style={styles.brandTitle}>Mobile-app-ebook</Text>
             <Text style={styles.brandSubtitle}>
               {activeTab === 'login'
                 ? 'Masuk ke akun Anda untuk mengakses koleksi buku.'

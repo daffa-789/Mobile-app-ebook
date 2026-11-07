@@ -19,7 +19,7 @@ export const PreviewSection = () => {
       label: 'Beranda Aplikasi',
       icon: BookOpen,
       image: '/mobile_screenshots/1_beranda.png',
-      alt: 'Tampilan Beranda Wahidiyah Book Mobile',
+      alt: 'Tampilan Beranda Mobile-app-ebook',
       title: 'Katalog & Rekomendasi Terverifikasi',
       description:
         'Halaman beranda menghadirkan koleksi kitab sholawat, spanduk pengumuman kegiatan resmi, serta pencarian instan berdasarkan judul atau kategori amaliyah.',
@@ -34,7 +34,7 @@ export const PreviewSection = () => {
       label: 'Pembaca PDF',
       icon: FileText,
       image: '/mobile_screenshots/6_reader_buku.png',
-      alt: 'Tampilan Pembaca PDF Dokumen Wahidiyah Book Mobile',
+      alt: 'Tampilan Pembaca PDF Dokumen Mobile-app-ebook',
       title: 'Pengalaman Membaca Murni & Khusyuk',
       description:
         'Layar pembaca dokumen terintegrasi dengan scroll vertikal alami, teks Arab yang tajam berharokat, serta navigasi daftar isi untuk langsung menuju bait yang diinginkan.',
@@ -49,7 +49,7 @@ export const PreviewSection = () => {
       label: 'Kalender Agenda',
       icon: Calendar,
       image: '/mobile_screenshots/2_kalender.png',
-      alt: 'Tampilan Kalender Agenda Mujahadah Wahidiyah Book Mobile',
+      alt: 'Tampilan Kalender Agenda Mujahadah Mobile-app-ebook',
       title: 'Kalender Kegiatan & Waktu Mujahadah',
       description:
         'Jadwal lengkap kegiatan amaliyah dari tingkat desa, kecamatan, cabang daerah, hingga Mujahadah Kubro di Pesantren Kedunglo Kediri.',
@@ -64,7 +64,7 @@ export const PreviewSection = () => {
       label: 'Profil Pengguna',
       icon: User,
       image: '/mobile_screenshots/4_profil.png',
-      alt: 'Tampilan Profil Akun Wahidiyah Book Mobile',
+      alt: 'Tampilan Profil Akun Mobile-app-ebook',
       title: 'Manajemen Akun & Pengaturan Membaca',
       description:
         'Atur preferensi tampilan aplikasi, lihat riwayat amaliyah, kelola langganan, dan simpan naskah favorit ke penyimpanan internal perangkat.',
@@ -91,7 +91,7 @@ export const PreviewSection = () => {
             Preview Antarmuka: Bersih, Khusyuk & Minimalis
           </h2>
           <p className="text-base sm:text-lg text-ink-600">
-            Lihat langsung preview tangkapan layar aplikasi Android Wahidiyah Book. Klik tab di
+            Lihat langsung preview tangkapan layar aplikasi Android Mobile-app-ebook. Klik tab di
             bawah untuk mengeksplorasi setiap bagian.
           </p>
         </div>
@@ -134,15 +134,17 @@ export const PreviewSection = () => {
                 {/* Speaker slit */}
                 <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-12 h-1 bg-ink-800 rounded-full z-20" />
 
-                {/* Inner Screen Display with real screenshot */}
+                {/* Inner Screen Display with real screenshot - cropped bottom to remove system gesture bar */}
                 <div className="relative w-full h-full bg-black rounded-[38px] overflow-hidden">
-                  <img
-                    key={currentTab.id}
-                    src={currentTab.image}
-                    alt={currentTab.alt}
-                    className="w-full h-full object-cover object-top animate-fadeIn select-none"
-                    loading="lazy"
-                  />
+                  <div className="w-full h-full overflow-hidden">
+                    <img
+                      key={currentTab.id}
+                      src={currentTab.image}
+                      alt={currentTab.alt}
+                      className="w-full h-[calc(100%+20px)] object-cover object-top animate-fadeIn select-none"
+                      loading="lazy"
+                    />
+                  </div>
                   {/* Subtle glass reflection overlay */}
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 pointer-events-none" />
                 </div>
@@ -175,18 +177,6 @@ export const PreviewSection = () => {
                   </div>
                 ))}
               </div>
-            </div>
-
-            {/* Quick jump to direct download */}
-            <div className="pt-6 border-t border-cream-200">
-              <a
-                href={APK_DOWNLOAD_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-bold text-brand-700 hover:text-brand-900 transition"
-              >
-                Unduh sekarang untuk mencoba langsung di ponsel Anda &rarr;
-              </a>
             </div>
           </div>
         </div>

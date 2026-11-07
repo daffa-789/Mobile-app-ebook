@@ -13,7 +13,7 @@ export const HeroSection = () => {
 
         {/* Subtitle / Tagline */}
         <p className="mt-6 text-base sm:text-lg lg:text-xl text-ink-600 max-w-3xl mx-auto leading-relaxed">
-          Aplikasi mobile resmi Wahidiyah Book menghadirkan kemudahan membaca Lembaran Sholawat
+          Aplikasi mobile resmi Mobile-app-ebook menghadirkan kemudahan membaca Lembaran Sholawat
           Wahidiyah, panduan mujahadah berharokat rapi, kalender agenda amaliyah, serta akses
           dokumen luring (offline) langsung di ponsel Android Anda.
         </p>

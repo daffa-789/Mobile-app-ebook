@@ -99,8 +99,8 @@ test('Milestone 3 — Admin Dashboard Web Configuration & Deployment Suite', asy
 
     const html = fs.readFileSync(indexPath, 'utf8');
     assert.ok(
-      html.includes('Wahidiyah Book — Admin Dashboard'),
-      'index.html title must be Wahidiyah Book — Admin Dashboard',
+      html.includes('Mobile-app-ebook — Admin Dashboard'),
+      'index.html title must be Mobile-app-ebook — Admin Dashboard',
     );
     assert.ok(
       html.includes('/assets/index-') || html.includes('assets/'),

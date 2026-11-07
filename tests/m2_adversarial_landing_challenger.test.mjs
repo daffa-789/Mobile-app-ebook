@@ -321,9 +321,10 @@ test('Adversarial Suite 6: HTML Metadata & Mobile Responsiveness', async (t) => 
       'Must have theme-color #14523A',
     );
     assert.ok(
-      content.includes(
-        'Wahidiyah Book — Aplikasi Android Kitab Sholawat Wahidiyah (Official APK Download)',
-      ),
+      content.includes('Mobile-app-ebook — Aplikasi Android (Official APK Download)') ||
+        content.includes(
+          'Wahidiyah Book — Aplikasi Android Kitab Sholawat Wahidiyah (Official APK Download)',
+        ),
       'Must have official title',
     );
   });
@@ -340,6 +341,9 @@ test('Adversarial Suite 6: HTML Metadata & Mobile Responsiveness', async (t) => 
     const content = fs.readFileSync(navPath, 'utf8');
 
     assert.ok(content.includes('APK_DOWNLOAD_URL'), 'Navbar must link to APK_DOWNLOAD_URL');
-    assert.ok(content.includes('Wahidiyah Book'), 'Navbar must display brand title');
+    assert.ok(
+      content.includes('Mobile-app-ebook') || content.includes('Wahidiyah Book'),
+      'Navbar must display brand title',
+    );
   });
 });

@@ -472,14 +472,16 @@ test('Challenger Suite 3: PaywallModal Lock Interaction & Dialog Focus Trap', as
     // M1 menghapus HomeScreen/PaywallModal/reader dari landing page. Landing kini
     // murni halaman promosi statis dengan CTA unduh APK langsung.
     const appContent = fs.readFileSync('landing-page/src/App.jsx', 'utf8');
-    for (const section of [
-      'HeroSection',
-      'PreviewSection',
-      'InstallGuideSection',
-      'DownloadCtaSection',
-    ]) {
+    for (const section of ['HeroSection', 'PreviewSection', 'FeaturesSection']) {
       assert.ok(appContent.includes(section), `Landing App.jsx must render ${section}`);
     }
+    assert.equal(
+      appContent.includes('InstallGuideSection') ||
+        appContent.includes('DownloadCtaSection') ||
+        appContent.includes('FaqSection'),
+      false,
+      'Landing page must not mount InstallGuide, DownloadCta, or Faq sections',
+    );
     assert.equal(
       appContent.includes('PdfReaderScreen') || appContent.includes('PaywallModal'),
       false,

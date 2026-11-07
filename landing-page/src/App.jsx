@@ -2,9 +2,6 @@ import { LandingNavbar } from './components/layout/LandingNavbar';
 import { HeroSection } from './components/sections/HeroSection';
 import { FeaturesSection } from './components/sections/FeaturesSection';
 import { PreviewSection } from './components/sections/PreviewSection';
-import { InstallGuideSection } from './components/sections/InstallGuideSection';
-import { FaqSection } from './components/sections/FaqSection';
-import { DownloadCtaSection } from './components/sections/DownloadCtaSection';
 import { LandingFooter } from './components/layout/LandingFooter';
 
 export default function App() {
@@ -15,9 +12,6 @@ export default function App() {
         <HeroSection />
         <FeaturesSection />
         <PreviewSection />
-        <InstallGuideSection />
-        <FaqSection />
-        <DownloadCtaSection />
       </main>
       <LandingFooter />
     </div>

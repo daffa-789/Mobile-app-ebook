@@ -88,7 +88,6 @@ test('Adversarial Suite 1: APK Download URL Network Validity & Uniformity', asyn
       'HeroSection.jsx',
       'PreviewSection.jsx',
       'DownloadCtaSection.jsx',
-      'LandingFooter.jsx',
     ];
 
     // M2: URL APK disentralisasi ke src/config/constants.js. Komponen tidak boleh
@@ -151,28 +150,32 @@ test('Adversarial Suite 2: Element IDs & Anchor Navigation Integrity', async (t)
     }
   });
 
-  await t.test('2.2 LandingNavbar defines correct anchor array', () => {
+  await t.test('2.2 LandingNavbar does not contain hash navigation links', () => {
     const navbarFile = jsxFiles.find((f) => path.basename(f) === 'LandingNavbar.jsx');
     assert.ok(navbarFile, 'LandingNavbar.jsx must exist');
     const content = fs.readFileSync(navbarFile, 'utf8');
 
-    assert.ok(content.includes("href: '#fitur'"), 'Nav must have #fitur link');
-    assert.ok(content.includes("href: '#preview'"), 'Nav must have #preview link');
-    assert.ok(content.includes("href: '#panduan'"), 'Nav must have #panduan link');
-    assert.ok(content.includes("href: '#faq'"), 'Nav must have #faq link');
+    assert.ok(!content.includes("href: '#fitur'"), 'Nav must not have #fitur link');
+    assert.ok(!content.includes("href: '#preview'"), 'Nav must not have #preview link');
+    assert.ok(!content.includes("href: '#panduan'"), 'Nav must not have #panduan link');
+    assert.ok(!content.includes("href: '#faq'"), 'Nav must not have #faq link');
+    assert.ok(!content.includes('href="#"'), 'Nav must not have href="#" link');
   });
 
-  await t.test('2.3 HeroSection and LandingFooter have functional jump links', () => {
+  await t.test('2.3 HeroSection and LandingFooter have no anchor jump links', () => {
     const heroFile = jsxFiles.find((f) => path.basename(f) === 'HeroSection.jsx');
     const heroContent = fs.readFileSync(heroFile, 'utf8');
-    assert.ok(heroContent.includes('href="#preview"'), 'Hero must have secondary link to #preview');
+    assert.ok(
+      !heroContent.includes('href="#preview"'),
+      'Hero must not have secondary link to #preview',
+    );
 
     const footerFile = jsxFiles.find((f) => path.basename(f) === 'LandingFooter.jsx');
     const footerContent = fs.readFileSync(footerFile, 'utf8');
-    assert.ok(footerContent.includes('href="#fitur"'), 'Footer must have link to #fitur');
-    assert.ok(footerContent.includes('href="#preview"'), 'Footer must have link to #preview');
-    assert.ok(footerContent.includes('href="#panduan"'), 'Footer must have link to #panduan');
-    assert.ok(footerContent.includes('href="#faq"'), 'Footer must have link to #faq');
+    assert.ok(!footerContent.includes('href="#fitur"'), 'Footer must not have link to #fitur');
+    assert.ok(!footerContent.includes('href="#preview"'), 'Footer must not have link to #preview');
+    assert.ok(!footerContent.includes('href="#panduan"'), 'Footer must not have link to #panduan');
+    assert.ok(!footerContent.includes('href="#faq"'), 'Footer must not have link to #faq');
   });
 });
 
@@ -325,7 +328,7 @@ test('Adversarial Suite 6: HTML Metadata & Mobile Responsiveness', async (t) => 
     );
   });
 
-  await t.test('6.2 LandingNavbar provides responsive drawer and accessible buttons', () => {
+  await t.test('6.2 LandingNavbar provides clean responsive navigation and APK CTA', () => {
     const navPath = path.join(
       ROOT_DIR,
       'landing-page',
@@ -336,8 +339,7 @@ test('Adversarial Suite 6: HTML Metadata & Mobile Responsiveness', async (t) => 
     );
     const content = fs.readFileSync(navPath, 'utf8');
 
-    assert.ok(content.includes('aria-label='), 'Navbar hamburger button must have aria-label');
-    assert.ok(content.includes('md:hidden'), 'Navbar must support mobile drawer');
-    assert.ok(content.includes('hidden md:flex'), 'Navbar must support desktop navigation');
+    assert.ok(content.includes('APK_DOWNLOAD_URL'), 'Navbar must link to APK_DOWNLOAD_URL');
+    assert.ok(content.includes('Wahidiyah Book'), 'Navbar must display brand title');
   });
 });

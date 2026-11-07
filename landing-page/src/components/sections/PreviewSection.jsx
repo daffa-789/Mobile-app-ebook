@@ -146,9 +146,6 @@ export const PreviewSection = () => {
                   {/* Subtle glass reflection overlay */}
                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 pointer-events-none" />
                 </div>
-
-                {/* Home Indicator bar */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-28 h-1 bg-ink-700 rounded-full z-20" />
               </div>
             </div>
           </div>
@@ -186,7 +183,7 @@ export const PreviewSection = () => {
                 href={APK_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm font-bold text-brand-700 hover:text-brand-900 underline underline-offset-4"
+                className="inline-flex items-center gap-2 text-sm font-bold text-brand-700 hover:text-brand-900 transition"
               >
                 Unduh sekarang untuk mencoba langsung di ponsel Anda &rarr;
               </a>

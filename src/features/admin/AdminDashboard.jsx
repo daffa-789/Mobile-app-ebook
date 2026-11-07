@@ -8,7 +8,6 @@ import { OverviewTab } from './OverviewTab';
 import { BooksTab } from './BooksTab';
 import { UsersTab } from './UsersTab';
 import { EventsTab } from './EventsTab';
-import { CarouselTab } from './CarouselTab';
 import { LogsTab } from './LogsTab';
 import { BookModal } from './BookModal';
 import { AdminSkeleton } from '@ui/Skeleton';
@@ -165,15 +164,6 @@ export const AdminDashboard = () => {
             editEvent={eventEditor.editEvent}
             cancelEditEvent={eventEditor.cancelEditEvent}
             toggleEventCarousel={eventEditor.toggleEventCarousel}
-          />
-        )}
-
-        {activeTab === 'carousel' && (
-          <CarouselTab
-            slides={carouselSlides}
-            carouselReady={carouselReady}
-            refreshCarousel={refreshCarousel}
-            sessionToken={sessionToken}
           />
         )}
 

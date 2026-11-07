@@ -53,29 +53,24 @@ export const OverviewTab = ({ stats, books = [], users = [], transactions = [], 
     {
       label: 'Total Pengguna',
       value: (stats?.totalUsers ?? users.length).toLocaleString('id-ID'),
-      hint: 'Akun terdaftar di sistem',
       icon: Users,
       tone: 'emerald',
     },
     {
       label: 'Koleksi Buku',
       value: (stats?.totalBooks ?? books.length).toLocaleString('id-ID'),
-      hint: `${books.filter((b) => b.isLocked).length} judul eksklusif Pro`,
       icon: BookOpen,
       tone: 'gold',
     },
     {
       label: 'Langganan Pro',
       value: (stats?.activeSubscriptions ?? proCount).toLocaleString('id-ID'),
-      hint: `Konversi ${conversionRate.toFixed(1)}% dari total pengguna`,
       icon: ShieldCheck,
       tone: 'deep',
-      trend: `${conversionRate.toFixed(1)}%`,
     },
     {
       label: 'Pendapatan Tervalidasi',
       value: formatCurrency(stats?.totalRevenue),
-      hint: `${transactions.length} transaksi tercatat`,
       icon: Wallet,
       tone: 'sand',
     },
@@ -83,19 +78,8 @@ export const OverviewTab = ({ stats, books = [], users = [], transactions = [], 
 
   return (
     <section className="space-y-6">
-      {/* Judul halaman + aksi ekspor */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gold-600">
-            Dashboard Eksekutif
-          </p>
-          <h2 className="mt-1 font-serif text-2xl font-bold tracking-tight text-brand-900">
-            Selamat datang di Wahidiyah Book
-          </h2>
-          <p className="mt-1 text-sm text-ink-500">
-            Pantau katalog, pengguna, dan performa langganan dalam satu tampilan.
-          </p>
-        </div>
+      {/* Aksi ekspor */}
+      <div className="flex items-center justify-end">
         <button
           type="button"
           onClick={onExportFull}

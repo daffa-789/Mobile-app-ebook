@@ -292,10 +292,7 @@ test('M4 Suite 4: Source Tree Cleanliness & Separation of Concerns', async (t) =
       const appJsx = fs.readFileSync(path.join(landingSrc, 'App.jsx'), 'utf-8');
       assert.ok(appJsx.includes('HeroSection'), 'App.jsx renders Landing HeroSection');
       assert.ok(appJsx.includes('FeaturesSection'), 'App.jsx renders Landing FeaturesSection');
-      assert.ok(
-        appJsx.includes('DownloadCtaSection'),
-        'App.jsx renders Landing DownloadCtaSection',
-      );
+      assert.ok(appJsx.includes('PreviewSection'), 'App.jsx renders Landing PreviewSection');
       assert.ok(!appJsx.includes('WebReader'), 'App.jsx does not render WebReader');
       assert.ok(!appJsx.includes('Checkout'), 'App.jsx does not render Checkout');
       assert.ok(!appJsx.includes('LoginModal'), 'App.jsx does not render LoginModal');

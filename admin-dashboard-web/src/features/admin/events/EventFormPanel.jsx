@@ -1,4 +1,4 @@
-import { BellRing, Images, Loader2, Pencil, Plus, X } from 'lucide-react';
+import { BellRing, Loader2, Pencil, Plus, X } from 'lucide-react';
 import { surfaces, controls } from '@lib/styles';
 import { Field } from '@ui/Field';
 import { EVENT_CATEGORIES } from './constants';
@@ -140,26 +140,6 @@ export const EventFormPanel = ({
         placeholder="Catatan tambahan agenda..."
         rows="2"
       />
-
-      <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border border-cream-300 bg-cream-50 px-3 py-3">
-        <input
-          type="checkbox"
-          checked={Boolean(eventForm.show_in_carousel)}
-          onChange={(e) =>
-            setEventForm((form) => ({ ...form, show_in_carousel: e.target.checked }))
-          }
-          className="mt-0.5 h-4 w-4 rounded border-cream-300 text-brand-700 focus:ring-brand-300"
-        />
-        <span>
-          <span className="flex items-center gap-1.5 text-caption font-bold text-ink-800">
-            <Images className="h-3.5 w-3.5 text-brand-700" />
-            Tampilkan di Carousel
-          </span>
-          <span className="mt-0.5 block text-caption text-ink-400">
-            Agenda ini otomatis muncul sebagai banner di beranda jemaah.
-          </span>
-        </span>
-      </label>
 
       <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border border-cream-300 bg-cream-50 px-3 py-3">
         <input

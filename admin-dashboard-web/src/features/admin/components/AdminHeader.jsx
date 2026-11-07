@@ -1,10 +1,9 @@
-import { ChevronRight, LogOut, Menu } from 'lucide-react';
+import { LogOut, Menu } from 'lucide-react';
 
 /**
- * AdminHeader — Header datar: breadcrumb "Panel Admin › [halaman]" saja.
- * Tanpa status pill, lonceng, tombol muat ulang, atau judul ganda.
+ * AdminHeader — Header bersih dan minimalis tanpa teks breadcrumb root.
  */
-export function AdminHeader({ title = 'Ringkasan', user, onLogout, onOpenMenu }) {
+export function AdminHeader({ user, onLogout, onOpenMenu }) {
   const displayName = user?.name || user?.email || 'Administrator';
   const initials = displayName.slice(0, 2).toUpperCase();
 
@@ -19,12 +18,6 @@ export function AdminHeader({ title = 'Ringkasan', user, onLogout, onOpenMenu })
         >
           <Menu className="h-4 w-4" />
         </button>
-
-        <div className="flex min-w-0 items-center gap-1.5 text-xs text-ink-500">
-          <span className="shrink-0">Panel Admin</span>
-          <ChevronRight className="h-3 w-3 shrink-0" />
-          <span className="truncate font-semibold text-ink-900">{title}</span>
-        </div>
       </div>
 
       <div className="flex shrink-0 items-center gap-2">

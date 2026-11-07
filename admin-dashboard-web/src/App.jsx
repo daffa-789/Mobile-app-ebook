@@ -18,7 +18,7 @@ import { AdminLogin } from './features/admin/AdminLogin';
 import { LayoutDashboard, BookOpen, Users, CalendarDays, Activity } from 'lucide-react';
 
 const ADMIN_NAV_ITEMS = [
-  { id: 'overview', label: 'Ringkasan', icon: LayoutDashboard },
+  { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'books', label: 'Manajemen Buku', icon: BookOpen },
   { id: 'users', label: 'Manajemen Pengguna', icon: Users },
   { id: 'events', label: 'Agenda & Kegiatan', icon: CalendarDays },
@@ -78,7 +78,7 @@ function AdminDashboardContent() {
       (res) => `Laporan lengkap berhasil diunduh (${res.fileName})`,
     );
 
-  const activeLabel = ADMIN_NAV_ITEMS.find((item) => item.id === activeTab)?.label || 'Ringkasan';
+  const activeLabel = ADMIN_NAV_ITEMS.find((item) => item.id === activeTab)?.label || 'Dashboard';
 
   return (
     <div className="flex min-h-screen bg-cream-50 font-sans text-ink-900">

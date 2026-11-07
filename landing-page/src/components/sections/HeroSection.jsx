@@ -1,4 +1,4 @@
-import { Download, Sparkles, Smartphone, Eye, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Download, Smartphone, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { APK_DOWNLOAD_URL } from '@/config/constants';
 
@@ -11,12 +11,6 @@ export const HeroSection = () => {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        {/* Release Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-50 border border-brand-200/80 text-brand-800 text-xs font-semibold shadow-xs mb-8">
-          <Sparkles className="w-3.5 h-3.5 text-gold-500" />
-          <span>Rilis Resmi v0.1.0 (Alpha) untuk Android</span>
-        </div>
-
         {/* Main Headline — clean typography without wavy underline lines */}
         <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-ink-900 leading-[1.18] max-w-4xl mx-auto">
           Khazanah Keilmuan & <span className="text-brand-700 font-serif">Amaliyah Wahidiyah</span>{' '}
@@ -49,14 +43,6 @@ export const HeroSection = () => {
                 v0.1.0 (Alpha) • ~60 MB • Android 8.0+
               </div>
             </div>
-          </a>
-
-          <a
-            href="#preview"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-2xl bg-cream-100 text-ink-800 font-semibold text-sm border border-cream-200/90 hover:bg-cream-200 hover:text-brand-900 transition duration-200"
-          >
-            <Eye className="w-4 h-4 text-brand-700" />
-            <span>Lihat Preview Aplikasi</span>
           </a>
         </div>
 

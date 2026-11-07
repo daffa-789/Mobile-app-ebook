@@ -43,15 +43,23 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
     assert.ok(fs.existsSync(appPath), 'landing-page/src/App.jsx must exist');
     const content = fs.readFileSync(appPath, 'utf8');
 
-    // Must import all single page sections
+    // Must import concise core single page sections
     assert.ok(content.includes('LandingNavbar'), 'App.jsx must include LandingNavbar');
     assert.ok(content.includes('HeroSection'), 'App.jsx must include HeroSection');
     assert.ok(content.includes('FeaturesSection'), 'App.jsx must include FeaturesSection');
     assert.ok(content.includes('PreviewSection'), 'App.jsx must include PreviewSection');
-    assert.ok(content.includes('InstallGuideSection'), 'App.jsx must include InstallGuideSection');
-    assert.ok(content.includes('FaqSection'), 'App.jsx must include FaqSection');
-    assert.ok(content.includes('DownloadCtaSection'), 'App.jsx must include DownloadCtaSection');
     assert.ok(content.includes('LandingFooter'), 'App.jsx must include LandingFooter');
+
+    // Must NOT render removed sections
+    assert.ok(
+      !content.includes('InstallGuideSection'),
+      'App.jsx must not include InstallGuideSection',
+    );
+    assert.ok(!content.includes('FaqSection'), 'App.jsx must not include FaqSection');
+    assert.ok(
+      !content.includes('DownloadCtaSection'),
+      'App.jsx must not include DownloadCtaSection',
+    );
 
     // Must NOT import legacy reader, auth, or payment screens
     assert.ok(!content.includes('PdfReaderScreen'), 'App.jsx must not import PdfReaderScreen');
@@ -68,20 +76,24 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
     );
   });
 
-  await t.test('LandingNavbar has official branding, anchor links and direct APK CTA', () => {
-    const navbarPath = path.join(landingSrc, 'components', 'layout', 'LandingNavbar.jsx');
-    assert.ok(fs.existsSync(navbarPath), 'LandingNavbar.jsx must exist');
-    const content = fs.readFileSync(navbarPath, 'utf8');
+  await t.test(
+    'LandingNavbar has official branding and direct APK CTA without hash anchors',
+    () => {
+      const navbarPath = path.join(landingSrc, 'components', 'layout', 'LandingNavbar.jsx');
+      assert.ok(fs.existsSync(navbarPath), 'LandingNavbar.jsx must exist');
+      const content = fs.readFileSync(navbarPath, 'utf8');
 
-    assert.ok(content.includes('#fitur'), 'LandingNavbar must have #fitur anchor');
-    assert.ok(content.includes('#preview'), 'LandingNavbar must have #preview anchor');
-    assert.ok(content.includes('#panduan'), 'LandingNavbar must have #panduan anchor');
-    assert.ok(content.includes('#faq'), 'LandingNavbar must have #faq anchor');
-    assert.ok(
-      content.includes('APK_DOWNLOAD_URL') || content.includes(EXPECTED_APK_URL),
-      'LandingNavbar must link directly to APK URL or centralized constant',
-    );
-  });
+      assert.ok(!content.includes('#fitur'), 'LandingNavbar must not have #fitur anchor');
+      assert.ok(!content.includes('#preview'), 'LandingNavbar must not have #preview anchor');
+      assert.ok(!content.includes('#panduan'), 'LandingNavbar must not have #panduan anchor');
+      assert.ok(!content.includes('#faq'), 'LandingNavbar must not have #faq anchor');
+      assert.ok(!content.includes('href="#"'), 'LandingNavbar must not have href="#" link');
+      assert.ok(
+        content.includes('APK_DOWNLOAD_URL') || content.includes(EXPECTED_APK_URL),
+        'LandingNavbar must link directly to APK URL or centralized constant',
+      );
+    },
+  );
 
   await t.test('HeroSection has badge, direct APK download, and QRCodeSVG', () => {
     const heroPath = path.join(landingSrc, 'components', 'sections', 'HeroSection.jsx');
@@ -180,19 +192,19 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
     assert.ok(content.includes('id="unduh"'), 'Must have id="unduh" anchor');
   });
 
-  await t.test('LandingFooter has official attribution and direct APK link', () => {
+  await t.test('LandingFooter has official attribution and clean minimalist structure', () => {
     const footerPath = path.join(landingSrc, 'components', 'layout', 'LandingFooter.jsx');
     assert.ok(fs.existsSync(footerPath), 'LandingFooter.jsx must exist');
     const content = fs.readFileSync(footerPath, 'utf8');
 
     assert.ok(
-      content.includes('APK_DOWNLOAD_URL') || content.includes(EXPECTED_APK_URL),
-      'Footer must link to APK URL or centralized constant',
-    );
-    assert.ok(
       content.includes('Yayasan Perjuangan Wahidiyah'),
       'Footer must attribute Yayasan Perjuangan Wahidiyah',
     );
+    assert.ok(!content.includes('#fitur'), 'Footer must not have #fitur anchor');
+    assert.ok(!content.includes('#preview'), 'Footer must not have #preview anchor');
+    assert.ok(!content.includes('#panduan'), 'Footer must not have #panduan anchor');
+    assert.ok(!content.includes('#faq'), 'Footer must not have #faq anchor');
   });
 
   await t.test('index.html has official title and meta tags', () => {
@@ -330,7 +342,6 @@ test('M2-5: Centralized Landing Configuration & Constants', async (t) => {
     () => {
       const componentPaths = [
         path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'layout', 'LandingNavbar.jsx'),
-        path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'layout', 'LandingFooter.jsx'),
         path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'sections', 'HeroSection.jsx'),
         path.join(
           ROOT_DIR,

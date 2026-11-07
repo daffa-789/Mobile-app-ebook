@@ -1,9 +1,7 @@
-import { ArrowUpRight } from 'lucide-react';
-
 /**
- * StatCard — Kartu metrik KPI dengan ikon gradien, angka dominan, dan keterangan.
+ * StatCard — Kartu metrik KPI minimalis dengan ikon, angka dominan, dan label judul.
  */
-export function StatCard({ label, value, hint, icon: Icon, tone = 'emerald', trend }) {
+export function StatCard({ label, value, icon: Icon, tone = 'emerald' }) {
   const tones = {
     emerald: 'bg-brand-50 text-brand-800 border-brand-200',
     gold: 'bg-gold-50 text-gold-800 border-gold-200',
@@ -19,18 +17,11 @@ export function StatCard({ label, value, hint, icon: Icon, tone = 'emerald', tre
         >
           <Icon className="h-5 w-5" strokeWidth={2.1} />
         </div>
-        {trend && (
-          <span className="inline-flex items-center gap-0.5 rounded-full bg-brand-50 px-2 py-1 text-[10px] font-bold text-brand-700">
-            <ArrowUpRight className="h-3 w-3" />
-            {trend}
-          </span>
-        )}
       </div>
       <p className="mt-4 truncate text-2xl font-black tracking-tight text-ink-900 sm:text-[28px]">
         {value}
       </p>
       <p className="mt-0.5 text-xs font-bold text-ink-700">{label}</p>
-      {hint && <p className="mt-1 text-[11px] leading-snug text-ink-400">{hint}</p>}
     </div>
   );
 }

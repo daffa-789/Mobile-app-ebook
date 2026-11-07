@@ -85,10 +85,7 @@ export const BookModal = ({
         {/* Header */}
         <div className="relative flex items-start justify-between gap-4 border-b border-brand-800 bg-brand-900 px-5 py-4 sm:px-6">
           <div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gold-300">
-              Koleksi Digital
-            </span>
-            <h2 id="book-modal-title" className="mt-1 font-serif text-xl font-bold text-cream-50">
+            <h2 id="book-modal-title" className="font-serif text-xl font-bold text-cream-50">
               {editingBookId ? 'Ubah buku' : 'Tambah buku'}
             </h2>
             <p className="mt-0.5 text-[11px] text-cream-200/80">

@@ -63,10 +63,6 @@ export const FeaturesSection = () => {
           <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-ink-900 leading-tight">
             Dirancang Khusus untuk Kenyamanan Beribadah & Belajar
           </h2>
-          <p className="text-base sm:text-lg text-ink-600">
-            Semua kebutuhan amaliyah Sholawat Wahidiyah kini terpadu dalam satu aplikasi Android
-            yang fokus, tenang, dan mudah digunakan oleh semua kalangan.
-          </p>
         </div>
 
         {/* Feature Cards Grid */}

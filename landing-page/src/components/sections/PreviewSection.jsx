@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, FileText, Calendar, User, Smartphone, CheckCircle2 } from 'lucide-react';
+import { BookOpen, FileText, Calendar, User, Smartphone } from 'lucide-react';
 import { APK_DOWNLOAD_URL } from '@/config/constants';
 
 export const PreviewSection = () => {
@@ -12,14 +12,6 @@ export const PreviewSection = () => {
       icon: BookOpen,
       image: '/mobile_screenshots/1_beranda.png',
       alt: 'Tampilan Beranda Mobile-app-ebook',
-      title: 'Katalog & Rekomendasi Terverifikasi',
-      description:
-        'Halaman beranda menghadirkan koleksi kitab sholawat, spanduk pengumuman kegiatan resmi, serta pencarian instan berdasarkan judul atau kategori amaliyah.',
-      highlights: [
-        'Katalog terorganisir per kategori naskah',
-        'Pencarian kilat naskah & bab amaliyah',
-        'Akses cepat bacaan terakhir yang dibuka',
-      ],
     },
     {
       id: 'reader',
@@ -27,14 +19,6 @@ export const PreviewSection = () => {
       icon: FileText,
       image: '/mobile_screenshots/6_reader_buku.png',
       alt: 'Tampilan Pembaca PDF Dokumen Mobile-app-ebook',
-      title: 'Pengalaman Membaca Murni & Khusyuk',
-      description:
-        'Layar pembaca dokumen terintegrasi dengan scroll vertikal alami, teks Arab yang tajam berharokat, serta navigasi daftar isi untuk langsung menuju bait yang diinginkan.',
-      highlights: [
-        'Render teks Arab beresolusi tinggi tanpa pecah',
-        'Navigasi bab dan nomor halaman instan',
-        'Fitur proteksi tangkapan layar untuk menjaga adab naskah',
-      ],
     },
     {
       id: 'kalender',
@@ -42,14 +26,6 @@ export const PreviewSection = () => {
       icon: Calendar,
       image: '/mobile_screenshots/2_kalender.png',
       alt: 'Tampilan Kalender Agenda Mujahadah Mobile-app-ebook',
-      title: 'Kalender Kegiatan & Waktu Mujahadah',
-      description:
-        'Jadwal lengkap kegiatan amaliyah dari tingkat desa, kecamatan, cabang daerah, hingga Mujahadah Kubro di Pesantren Kedunglo Kediri.',
-      highlights: [
-        'Sinkronisasi kalender amaliyah secara berkala',
-        'Informasi lokasi dan rincian panitia penyelenggara',
-        'Penanda agenda terdekat agar tidak terlewat',
-      ],
     },
     {
       id: 'profil',
@@ -57,14 +33,6 @@ export const PreviewSection = () => {
       icon: User,
       image: '/mobile_screenshots/4_profil.png',
       alt: 'Tampilan Profil Akun Mobile-app-ebook',
-      title: 'Manajemen Akun & Pengaturan Membaca',
-      description:
-        'Atur preferensi tampilan aplikasi, lihat riwayat amaliyah, kelola langganan, dan simpan naskah favorit ke penyimpanan internal perangkat.',
-      highlights: [
-        'Pengaturan preferensi baca dan unduhan',
-        'Status keanggotaan dan riwayat dokumen',
-        'Akses pusat bantuan & kontak pengurus',
-      ],
     },
   ];
 
@@ -82,10 +50,6 @@ export const PreviewSection = () => {
           <h2 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-ink-900 leading-tight">
             Preview Antarmuka: Bersih, Khusyuk & Minimalis
           </h2>
-          <p className="text-base sm:text-lg text-ink-600">
-            Lihat langsung preview tangkapan layar aplikasi Android Mobile-app-ebook. Klik tab di
-            bawah untuk mengeksplorasi setiap bagian.
-          </p>
         </div>
 
         {/* Tab Switcher Buttons */}
@@ -111,48 +75,22 @@ export const PreviewSection = () => {
           })}
         </div>
 
-        {/* Mockup + Explanations Container */}
-        <div className="mt-14 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          {/* Left: Device Mockup Frame */}
-          <div className="lg:col-span-6 flex justify-center">
-            <div className="relative mx-auto">
-              {/* Outer Phone Mockup Frame - Flat rectangular frame without punch-hole / notch */}
-              <div className="relative w-[280px] sm:w-[320px] max-w-full h-[580px] sm:h-[650px] bg-ink-900 rounded-2xl p-2.5 shadow-2xl shadow-ink-900/30 border-2 border-ink-700 ring-1 ring-white/10">
-                {/* Inner Screen Display with real screenshot - 100% clean rectangular view without punch-hole or notch */}
-                <div className="relative w-full h-full bg-black rounded-xl overflow-hidden">
-                  <img
-                    key={currentTab.id}
-                    src={currentTab.image}
-                    alt={currentTab.alt}
-                    className="w-full h-full object-cover object-top animate-fadeIn select-none"
-                    loading="lazy"
-                  />
-                  {/* Subtle glass reflection overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 pointer-events-none" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Screen Details & Key Highlights */}
-          <div className="lg:col-span-6 space-y-6">
-            <h3 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-ink-900 leading-snug">
-              {currentTab.title}
-            </h3>
-
-            <p className="text-base text-ink-600 leading-relaxed">{currentTab.description}</p>
-
-            <div className="space-y-3 pt-2">
-              <h4 className="text-xs font-bold text-ink-900 uppercase tracking-wider">
-                Keunggulan Layar Ini:
-              </h4>
-              <div className="space-y-2.5">
-                {currentTab.highlights.map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-3 text-sm text-ink-700">
-                    <CheckCircle2 className="w-5 h-5 text-brand-700 shrink-0 mt-0.5" />
-                    <span>{item}</span>
-                  </div>
-                ))}
+        {/* Mockup Container - Centered */}
+        <div className="mt-14 flex justify-center">
+          <div className="relative mx-auto">
+            {/* Outer Phone Mockup Frame - Flat rectangular frame without punch-hole / notch */}
+            <div className="relative w-[280px] sm:w-[320px] max-w-full h-[580px] sm:h-[650px] bg-ink-900 rounded-2xl p-2.5 shadow-2xl shadow-ink-900/30 border-2 border-ink-700 ring-1 ring-white/10">
+              {/* Inner Screen Display with real screenshot - 100% clean rectangular view without punch-hole or notch */}
+              <div className="relative w-full h-full bg-black rounded-xl overflow-hidden">
+                <img
+                  key={currentTab.id}
+                  src={currentTab.image}
+                  alt={currentTab.alt}
+                  className="w-full h-full object-cover object-top animate-fadeIn select-none"
+                  loading="lazy"
+                />
+                {/* Subtle glass reflection overlay */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 pointer-events-none" />
               </div>
             </div>
           </div>

@@ -1,13 +1,5 @@
 import { useState } from 'react';
-import {
-  BookOpen,
-  FileText,
-  Calendar,
-  User,
-  Smartphone,
-  Sparkles,
-  CheckCircle2,
-} from 'lucide-react';
+import { BookOpen, FileText, Calendar, User, Smartphone, CheckCircle2 } from 'lucide-react';
 import { APK_DOWNLOAD_URL } from '@/config/constants';
 
 export const PreviewSection = () => {
@@ -154,11 +146,6 @@ export const PreviewSection = () => {
 
           {/* Right: Screen Details & Key Highlights */}
           <div className="lg:col-span-6 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-800 border border-brand-200/70">
-              <Sparkles className="w-3.5 h-3.5 text-gold-600" />
-              <span>Preview • {currentTab.label}</span>
-            </div>
-
             <h3 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold text-ink-900 leading-snug">
               {currentTab.title}
             </h3>

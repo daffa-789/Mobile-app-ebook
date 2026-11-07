@@ -44,18 +44,6 @@ export const BooksTab = ({ books = [], onAddBook, onEditBook, onDeleteBook }) =>
 
   return (
     <section className="space-y-5">
-      <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gold-600">
-          Koleksi Digital
-        </p>
-        <h2 className="mt-1 font-serif text-2xl font-bold tracking-tight text-brand-900">
-          Manajemen Buku
-        </h2>
-        <p className="mt-1 text-sm text-ink-500">
-          Kelola naskah, sampul, dan hak akses untuk setiap judul.
-        </p>
-      </div>
-
       {/* Toolbar: pencarian + filter + tambah */}
       <div className="flex flex-col gap-3 rounded-2xl border border-cream-200 bg-ui-card p-4 shadow-[0_1px_2px_rgba(20,18,16,0.04)] lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">

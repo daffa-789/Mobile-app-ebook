@@ -39,7 +39,21 @@ The repository consists of four coordinated sub-projects plus root orchestration
 | M2 | Centralize Hardcoded Config & Env Variables | Create `.env.example` templates, `src/config/constants.js` across sub-projects, centralize APK URL, add mobile timeout, and update port cleanup | M1 | DONE |
 | M3 | Admin Dashboard Modern UI Redesign | Rework `admin-dashboard-web` UI into modern minimalist Wahidiyah Book theme (emerald, gold, cream-50), responsive sidebar, KPI cards, table filters, polished modals | M2 | DONE |
 | M4 | Full Build & Regression Gate Verification | Build all targets, run test suites, execute adversarial challenges and forensic integrity audit | M3 | DONE |
-| M5 | Final Victory Deployment & Git Sync | Commit all verified changes, verify 3 uploaded books in Supabase, push to origin/main, and deploy Vercel production | M4 | IN_PROGRESS |
+| M5 | Final Victory Deployment & Git Sync | Commit all verified changes, verify 3 uploaded books in Supabase, push to origin/main, and deploy Vercel production | M4 | DONE |
+
+## M5 — Deployment Record
+
+- Git: `origin/main` (`https://github.com/daffa-789/Mobile-app-ebook.git`) — commits
+  `8749316` (M1–M4 + buku) dan `b6e2598` (stabilisasi uji port), pushed 2026-11-07.
+- Landing Page production: https://mobile-app-ebook.vercel.app (build `dist/landing`, HTTP 200).
+- Admin Dashboard production: https://mobile-app-ebook-admin.vercel.app
+  (build `dist/admin`, HTTP 200, title `Wahidiyah Book — Admin Dashboard`).
+- Gate M4: `npm run build:all` (3 target), `npm run check`, dan 233/233 tes
+  (`node --test --test-concurrency=1 tests/*.test.mjs`) pada Node 24, semua lulus.
+- Catatan deploy admin: Vercel CLI hanya membaca `vercel.json`. Untuk proyek admin,
+  `vercel.admin.json` dipakai sebagai `vercel.json` sementara saat deploy, lalu
+  konfigurasi landing dikembalikan. Jangan memakai `--local-config` pada `vercel deploy`
+  (diabaikan, akan salah build menjadi landing).
 
 ## Implementation Notes (M3 & M4)
 

@@ -13,7 +13,7 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 
 const LIVE_VERCEL_URL = 'https://mobile-app-ebook.vercel.app';
 const OFFICIAL_APK_URL =
-  'https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk';
+  'https://expo.dev/artifacts/eas/Ed9NJ755J7BnDSR2zNqX6FjLFXevov8oC7G-JCxiSU0.apk';
 
 // Helper: HTTP GET request with redirect resolution
 function fetchWithRedirects(url, maxRedirects = 5) {

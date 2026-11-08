@@ -371,7 +371,7 @@ test('Challenger Suite 4: Dynamic APK Download URL Propagation Across Landing UI
       let foundOverrideCount = 0;
       let compiledWithFallback = false;
       const DEFAULT_APK_URL =
-        'https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk';
+        'https://expo.dev/artifacts/eas/Ed9NJ755J7BnDSR2zNqX6FjLFXevov8oC7G-JCxiSU0.apk';
 
       for (const jsFile of testAssets) {
         const content = fs.readFileSync(jsFile, 'utf8');

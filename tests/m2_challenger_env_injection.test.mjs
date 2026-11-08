@@ -19,7 +19,7 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
 const DEFAULT_APK =
-  'https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk';
+  'https://expo.dev/artifacts/eas/Ed9NJ755J7BnDSR2zNqX6FjLFXevov8oC7G-JCxiSU0.apk';
 
 // Helper to run code in an isolated subprocess with specific env variables
 async function runInSubprocess(moduleRelativePath, envOverrides = {}) {

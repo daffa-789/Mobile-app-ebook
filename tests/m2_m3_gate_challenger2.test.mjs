@@ -158,7 +158,7 @@ describe('CHALLENGER 2 — Integrated Monorepo, Build & Admin Auth Stress Harnes
 
   describe('Stress Vector 3: Landing Page APK Delivery & Static Independence', () => {
     const OFFICIAL_APK_URL =
-      'https://expo.dev/artifacts/eas/qdKRlQGtuS4qap2eylCUfl46_HuxOLHgo3p9tUPCQHs.apk';
+      'https://expo.dev/artifacts/eas/Ed9NJ755J7BnDSR2zNqX6FjLFXevov8oC7G-JCxiSU0.apk';
 
     test('Direct APK URL is strictly matching official artifact across all landing components', () => {
       const heroPath = path.join(rootDir, 'landing-page/src/components/sections/HeroSection.jsx');

@@ -49,13 +49,7 @@ export const useCatalogSlice = ({ navigateTo }) => {
   }, []);
 
   const refreshCarousel = useCallback(async () => {
-    try {
-      const warm = takeWarmCatalogResponse('/api/carousel');
-      const payload = await (warm ?? apiJson('/api/carousel', { cache: 'no-store' }));
-      setCarouselSlides((payload.slides || []).map(normalizeCarouselSlide));
-    } catch {
-      setCarouselSlides([]);
-    }
+    setCarouselSlides([]);
   }, []);
 
   const openReader = useCallback(

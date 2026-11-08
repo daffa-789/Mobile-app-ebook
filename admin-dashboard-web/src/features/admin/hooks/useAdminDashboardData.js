@@ -50,20 +50,18 @@ export const useAdminDashboardData = ({
     setError('');
     setLoadingDashboard(true);
     try {
-      const [statsPayload, userPayload, transactionPayload, eventPayload, carouselPayload] =
-        await Promise.all([
-          apiJson('/api/stats', { headers }),
-          apiJson('/api/users', { headers }),
-          apiJson('/api/transactions', { headers }),
-          apiJson('/api/events'),
-          apiJson('/api/carousel/all', { headers }),
-        ]);
+      const [statsPayload, userPayload, transactionPayload, eventPayload] = await Promise.all([
+        apiJson('/api/stats', { headers }),
+        apiJson('/api/users', { headers }),
+        apiJson('/api/transactions', { headers }),
+        apiJson('/api/events'),
+      ]);
       setStats(statsPayload.stats);
       setUsers((userPayload.users || []).map(normalizeUser));
       setTransactions((transactionPayload.transactions || []).map(normalizeTransaction));
       setEvents((eventPayload.events || []).map(normalizeEvent));
-      setCarouselReady(carouselPayload.carouselReady !== false);
-      await Promise.all([refreshBooks(), refreshEvents(), refreshCarousel()]);
+      setCarouselReady(false);
+      await Promise.all([refreshBooks(), refreshEvents()]);
     } catch (loadError) {
       setError(loadError.message || 'Dashboard tidak dapat dimuat.');
     } finally {

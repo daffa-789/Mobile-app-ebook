@@ -37,7 +37,6 @@ const warmCatalogEndpoint = (path) => {
 
 warmCatalogEndpoint('/api/books');
 warmCatalogEndpoint('/api/events');
-warmCatalogEndpoint('/api/carousel');
 
 /**
  * Ambil janji warm-up untuk path (begitu saja), lalu tandai terkonsumsi.

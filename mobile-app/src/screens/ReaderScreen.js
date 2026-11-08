@@ -1,24 +1,144 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../theme';
 import { useBooks } from '../context/BookContext';
+import { apiRequest } from '../api/client.js';
+import { htmlToPlainText, paginateText, buildReaderFallback } from '../lib/catalog.js';
 
 export const ReaderScreen = ({ book, onBack }) => {
-  const { isDownloaded, downloadBook } = useBooks();
+  const { isDownloaded, downloadBook, deleteDownloadedBook } = useBooks();
+
   const [fontSize, setFontSize] = useState(16);
   const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = book.pages_count || 12;
+  const [pages, setPages] = useState([]);
+  const [isLoadingContent, setIsLoadingContent] = useState(true);
+  const [contentError, setContentError] = useState(null);
+  const [fullContentText, setFullContentText] = useState('');
+
+  const isPdf =
+    String(book?.file_type || '').toLowerCase() === 'pdf' ||
+    String(book?.content_name || '')
+      .toLowerCase()
+      .endsWith('.pdf');
   const downloaded = isDownloaded(book.id);
+
+  // Ambil konten naskah dari cache lokal atau server /api/books/:id/html
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadBookContent = async () => {
+      setIsLoadingContent(true);
+      setContentError(null);
+
+      // Cek apakah ada konten offline yang tersimpan di storage
+      try {
+        const offlineText = await AsyncStorage.getItem(`@book_content_${book.id}`);
+        if (offlineText && isMounted) {
+          setFullContentText(offlineText);
+          const paginated = paginateText(offlineText);
+          setPages(paginated);
+          setIsLoadingContent(false);
+          return;
+        }
+      } catch (_) {}
+
+      // Jika buku format PDF, siapkan pratinjau teks pembaca
+      if (isPdf) {
+        if (isMounted) {
+          const fallback = book.sample_text || buildReaderFallback(book);
+          setFullContentText(fallback);
+          setPages(paginateText(fallback));
+          setIsLoadingContent(false);
+        }
+        return;
+      }
+
+      // Ambil naskah dari server Express: /api/books/:id/html
+      try {
+        const res = await apiRequest(`/api/books/${book.id}/html`);
+        if (res?.html && isMounted) {
+          const plain = htmlToPlainText(res.html);
+          setFullContentText(plain);
+          const paginated = paginateText(plain);
+          setPages(paginated.length > 0 ? paginated : [plain]);
+        } else if (isMounted) {
+          const fallback = book.sample_text || buildReaderFallback(book);
+          setFullContentText(fallback);
+          setPages(paginateText(fallback));
+        }
+      } catch (err) {
+        console.warn('[ReaderScreen] Gagal memuat naskah HTML:', err.message);
+        if (isMounted) {
+          const fallback = book.sample_text || buildReaderFallback(book);
+          setFullContentText(fallback);
+          setPages(paginateText(fallback));
+          setContentError('Memuat pratinjau lokal: tidak dapat terhubung ke server.');
+        }
+      } finally {
+        if (isMounted) setIsLoadingContent(false);
+      }
+    };
+
+    loadBookContent();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [book, isPdf]);
+
+  const totalPages = pages.length > 0 ? pages.length : 1;
+  const currentContent = pages[currentPage - 1] || fullContentText || 'Naskah belum tersedia.';
 
   const increaseFont = () => setFontSize((f) => Math.min(f + 2, 26));
   const decreaseFont = () => setFontSize((f) => Math.max(f - 2, 12));
+
+  const handleToggleDownload = async () => {
+    if (downloaded) {
+      Alert.alert(
+        'Hapus Unduhan',
+        `Hapus naskah "${book.title}" dari penyimpanan offline perangkat?`,
+        [
+          { text: 'Batal', style: 'cancel' },
+          {
+            text: 'Hapus',
+            style: 'destructive',
+            onPress: async () => {
+              await deleteDownloadedBook(book.id);
+            },
+          },
+        ],
+      );
+    } else {
+      const res = await downloadBook(book, fullContentText);
+      if (res.success) {
+        Alert.alert(
+          'Tersimpan Offline',
+          `Naskah "${book.title}" berhasil disimpan di perangkat dan siap dibaca tanpa koneksi internet.`,
+        );
+      } else {
+        Alert.alert('Gagal Mengunduh', res.error || 'Tidak dapat menyimpan naskah offline.');
+      }
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Top Bar Reader */}
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Kembali</Text>
+        <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
+          <Feather name="arrow-left" size={18} color="#1D1B17" />
+          <Text style={styles.backButtonText}>Kembali</Text>
         </TouchableOpacity>
 
         <View style={styles.titleContainer}>
@@ -30,13 +150,27 @@ export const ReaderScreen = ({ book, onBack }) => {
           </Text>
         </View>
 
-        <View style={styles.fontControls}>
-          <TouchableOpacity onPress={decreaseFont} style={styles.fontBtn}>
-            <Text style={styles.fontBtnText}>A-</Text>
+        <View style={styles.rightActions}>
+          <TouchableOpacity
+            onPress={handleToggleDownload}
+            style={[styles.downloadBtn, downloaded && styles.downloadBtnActive]}
+            activeOpacity={0.7}
+          >
+            <Feather
+              name={downloaded ? 'check-circle' : 'download'}
+              size={16}
+              color={downloaded ? '#14523A' : '#5A544C'}
+            />
           </TouchableOpacity>
-          <TouchableOpacity onPress={increaseFont} style={styles.fontBtn}>
-            <Text style={styles.fontBtnText}>A+</Text>
-          </TouchableOpacity>
+
+          <View style={styles.fontControls}>
+            <TouchableOpacity onPress={decreaseFont} style={styles.fontBtn} activeOpacity={0.7}>
+              <Text style={styles.fontBtnText}>A-</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={increaseFont} style={styles.fontBtn} activeOpacity={0.7}>
+              <Text style={styles.fontBtnText}>A+</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -48,27 +182,70 @@ export const ReaderScreen = ({ book, onBack }) => {
       >
         <View style={styles.pageCard}>
           <View style={styles.ornamentLine} />
-          <Text style={styles.chapterHeader}>Bagian {currentPage}</Text>
 
-          <Text style={[styles.bodyText, { fontSize, lineHeight: fontSize * 1.8 }]}>
-            {book.sample_text ||
-              `Buku "${book.title}" karya ${book.author}.\n\nNaskah digital ini dilindungi hak cipta dan disajikan khusus untuk pengamal Wahidiyah melalui aplikasi Mobile-app-ebook.`}
-          </Text>
+          {/* Banner Informasi Format PDF jika berlaku */}
+          {isPdf ? (
+            <View style={styles.pdfNoticeCard}>
+              <Feather name="file-text" size={20} color="#14523A" />
+              <View style={styles.pdfNoticeTextWrap}>
+                <Text style={styles.pdfNoticeTitle}>
+                  Naskah Format PDF ({book.pages_count} Hal)
+                </Text>
+                <Text style={styles.pdfNoticeDesc}>
+                  Naskah digital lengkap dapat dibuka melalui viewer web atau diunduh untuk dibaca
+                  secara offline. Pratinjau teks tersedia di bawah.
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
+          {/* Notifikasi Status Galat Koneksi */}
+          {contentError ? (
+            <View style={styles.errorNotice}>
+              <Feather name="wifi-off" size={14} color="#854D0E" />
+              <Text style={styles.errorNoticeText}>{contentError}</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.pageHeaderRow}>
+            <Text style={styles.chapterHeader}>Bagian {currentPage}</Text>
+            {downloaded && (
+              <View style={styles.offlineBadge}>
+                <Feather name="check" size={11} color="#14523A" />
+                <Text style={styles.offlineBadgeText}>Offline</Text>
+              </View>
+            )}
+          </View>
+
+          {isLoadingContent ? (
+            <View style={styles.loadingWrapper}>
+              <ActivityIndicator size="large" color="#14523A" />
+              <Text style={styles.loadingText}>Menyiapkan lembaran naskah...</Text>
+            </View>
+          ) : (
+            <Text style={[styles.bodyText, { fontSize, lineHeight: fontSize * 1.85 }]}>
+              {currentContent}
+            </Text>
+          )}
 
           <View style={styles.watermark}>
-            <Text style={styles.watermarkText}>Perpustakaan Digital Wahidiyah</Text>
+            <Text style={styles.watermarkText}>Perpustakaan Digital Sholawat Wahidiyah</Text>
           </View>
         </View>
       </ScrollView>
 
-      {/* Bottom Bar: Paging & Offline Download */}
+      {/* Bottom Bar: Paging & Navigasi Halaman */}
       <View style={styles.bottomBar}>
         <TouchableOpacity
           style={[styles.pageBtn, currentPage <= 1 && styles.pageBtnDisabled]}
           disabled={currentPage <= 1}
           onPress={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+          activeOpacity={0.7}
         >
-          <Text style={styles.pageBtnText}>◀ Hal Sebelumnya</Text>
+          <Feather name="chevron-left" size={16} color={currentPage <= 1 ? '#A8A199' : '#1D1B17'} />
+          <Text style={[styles.pageBtnText, currentPage <= 1 && styles.pageBtnTextDisabled]}>
+            Sebelumnya
+          </Text>
         </TouchableOpacity>
 
         <Text style={styles.pageIndicator}>
@@ -79,8 +256,18 @@ export const ReaderScreen = ({ book, onBack }) => {
           style={[styles.pageBtn, currentPage >= totalPages && styles.pageBtnDisabled]}
           disabled={currentPage >= totalPages}
           onPress={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+          activeOpacity={0.7}
         >
-          <Text style={styles.pageBtnText}>Berikutnya ▶</Text>
+          <Text
+            style={[styles.pageBtnText, currentPage >= totalPages && styles.pageBtnTextDisabled]}
+          >
+            Berikutnya
+          </Text>
+          <Feather
+            name="chevron-right"
+            size={16}
+            color={currentPage >= totalPages ? '#A8A199' : '#1D1B17'}
+          />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -90,131 +277,229 @@ export const ReaderScreen = ({ book, onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: '#FBF8F3',
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    backgroundColor: theme.colors.surface,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-    paddingTop: theme.spacing.xl,
+    borderBottomColor: '#E4D9C6',
+    backgroundColor: '#FFFDF9',
   },
   backButton: {
-    paddingVertical: 6,
-    paddingRight: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
   },
   backButtonText: {
     fontSize: 13,
-    color: theme.colors.primary,
     fontWeight: '700',
+    color: '#1D1B17',
   },
   titleContainer: {
     flex: 1,
-    marginHorizontal: 8,
+    marginHorizontal: 10,
+    alignItems: 'center',
   },
   bookTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: theme.colors.ink,
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#1D1B17',
   },
   bookAuthor: {
-    fontSize: 10,
-    color: theme.colors.inkSecondary,
+    fontSize: 11,
+    color: '#7C756C',
+    marginTop: 1,
+  },
+  rightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  downloadBtn: {
+    padding: 6,
+    borderRadius: 8,
+    backgroundColor: '#F5EFE6',
+  },
+  downloadBtnActive: {
+    backgroundColor: '#DCEDE4',
   },
   fontControls: {
     flexDirection: 'row',
-    gap: 4,
+    backgroundColor: '#F5EFE6',
+    borderRadius: 8,
+    padding: 2,
   },
   fontBtn: {
-    backgroundColor: theme.colors.surfaceLight,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 4,
   },
   fontBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
-    color: theme.colors.ink,
+    color: '#1D1B17',
   },
   contentScroll: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   contentInner: {
-    padding: theme.spacing.md,
+    padding: 16,
     paddingBottom: 40,
+    alignItems: 'center',
   },
   pageCard: {
-    backgroundColor: theme.colors.surfaceLight,
-    padding: theme.spacing.lg,
-    borderRadius: theme.radius.md,
+    width: '100%',
+    maxWidth: 500,
+    backgroundColor: '#FFFDF9',
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    minHeight: 450,
+    borderColor: '#E4D9C6',
+    padding: 22,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   ornamentLine: {
-    height: 2,
-    backgroundColor: theme.colors.gold,
-    width: 60,
-    alignSelf: 'center',
-    marginBottom: theme.spacing.md,
+    height: 3,
+    width: 48,
+    backgroundColor: '#14523A',
     borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  pdfNoticeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#DCEDE4',
+    borderColor: '#A7D4BF',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  pdfNoticeTextWrap: {
+    flex: 1,
+  },
+  pdfNoticeTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#14523A',
+  },
+  pdfNoticeDesc: {
+    fontSize: 11,
+    color: '#284E3F',
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  errorNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FEF9C3',
+    borderColor: '#FDE047',
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 14,
+  },
+  errorNoticeText: {
+    fontSize: 11,
+    color: '#854D0E',
+    flex: 1,
+  },
+  pageHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   chapterHeader: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '800',
-    color: theme.colors.primary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.lg,
-    letterSpacing: 1,
+    color: '#7C756C',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  offlineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#DCEDE4',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  offlineBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#14523A',
+  },
+  loadingWrapper: {
+    paddingVertical: 48,
+    alignItems: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 13,
+    color: '#7C756C',
   },
   bodyText: {
-    color: theme.colors.ink,
-    fontFamily: theme.typography.serif,
+    color: '#1D1B17',
+    letterSpacing: 0.2,
   },
   watermark: {
-    marginTop: 40,
+    marginTop: 32,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F0E8DA',
     alignItems: 'center',
-    opacity: 0.3,
   },
   watermarkText: {
-    fontSize: 10,
-    letterSpacing: 2,
-    color: theme.colors.inkMuted,
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#A8A199',
+    letterSpacing: 0.5,
   },
   bottomBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    backgroundColor: theme.colors.surface,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#FFFDF9',
     borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+    borderTopColor: '#E4D9C6',
   },
   pageBtn: {
-    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 12,
-    backgroundColor: theme.colors.primary50,
-    borderRadius: theme.radius.sm,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#F5EFE6',
   },
   pageBtnDisabled: {
-    opacity: 0.3,
+    opacity: 0.5,
   },
   pageBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
-    color: theme.colors.primary,
+    color: '#1D1B17',
+  },
+  pageBtnTextDisabled: {
+    color: '#A8A199',
   },
   pageIndicator: {
     fontSize: 12,
-    fontWeight: '600',
-    color: theme.colors.inkSecondary,
+    fontWeight: '800',
+    color: '#5A544C',
   },
 });

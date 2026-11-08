@@ -3,14 +3,20 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { useBooks } from '../context/BookContext';
+import { formatRupiah, formatPurchaseDate } from '../lib/catalog';
 
 export const SubscriptionHistoryScreen = ({ onBack }) => {
   const { subscriptions } = useBooks();
 
   const handleDownloadPdf = (sub) => {
+    const ref = sub.id || sub.ref || 'TRX-PRO';
+    const plan = sub.plan_name || sub.planName || 'Paket Bulanan';
+    const amount =
+      sub.formattedAmount || sub.price || (sub.amount ? formatRupiah(sub.amount) : 'Rp 25.000');
+
     Alert.alert(
       'Unduh Kwitansi PDF',
-      `Kwitansi transaksi ${sub.ref} untuk ${sub.planName} (${sub.price}) berhasil disiapkan.`,
+      `Kwitansi transaksi ${ref} untuk ${plan} (${amount}) berhasil disiapkan.`,
     );
   };
 
@@ -30,37 +36,68 @@ export const SubscriptionHistoryScreen = ({ onBack }) => {
 
       {/* 1:1 Daftar Kartu Transaksi */}
       <View style={styles.listContainer}>
-        {subscriptions.map((sub) => (
-          <View key={sub.id} style={styles.subCard}>
-            <View style={styles.subTopRow}>
-              <View style={styles.planNameWrap}>
-                <Text style={styles.planNameText}>{sub.planName}</Text>
-                <Feather name="sparkles" size={14} color="#B8860B" />
-              </View>
-
-              <View style={styles.statusBadge}>
-                <Text style={styles.statusBadgeText}>{sub.status}</Text>
-              </View>
+        {subscriptions.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <View style={styles.emptyIconCircle}>
+              <Feather name="clock" size={24} color="#7C756C" />
             </View>
-
-            <View style={styles.subMiddleRow}>
-              <View>
-                <Text style={styles.priceText}>{sub.price}</Text>
-                <Text style={styles.refText}>{sub.ref}</Text>
-                <Text style={styles.dateText}>Dibeli: 03 Nov 2026, 20:12</Text>
-              </View>
-
-              <TouchableOpacity
-                style={styles.downloadButton}
-                onPress={() => handleDownloadPdf(sub)}
-                activeOpacity={0.75}
-              >
-                <Feather name="download" size={14} color="#14523A" />
-                <Text style={styles.downloadButtonText}>Unduh PDF</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.emptyTitle}>Belum Ada Riwayat Langganan</Text>
+            <Text style={styles.emptyDesc}>
+              Seluruh transaksi paket keanggotaan Pro dan riwayat pembayaran Anda akan dicatat di
+              sini.
+            </Text>
           </View>
-        ))}
+        ) : (
+          subscriptions.map((sub) => {
+            const plan = sub.plan_name || sub.planName || 'Paket Bulanan';
+            const price =
+              sub.formattedAmount ||
+              sub.price ||
+              (sub.amount ? formatRupiah(sub.amount) : 'Rp 25.000');
+            const refNo = sub.id || sub.ref || 'TRX-PRO';
+            const dateStr =
+              sub.formattedDate ||
+              (sub.created_at ? formatPurchaseDate(sub.created_at) : 'Tanggal pembelian');
+            const isSettled =
+              sub.status === 'success' || sub.status === 'settlement' || sub.status === 'Aktif';
+
+            return (
+              <View key={sub.id} style={styles.subCard}>
+                <View style={styles.subTopRow}>
+                  <View style={styles.planNameWrap}>
+                    <Text style={styles.planNameText}>{plan}</Text>
+                    <Feather name="sparkles" size={14} color="#B8860B" />
+                  </View>
+
+                  <View style={[styles.statusBadge, isSettled && styles.statusBadgeSuccess]}>
+                    <Text
+                      style={[styles.statusBadgeText, isSettled && styles.statusBadgeTextSuccess]}
+                    >
+                      {isSettled ? 'Aktif' : sub.status || 'Pending'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.subMiddleRow}>
+                  <View style={styles.subInfoWrap}>
+                    <Text style={styles.priceText}>{price}</Text>
+                    <Text style={styles.refText}>{refNo}</Text>
+                    <Text style={styles.dateText}>Dibeli: {dateStr}</Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.downloadButton}
+                    onPress={() => handleDownloadPdf(sub)}
+                    activeOpacity={0.75}
+                  >
+                    <Feather name="download" size={14} color="#14523A" />
+                    <Text style={styles.downloadButtonText}>Unduh PDF</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          })
+        )}
       </View>
     </ScrollView>
   );
@@ -100,10 +137,10 @@ const styles = StyleSheet.create({
   },
   subCard: {
     backgroundColor: '#FFFDF9',
-    borderRadius: 24,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: '#E4D9C6',
-    padding: 20,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -112,9 +149,9 @@ const styles = StyleSheet.create({
   },
   subTopRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   planNameWrap: {
     flexDirection: 'row',
@@ -127,49 +164,93 @@ const styles = StyleSheet.create({
     color: '#1D1B17',
   },
   statusBadge: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 999,
+    borderRadius: 12,
+    backgroundColor: '#FEF3C7',
+  },
+  statusBadgeSuccess: {
     backgroundColor: '#DCEDE4',
-    borderWidth: 1,
-    borderColor: 'rgba(20, 82, 58, 0.25)',
   },
   statusBadgeText: {
     fontSize: 11,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    color: '#B45309',
+  },
+  statusBadgeTextSuccess: {
     color: '#14523A',
   },
   subMiddleRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F0E8DA',
+  },
+  subInfoWrap: {
+    flex: 1,
   },
   priceText: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontWeight: '900',
     color: '#14523A',
     marginBottom: 2,
   },
   refText: {
     fontSize: 11,
-    fontFamily: 'monospace',
-    color: '#8C857B',
-    marginBottom: 4,
+    color: '#7C756C',
+    fontWeight: '500',
   },
   dateText: {
     fontSize: 11,
     color: '#8C857B',
+    marginTop: 2,
   },
   downloadButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingVertical: 6,
-    paddingHorizontal: 8,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: '#DCEDE4',
   },
   downloadButtonText: {
     fontSize: 12,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#14523A',
+  },
+  emptyCard: {
+    backgroundColor: '#FFFDF9',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E4D9C6',
+    padding: 32,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  emptyIconCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#F5EFE6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#1D1B17',
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  emptyDesc: {
+    fontSize: 12,
+    color: '#7C756C',
+    textAlign: 'center',
+    lineHeight: 18,
+    maxWidth: 280,
   },
 });

@@ -1,257 +1,230 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { apiRequest } from '../api/client';
+import { apiRequest } from '../api/client.js';
+import { useAuth } from './AuthContext.js';
+import {
+  normalizeBook,
+  normalizeEvent,
+  normalizeSlide,
+  normalizeSubscription,
+} from '../lib/catalog.js';
 
 const BookContext = createContext(null);
 
-export const DEFAULT_BOOKS = [
-  {
-    id: 'buku-arbain',
-    title: "Hadits Arba'in An-Nawawiyah",
-    author: 'Imam An-Nawawi',
-    category: 'Hadits',
-    cover_local: require('../../assets/covers/hadits-arbain.jpg'),
-    cover_url: null,
-    is_locked: false,
-    pages_count: 42,
-    description:
-      'Kumpulan empat puluh dua hadits pokok karya Imam An-Nawawi yang merangkum sendi-sendi utama syariat dan akhlak Islam.',
-    content_name: 'terjemah-hadits-arbain-nawawi.pdf',
-    sample_text: `HADITS KE-1 (NIAT):\n\nDari Amirul Mu'minin Abu Hafsh Umar bin Khaththab radhiyallahu 'anhu, ia berkata: Aku mendengar Rasulullah shallallahu 'alaihi wa sallam bersabda:\n\n"Sesungguhnya setiap amalan tergantung pada niatnya, dan sesungguhnya setiap orang akan mendapatkan sesuai dengan apa yang ia niatkan..." (HR. Bukhari & Muslim)\n\nFaidah Hadits:\n1. Niat adalah syarat sah dan pembeda setiap amal perbuatan.\n2. Keikhlasan semata-mata karena Allah SWT (Lillah) adalah pondasi keselamatan jiwa.`,
-  },
-  {
-    id: 'buku-mujahadah',
-    title: 'Panduan Mujahadah Usbuiyah & Syahriyah',
-    author: 'Penyiar Sholawat Wahidiyah',
-    category: 'Mujahadah',
-    cover_local: require('../../assets/covers/panduan-mujahadah.jpg'),
-    cover_url: null,
-    is_locked: false,
-    pages_count: 28,
-    description:
-      'Tuntunan tata tertib dan adab mujahadah mingguan serta bulanan bagi segenap pengamal Sholawat Wahidiyah.',
-    content_name: 'panduan-mujahadah-usbuiyah-syahriyah.pdf',
-    sample_text: `TUNTUNAN MUJAHADAH:\n\n1. Dilaksanakan dengan adab lahir batin yang khusyuk, tawadhuk, dan menghadap kiblat.\n2. Menyadari diri dipenuhi dosa di hadapan Allah SWT serta berwashilah kepada Baginda Rosulullah SAW dan Ghoutsu Hadzaz-Zaman RA.\n3. Membaca fatihah dan untaian bait Sholawat Wahidiyah dengan penuh permohonan syafaat dan hidayah.`,
-  },
-  {
-    id: 'buku-lembaran',
-    title: 'Lembaran Sholawat Wahidiyah',
-    author: 'Muallif Sholawat Wahidiyah RA',
-    category: 'Sholawat',
-    cover_local: require('../../assets/covers/lembaran-sholawat.jpg'),
-    cover_url: null,
-    is_locked: false,
-    pages_count: 3,
-    description:
-      'Teks resmi Sholawat Wahidiyah lengkap dengan naskah Arab, transliterasi Latin, dan terjemahan maknawiyah.',
-    content_name: 'sholawat-wahidiyah-arab-latin.pdf',
-    sample_text: `BISMILLAAHIR RAHMAANIR RAHIIM\n\n(1) YAA SYAFII'AL KHOLQIS-SHOLAATU WASSALAAM\n'ALAIKA NUUROL KHOLQI HAADIL ANAAM\nWA ASHLUHU WA RUUHUHU ADRIKNI\nFAQOD GHORIQTU FII BAHRIDZ-DZUNUUB\n\n(2) YAA AYYUHAL GHOUTSU SALAAMULLOOHI\n'ALAIKA ROBBINII BI-IDZNILLAAHI\nWANDZUR ILAYYA NADZROTAN JALIYYAH\nTUHDZILU BII KULLA 'ANAAN DANIYYAH\n\n(3) YAA AYYUHAL AMANU SIKNAL WAATHI'I\nMIN KULLI KHOOFIN WA LI-A'DOO DAFI'I\n\nFadhilah Sholawat Wahidiyah:\nMembersihkan hati, menggapai ketenangan batin, serta membimbing jiwa menuju ma'rifat Billah wa Rosuulihi SAW.`,
-  },
-];
-
-export const CAROUSEL_SLIDES = [
-  {
-    id: 'crs-1',
-    eventDate: '2026-10-29',
-    dateLabel: '29 OKT 2026',
-    title: 'Perpustakaan Digital Sholawat Wahidiyah',
-    description:
-      'Satu wadah terpadu membaca lembaran Sholawat Wahidiyah resmi, tuntunan amalan mujahadah, dan kitab klasik Islam di mana saja dan kapan saja.',
-  },
-  {
-    id: 'crs-2',
-    eventDate: '2026-10-29',
-    dateLabel: '29 OKT 2026',
-    title: 'Mujahadah Usbuiyah Berjamaah',
-    description:
-      'Pelaksanaan mujahadah mingguan bersama para pengamal Wahidiyah untuk mempererat silaturahmi dan menjernihkan hati.',
-  },
-  {
-    id: 'crs-3',
-    eventDate: '2026-11-01',
-    dateLabel: '01 NOV 2026',
-    title: 'Kajian Tasawuf & Bedah Kitab Al-Hikam',
-    description:
-      'Bedah mendalam hikmah Syaikh Ibnu Athaillah as-Sakandari tentang maqam ikhlas, fana, dan marifatullah.',
-  },
-  {
-    id: 'crs-4',
-    eventDate: '2026-11-22',
-    dateLabel: '22 NOV 2026',
-    title: 'Mujahadah Nisfus Sanah (Semesteran)',
-    description:
-      'Doa bersama permohonan ketentraman, keamanan bangsa, dan kedamaian dunia yang dihadiri ribuan jamaah.',
-  },
-];
-
-export const DEFAULT_EVENTS = [
-  {
-    id: 'evt-1',
-    title: 'Mujahadah Usbuiyah Berjamaah',
-    event_date: '2026-10-29',
-    dateDisplay: '29 Okt 2026',
-    time_start: '19:30',
-    time_end: '21:00',
-    location: 'NEKA KEDIRI',
-    mapsUrl: 'https://maps.app.goo.gl/ZJHAfwmXwedLJquQ7',
-    category: 'Mujahadah',
-    description:
-      'Pelaksanaan mujahadah mingguan (usbuiyah) bersama para pengamal Wahidiyah untuk mempererat tali silaturahmi dan menjernihkan hati.',
-  },
-  {
-    id: 'evt-2',
-    title: 'Kajian Tasawuf & Bedah Kitab Al-Hikam',
-    event_date: '2026-11-01',
-    dateDisplay: '01 Nov 2026',
-    time_start: '09:00',
-    time_end: '11:30',
-    location: 'Ponpes Kedunglo Kediri',
-    mapsUrl: 'https://maps.google.com',
-    category: 'Pengajian',
-    description:
-      'Bedah mendalam hikmah-hikmah Syaikh Ibnu Athaillah as-Sakandari tentang maqam ikhlas, fana, dan marifatullah.',
-  },
-  {
-    id: 'evt-3',
-    title: 'Mujahadah Syahriyah Tingkat Kecamatan',
-    event_date: '2026-11-08',
-    dateDisplay: '08 Nov 2026',
-    time_start: '08:30',
-    time_end: '11:30',
-    location: 'Masjid Agung Kota Kediri',
-    mapsUrl: 'https://maps.google.com',
-    category: 'Mujahadah',
-    description:
-      'Mujahadah bulanan bersama seluruh jamaah pengamal Sholawat Wahidiyah se-Kecamatan.',
-  },
-  {
-    id: 'evt-4',
-    title: 'Kuliah Wahidiyah & Bimbingan Pengamal Baru',
-    event_date: '2026-11-15',
-    dateDisplay: '15 Nov 2026',
-    time_start: '08:00',
-    time_end: '11:00',
-    location: 'Gedung Yayasan Perjuangan Wahidiyah',
-    mapsUrl: 'https://maps.google.com',
-    category: 'Bimbingan',
-    description:
-      'Pembekalan ajaran Lillah, Billah, Lirrosul, Birrosul, dan Lilghouts bagi para simpatisan dan pengamal pemula.',
-  },
-  {
-    id: 'evt-5',
-    title: 'Mujahadah Nisfus Sanah (Semesteran)',
-    event_date: '2026-11-22',
-    dateDisplay: '22 Nov 2026',
-    time_start: '19:30',
-    time_end: '23:00',
-    location: 'Stadion Brawijaya Kediri',
-    mapsUrl: 'https://maps.google.com',
-    category: 'Mujahadah',
-    description:
-      'Doa bersama permohonan ketentraman, keamanan bangsa, dan kedamaian dunia yang dihadiri ribuan jamaah.',
-  },
-  {
-    id: 'evt-6',
-    title: 'Mujahadah Kubro Gelombang I (Puncak Acara)',
-    event_date: '2026-12-10',
-    dateDisplay: '10 Des 2026',
-    time_start: '19:30',
-    time_end: '23:30',
-    location: 'Pesantren Kedunglo Al-Munadhdharah Kediri',
-    mapsUrl: 'https://maps.google.com',
-    category: 'Kubro',
-    description:
-      'Perhelatan akbar Mujahadah Kubro dihadiri jamaah Wahidiyah dari pelosok nusantara dan mancanegara.',
-  },
-  {
-    id: 'evt-7',
-    title: 'Mujahadah Kubro Gelombang II (Khusus Kaum Ibu & Remaja)',
-    event_date: '2026-12-12',
-    dateDisplay: '12 Des 2026',
-    time_start: '08:00',
-    time_end: '12:00',
-    location: 'Pesantren Kedunglo Al-Munadhdharah Kediri',
-    mapsUrl: 'https://maps.google.com',
-    category: 'Kubro',
-    description:
-      'Doa bersama dan pembinaan mental spiritual khusus bagi ibu-ibu, wanita, remaja putri, dan santriwati.',
-  },
-];
-
-export const SUBSCRIPTIONS_DATA = [
-  {
-    id: 'sub-active',
-    planName: 'Paket Bulanan',
-    price: 'Rp 25.000',
-    rawPrice: 25000,
-    ref: 'REF-88764885',
-    createdAt: '2026-11-03T20:12:00.000Z',
-    status: 'Aktif',
-    period: '1 Bulan Langganan Pro',
-  },
-];
+const CACHE_KEY = '@catalog_cache_v1';
+const OFFLINE_MANIFEST_KEY = '@offline_books_manifest';
 
 export const BookProvider = ({ children }) => {
-  const [books, setBooks] = useState(DEFAULT_BOOKS);
-  const [carouselSlides] = useState(CAROUSEL_SLIDES);
-  const [events, setEvents] = useState(DEFAULT_EVENTS);
-  const [subscriptions] = useState(SUBSCRIPTIONS_DATA);
-  const [downloadedBooks, setDownloadedBooks] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const { sessionToken } = useAuth();
 
+  const [books, setBooks] = useState([]);
+  const [carouselSlides, setCarouselSlides] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
+  const [downloadedBooks, setDownloadedBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState(null);
+
+  // 1. Muat cache awal dan manifest unduhan offline
   useEffect(() => {
-    const loadOfflineBooks = async () => {
+    let isMounted = true;
+
+    const hydrateFromCache = async () => {
       try {
-        const stored = await AsyncStorage.getItem('@offline_books_manifest');
-        if (stored) {
-          setDownloadedBooks(JSON.parse(stored));
+        const [cachedCatalog, offlineManifest] = await Promise.all([
+          AsyncStorage.getItem(CACHE_KEY),
+          AsyncStorage.getItem(OFFLINE_MANIFEST_KEY),
+        ]);
+
+        if (offlineManifest && isMounted) {
+          try {
+            setDownloadedBooks(JSON.parse(offlineManifest));
+          } catch (_) {}
+        }
+
+        if (cachedCatalog && isMounted) {
+          try {
+            const parsed = JSON.parse(cachedCatalog);
+            if (Array.isArray(parsed.books)) setBooks(parsed.books);
+            if (Array.isArray(parsed.events)) setEvents(parsed.events);
+            if (Array.isArray(parsed.carouselSlides)) setCarouselSlides(parsed.carouselSlides);
+            if (Array.isArray(parsed.subscriptions)) setSubscriptions(parsed.subscriptions);
+            if (parsed.lastSyncedAt) setLastSyncedAt(parsed.lastSyncedAt);
+          } catch (_) {}
         }
       } catch (err) {
-        console.warn('Gagal membaca manifest unduhan:', err);
+        console.warn('Gagal membaca cache katalog:', err);
+      } finally {
+        if (isMounted) setLoading(false);
       }
     };
-    loadOfflineBooks();
+
+    hydrateFromCache();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const refreshBooks = async () => {
+  // 2. Sinkronkan seluruh data katalog dari API
+  const refreshBooks = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await apiRequest('/api/books');
-      if (Array.isArray(res?.books) && res.books.length > 0) {
-        setBooks(res.books);
+      const endpoints = [
+        apiRequest('/api/books').catch(() => null),
+        apiRequest('/api/events').catch(() => null),
+        apiRequest('/api/carousel').catch(() => null),
+      ];
+
+      // Jika user sudah login, ambil juga riwayat langganan
+      if (sessionToken) {
+        endpoints.push(apiRequest('/api/subscriptions/my').catch(() => null));
       }
-    } catch {
-      // Pertahankan buku default
+
+      const results = await Promise.all(endpoints);
+      const [booksRes, eventsRes, carouselRes, subsRes] = results;
+
+      let nextBooks = books;
+      if (booksRes && Array.isArray(booksRes.books)) {
+        nextBooks = booksRes.books.map(normalizeBook).filter(Boolean);
+        setBooks(nextBooks);
+      }
+
+      let nextEvents = events;
+      if (eventsRes && Array.isArray(eventsRes.events)) {
+        nextEvents = eventsRes.events.map(normalizeEvent).filter(Boolean);
+        setEvents(nextEvents);
+      }
+
+      let nextSlides = carouselSlides;
+      if (carouselRes && Array.isArray(carouselRes.slides)) {
+        nextSlides = carouselRes.slides.map(normalizeSlide).filter(Boolean);
+        setCarouselSlides(nextSlides);
+      }
+
+      let nextSubs = subscriptions;
+      if (subsRes) {
+        const rawSubs = Array.isArray(subsRes.subscriptions)
+          ? subsRes.subscriptions
+          : Array.isArray(subsRes.transactions)
+            ? subsRes.transactions
+            : [];
+        if (rawSubs.length > 0) {
+          nextSubs = rawSubs.map(normalizeSubscription).filter(Boolean);
+          setSubscriptions(nextSubs);
+        }
+      }
+
+      const syncTime = new Date().toISOString();
+      setLastSyncedAt(syncTime);
+
+      // Simpan ke cache offline
+      await AsyncStorage.setItem(
+        CACHE_KEY,
+        JSON.stringify({
+          books: nextBooks,
+          events: nextEvents,
+          carouselSlides: nextSlides,
+          subscriptions: nextSubs,
+          lastSyncedAt: syncTime,
+        }),
+      );
+
+      return { success: true };
+    } catch (err) {
+      console.warn('[BookContext] Gagal sinkronisasi katalog:', err.message);
+      setError(err.message || 'Gagal memuat katalog terbaru.');
+      return { success: false, error: err.message };
     } finally {
       setLoading(false);
     }
-  };
+  }, [books, events, carouselSlides, subscriptions, sessionToken]);
 
-  const isDownloaded = (bookId) => {
-    return downloadedBooks.some((b) => b.id === bookId);
-  };
-
-  const downloadBook = async (book) => {
+  // 3. Sinkronkan khusus data langganan (misal setelah bayar Pro)
+  const refreshSubscriptions = useCallback(async () => {
+    if (!sessionToken) return { success: false };
     try {
-      const nextDownloads = [...downloadedBooks, book];
-      setDownloadedBooks(nextDownloads);
-      await AsyncStorage.setItem('@offline_books_manifest', JSON.stringify(nextDownloads));
-      return { success: true };
+      const res = await apiRequest('/api/subscriptions/my');
+      const rawSubs = Array.isArray(res?.subscriptions)
+        ? res.subscriptions
+        : Array.isArray(res?.transactions)
+          ? res.transactions
+          : [];
+      const normalized = rawSubs.map(normalizeSubscription).filter(Boolean);
+      setSubscriptions(normalized);
+
+      // Perbarui juga di cache
+      const cached = await AsyncStorage.getItem(CACHE_KEY);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          parsed.subscriptions = normalized;
+          await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(parsed));
+        } catch (_) {}
+      }
+
+      return { success: true, subscriptions: normalized };
     } catch (err) {
+      console.warn('[BookContext] Gagal refresh langganan:', err.message);
       return { success: false, error: err.message };
     }
-  };
+  }, [sessionToken]);
 
-  const deleteDownloadedBook = async (bookId) => {
-    try {
-      const nextDownloads = downloadedBooks.filter((b) => b.id !== bookId);
-      setDownloadedBooks(nextDownloads);
-      await AsyncStorage.setItem('@offline_books_manifest', JSON.stringify(nextDownloads));
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: err.message };
-    }
-  };
+  // Panggil refresh saat mount atau saat sessionToken berubah
+  useEffect(() => {
+    refreshBooks();
+  }, [sessionToken]);
+
+  // 4. Manajemen Unduhan Buku Offline
+  const isDownloaded = useCallback(
+    (bookId) => {
+      return downloadedBooks.some((b) => b.id === bookId);
+    },
+    [downloadedBooks],
+  );
+
+  const downloadBook = useCallback(
+    async (book, contentText = '') => {
+      try {
+        const itemToSave = {
+          ...book,
+          savedAt: new Date().toISOString(),
+          cachedContent: contentText || book.sample_text || '',
+        };
+
+        const nextDownloads = [...downloadedBooks.filter((b) => b.id !== book.id), itemToSave];
+        setDownloadedBooks(nextDownloads);
+        await AsyncStorage.setItem(OFFLINE_MANIFEST_KEY, JSON.stringify(nextDownloads));
+
+        // Simpan isi naskah teks secara terpisah
+        if (contentText) {
+          await AsyncStorage.setItem(`@book_content_${book.id}`, contentText);
+        }
+
+        return { success: true };
+      } catch (err) {
+        return { success: false, error: err.message };
+      }
+    },
+    [downloadedBooks],
+  );
+
+  const deleteDownloadedBook = useCallback(
+    async (bookId) => {
+      try {
+        const nextDownloads = downloadedBooks.filter((b) => b.id !== bookId);
+        setDownloadedBooks(nextDownloads);
+        await AsyncStorage.setItem(OFFLINE_MANIFEST_KEY, JSON.stringify(nextDownloads));
+        await AsyncStorage.removeItem(`@book_content_${bookId}`);
+        return { success: true };
+      } catch (err) {
+        return { success: false, error: err.message };
+      }
+    },
+    [downloadedBooks],
+  );
 
   return (
     <BookContext.Provider
@@ -262,7 +235,10 @@ export const BookProvider = ({ children }) => {
         subscriptions,
         downloadedBooks,
         loading,
+        error,
+        lastSyncedAt,
         refreshBooks,
+        refreshSubscriptions,
         isDownloaded,
         downloadBook,
         deleteDownloadedBook,

@@ -32,10 +32,7 @@ test('Milestone 1 — Supabase Database & Configuration Verification', async (t)
     const filesToCheck = [
       'server/db.js',
       'src/lib/supabaseConfig.js',
-      'landing-page/src/lib/supabaseConfig.js',
       'admin-dashboard-web/src/lib/supabaseConfig.js',
-      'supabase/.temp/project-ref',
-      'supabase/.temp/linked-project.json',
     ];
 
     for (const relPath of filesToCheck) {

@@ -4,19 +4,6 @@ import { apiRequest } from '../api/client';
 
 const AuthContext = createContext(null);
 
-export const DEFAULT_USER = {
-  id: 'usr-daffa-default',
-  name: 'Ghazalah Ramadhan Daffa Firjatullah',
-  fullName: 'Ghazalah Ramadhan Daffa Firjatullah',
-  email: 'ghazalahramadhan6@gmail.com',
-  phone: '081234567890',
-  role: 'user',
-  is_pro: true,
-  isPro: true,
-  subscription_expires_at: '2026-12-03T20:12:00.000Z',
-  created_at: '2026-10-25T05:50:20.386+07:00',
-};
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [sessionToken, setSessionToken] = useState(null);
@@ -56,12 +43,11 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ identifier: emailOrPhone.trim(), password }),
       });
 
-      const token = res.token || res.data?.token || res.sessionToken || 'mock-token-' + Date.now();
-      const profile = res.user ||
-        res.data?.user || {
-          ...DEFAULT_USER,
-          email: emailOrPhone.trim(),
-        };
+      const token = res.token;
+      const profile = res.user;
+      if (!token || !profile) {
+        return { success: false, error: 'Respons server tidak lengkap. Coba lagi sebentar.' };
+      }
 
       await AsyncStorage.setItem('@session_token', token);
       await AsyncStorage.setItem('@user_profile', JSON.stringify(profile));
@@ -84,41 +70,11 @@ export const AuthProvider = ({ children }) => {
         };
       }
 
-      // Fallback offline / mock login HANYA jika server tidak terjangkau / offline
-      const trimmed = emailOrPhone.trim();
-      const isEmail = trimmed.includes('@');
-      const fallbackUser = {
-        ...DEFAULT_USER,
-        id: 'usr-local-' + Date.now(),
-        name: isEmail ? trimmed.split('@')[0] : 'Pengguna Wahidiyah',
-        fullName: isEmail ? trimmed.split('@')[0] : 'Pengguna Wahidiyah',
-        email: isEmail ? trimmed : DEFAULT_USER.email,
-        phone: !isEmail ? trimmed : DEFAULT_USER.phone,
+      return {
+        success: false,
+        error: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
       };
-      await AsyncStorage.setItem('@session_token', 'local-token-' + Date.now());
-      await AsyncStorage.setItem('@user_profile', JSON.stringify(fallbackUser));
-      setSessionToken('local-token');
-      setUser(fallbackUser);
-      return { success: true, user: fallbackUser };
     }
-  };
-
-  const loginWithUser = async (customProfile, token = 'demo-token-active-pro') => {
-    try {
-      await AsyncStorage.setItem('@session_token', token);
-      await AsyncStorage.setItem('@user_profile', JSON.stringify(customProfile));
-      try {
-        const SecureStore = await import('expo-secure-store');
-        if (SecureStore && typeof SecureStore.setItemAsync === 'function') {
-          await SecureStore.setItemAsync('auth_token', token);
-        }
-      } catch (_) {}
-    } catch (err) {
-      console.warn('Gagal menyimpan sesi login:', err);
-    }
-    setSessionToken(token);
-    setUser(customProfile);
-    return { success: true, user: customProfile };
   };
 
   const register = async ({ fullName, email, phone, password }) => {
@@ -145,10 +101,9 @@ export const AuthProvider = ({ children }) => {
         };
       }
 
-      // Fallback offline saat jaringan tidak terjangkau
       return {
-        success: true,
-        message: 'Pendaftaran berhasil! Silakan masuk dengan akun Anda.',
+        success: false,
+        error: 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
       };
     }
   };
@@ -187,7 +142,6 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!user,
         isPro: Boolean(user?.is_pro || user?.isPro || user?.role === 'pro'),
         login,
-        loginWithUser,
         register,
         updateUser,
         logout,

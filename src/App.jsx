@@ -19,14 +19,7 @@ import { CalendarScreen } from '@features/calendar/CalendarScreen';
 import { ProScreen } from '@features/subscription/ProScreen';
 import { PaymentMethodScreen } from '@features/payment/PaymentMethodScreen';
 
-import {
-  ScreenLoading,
-  RequireAuth,
-  Framed,
-  UserOnly,
-  shellPage,
-  AdminRoute,
-} from './components/routing/RouteGuards';
+import { ScreenLoading, RequireAuth, shellPage } from './components/routing/RouteGuards';
 import { RouterBridge, ProfileRoutePreloader } from './components/routing/RouterBridge';
 
 // Layar Pemuatan Asinkron (Code-Splitting via React.lazy)
@@ -71,9 +64,6 @@ const EditProfileScreen = lazy(loadEditProfileScreen);
 const SubscriptionHistoryScreen = lazy(loadSubscriptionHistoryScreen);
 const HelpCenterScreen = lazy(loadHelpCenterScreen);
 const AboutScreen = lazy(loadAboutScreen);
-const AdminDashboard = lazy(() =>
-  import('@features/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })),
-);
 
 const PROFILE_LOADERS = [
   loadEditProfileScreen,
@@ -86,16 +76,6 @@ const authPage = (node) => <div className={layout.screen}>{node}</div>;
 const subscriptionHistoryPage = shellPage(<SubscriptionHistoryScreen />);
 const helpCenterPage = shellPage(<HelpCenterScreen />);
 const editProfilePage = shellPage(<EditProfileScreen />);
-
-const adminPortalPage = (
-  <Framed>
-    <AdminRoute>
-      <Suspense fallback={<ScreenLoading />}>
-        <AdminDashboard />
-      </Suspense>
-    </AdminRoute>
-  </Framed>
-);
 
 /**
  * Komponen root aplikasi.
@@ -118,11 +98,9 @@ function App() {
           <Route
             path="/reader"
             element={
-              <UserOnly>
-                <RequireAuth>
-                  <PdfReaderScreen />
-                </RequireAuth>
-              </UserOnly>
+              <RequireAuth>
+                <PdfReaderScreen />
+              </RequireAuth>
             }
           />
 
@@ -181,10 +159,6 @@ function App() {
               </Suspense>,
             )}
           />
-
-          <Route path="/admin" element={adminPortalPage} />
-          <Route path="/admin-dashboard" element={adminPortalPage} />
-          <Route path="/admin/:tab" element={adminPortalPage} />
 
           <Route path="*" element={authPage(<LoginScreen />)} />
         </Routes>

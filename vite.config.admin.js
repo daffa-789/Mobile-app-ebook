@@ -16,13 +16,10 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./admin-dashboard-web/src', import.meta.url)),
-        '@features': fileURLToPath(new URL('./admin-dashboard-web/src/features', import.meta.url)),
         '@ui': fileURLToPath(new URL('./admin-dashboard-web/src/components/ui', import.meta.url)),
         '@lib': fileURLToPath(new URL('./admin-dashboard-web/src/lib', import.meta.url)),
         '@data': fileURLToPath(new URL('./admin-dashboard-web/src/data', import.meta.url)),
         '@context': fileURLToPath(new URL('./admin-dashboard-web/src/context', import.meta.url)),
-        '@theme': fileURLToPath(new URL('./admin-dashboard-web/src/theme', import.meta.url)),
-        '@shared': fileURLToPath(new URL('./shared', import.meta.url)),
       },
     },
     build: {

@@ -15,11 +15,11 @@ import {
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
-import { useAuth, DEFAULT_USER } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { OAUTH_CONFIG, APP_CONFIG } from '../config/constants';
 
 export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
-  const { login, register, loginWithUser } = useAuth();
+  const { login, register } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab); // 'login' | 'register'
   const [sharedEmail, setSharedEmail] = useState('');
   const [fullName, setFullName] = useState('');
@@ -140,9 +140,9 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
       if (isWeb && typeof window !== 'undefined') {
         const origin = window.location.origin;
         if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-          redirectUri = 'http://localhost:3000/api/auth/google/callback';
+          redirectUri = OAUTH_CONFIG.localWebRedirectUri;
         } else {
-          redirectUri = `${origin}/api/auth/google/callback`;
+          redirectUri = `${origin}${OAUTH_CONFIG.callbackPath}`;
         }
       }
 

@@ -1,17 +1,8 @@
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_CONFIG } from '../config/constants';
 
-// Endpoint lokal: 10.0.2.2 untuk Android emulator, localhost untuk iOS/Web
-const DEFAULT_API_URL = Platform.select({
-  android: 'http://10.0.2.2:5000/api',
-  default: 'http://localhost:5000/api',
-});
-
-export const API_BASE_URL =
-  API_CONFIG.baseUrl || process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_URL;
-export const API_TIMEOUT_MS =
-  API_CONFIG.timeoutMs || Number(process.env.EXPO_PUBLIC_API_TIMEOUT_MS) || 20000;
+export const API_BASE_URL = API_CONFIG.baseUrl;
+export const API_TIMEOUT_MS = API_CONFIG.timeoutMs;
 
 /**
  * Normalisasi URL untuk memastikan endpoint selalu memiliki prefix `/api`

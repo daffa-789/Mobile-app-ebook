@@ -1,25 +1,46 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { useBooks } from '../context/BookContext';
+import {
+  DAY_HEADERS,
+  daysInMonth,
+  eventDaysInMonth,
+  formatEventDate,
+  formatFullDate,
+  leadingBlankCells,
+  monthLabel,
+  parseIsoDate,
+  shiftMonth,
+  toIsoDate,
+} from '../lib/calendar';
 
-const DAYS_HEADER = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Ahd'];
 const CATEGORY_FILTERS = ['Semua', 'Kubro', 'Mujahadah', 'Pengajian'];
-
-// Hari dalam bulan November 2026:
-// 1 Nov 2026 = Ahad (Sunday, index 6 jika Sen = 0)
-// 30 hari total
-const NOVEMBER_DAYS = Array.from({ length: 30 }, (_, i) => i + 1);
-const EMPTY_START_DAYS = [null, null, null, null, null, null]; // 6 slot kosong sebelum hari Ahad
 
 export const CalendarScreen = () => {
   const { events } = useBooks();
-  const [selectedDay, setSelectedDay] = useState(6); // Default 6 Nov 2026 seperti pada tangkapan layar
+
+  const todayIso = useMemo(() => {
+    const now = new Date();
+    return toIsoDate(now.getFullYear(), now.getMonth(), now.getDate());
+  }, []);
+  const today = parseIsoDate(todayIso);
+
+  const [view, setView] = useState({ year: today.year, month: today.monthIndex });
+  const [selectedIso, setSelectedIso] = useState(todayIso);
   const [activeFilter, setActiveFilter] = useState('Semua');
 
-  // Tanggal yang memiliki agenda kegiatan
-  const eventDays = [1, 8, 15, 22, 29];
+  const totalDays = daysInMonth(view.year, view.month);
+  const blankCells = leadingBlankCells(view.year, view.month);
+  const eventDays = useMemo(
+    () => eventDaysInMonth(events, view.year, view.month),
+    [events, view.year, view.month],
+  );
+
+  const selected = parseIsoDate(selectedIso);
+  const selectedInThisMonth =
+    Boolean(selected) && selected.year === view.year && selected.monthIndex === view.month;
 
   const filteredEvents = events.filter((ev) => {
     if (activeFilter === 'Semua') return true;
@@ -30,20 +51,14 @@ export const CalendarScreen = () => {
     return true;
   });
 
-  const getDayName = (day) => {
-    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    // 1 Nov 2026 adalah hari Ahad (0)
-    const dayOfWeek = (day - 1) % 7;
-    // 0 = Ahad/Minggu, 1 = Sen, 2 = Sel, 3 = Rab, 4 = Kam, 5 = Jum, 6 = Sab
-    const map = ['Ahad', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    return map[dayOfWeek];
-  };
+  const selectedDateEvents = events.filter(
+    (ev) => String(ev.event_date || '').slice(0, 10) === selectedIso,
+  );
 
-  const selectedDateEvents = events.filter((ev) => {
-    // Cek apakah tanggal event cocok
-    const dayStr = String(selectedDay).padStart(2, '0');
-    return ev.event_date === `2026-11-${dayStr}`;
-  });
+  const handleToday = () => {
+    setView({ year: today.year, month: today.monthIndex });
+    setSelectedIso(todayIso);
+  };
 
   return (
     <ScrollView
@@ -55,22 +70,30 @@ export const CalendarScreen = () => {
       <View style={styles.calendarCard}>
         {/* Header Bulan & Navigasi */}
         <View style={styles.calendarHeader}>
-          <Text style={styles.monthTitle}>November 2026</Text>
+          <Text style={styles.monthTitle}>{monthLabel(view.year, view.month)}</Text>
 
           <View style={styles.navGroup}>
-            <TouchableOpacity
-              style={styles.todayButton}
-              onPress={() => setSelectedDay(6)}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity style={styles.todayButton} onPress={handleToday} activeOpacity={0.7}>
               <Text style={styles.todayButtonText}>Hari ini</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.arrowButton} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.arrowButton}
+              onPress={() => setView((prev) => shiftMonth(prev, -1))}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Bulan sebelumnya"
+            >
               <Feather name="chevron-left" size={16} color={theme.colors.inkSecondary} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.arrowButton} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.arrowButton}
+              onPress={() => setView((prev) => shiftMonth(prev, 1))}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Bulan berikutnya"
+            >
               <Feather name="chevron-right" size={16} color={theme.colors.inkSecondary} />
             </TouchableOpacity>
           </View>
@@ -78,7 +101,7 @@ export const CalendarScreen = () => {
 
         {/* Baris Nama Hari */}
         <View style={styles.daysHeaderRow}>
-          {DAYS_HEADER.map((d) => (
+          {DAY_HEADERS.map((d) => (
             <Text key={d} style={styles.dayHeaderText}>
               {d}
             </Text>
@@ -87,19 +110,19 @@ export const CalendarScreen = () => {
 
         {/* Grid Tanggal */}
         <View style={styles.gridContainer}>
-          {EMPTY_START_DAYS.map((_, idx) => (
-            <View key={`empty-${idx}`} style={styles.gridCell} />
+          {Array.from({ length: blankCells }, (_, idx) => (
+            <View key={`kosong-${idx}`} style={styles.gridCell} />
           ))}
 
-          {NOVEMBER_DAYS.map((day) => {
-            const isSelected = day === selectedDay;
-            const hasEvent = eventDays.includes(day);
+          {Array.from({ length: totalDays }, (_, idx) => idx + 1).map((day) => {
+            const isSelected = selectedInThisMonth && day === selected.day;
+            const hasEvent = eventDays.has(day);
 
             return (
               <TouchableOpacity
                 key={day}
                 style={[styles.gridCell, isSelected && styles.gridCellSelected]}
-                onPress={() => setSelectedDay(day)}
+                onPress={() => setSelectedIso(toIsoDate(view.year, view.month, day))}
                 activeOpacity={0.7}
               >
                 <Text
@@ -129,9 +152,7 @@ export const CalendarScreen = () => {
       {/* 1:1 Panel Tanggal Terpilih */}
       <View style={styles.selectedDateCard}>
         <Text style={styles.selectedDateCaption}>TANGGAL TERPILIH</Text>
-        <Text style={styles.selectedDateTitle}>
-          {getDayName(selectedDay)}, {selectedDay} November 2026
-        </Text>
+        <Text style={styles.selectedDateTitle}>{formatFullDate(selectedIso)}</Text>
 
         {selectedDateEvents.length > 0 ? (
           selectedDateEvents.map((ev) => (
@@ -187,7 +208,9 @@ export const CalendarScreen = () => {
                 <View style={styles.categoryBadge}>
                   <Text style={styles.categoryBadgeText}>{item.category}</Text>
                 </View>
-                <Text style={styles.eventDateText}>{item.dateDisplay}</Text>
+                <Text style={styles.eventDateText}>
+                  {formatEventDate(item.event_date) || item.dateDisplay}
+                </Text>
               </View>
 
               <Text style={styles.eventTitle}>{item.title}</Text>

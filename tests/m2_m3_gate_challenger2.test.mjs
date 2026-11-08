@@ -162,14 +162,9 @@ describe('CHALLENGER 2 — Integrated Monorepo, Build & Admin Auth Stress Harnes
 
     test('Direct APK URL is strictly matching official artifact across all landing components', () => {
       const heroPath = path.join(rootDir, 'landing-page/src/components/sections/HeroSection.jsx');
-      const ctaPath = path.join(
-        rootDir,
-        'landing-page/src/components/sections/DownloadCtaSection.jsx',
-      );
       const navPath = path.join(rootDir, 'landing-page/src/components/layout/LandingNavbar.jsx');
 
       const heroSrc = fs.readFileSync(heroPath, 'utf8');
-      const ctaSrc = fs.readFileSync(ctaPath, 'utf8');
       const navSrc = fs.readFileSync(navPath, 'utf8');
 
       // M2 memusatkan URL APK ke satu konstanta; komponen wajib memakainya.
@@ -183,7 +178,6 @@ describe('CHALLENGER 2 — Integrated Monorepo, Build & Admin Auth Stress Harnes
       );
       for (const [name, src] of [
         ['HeroSection', heroSrc],
-        ['DownloadCtaSection', ctaSrc],
         ['LandingNavbar', navSrc],
       ]) {
         assert.ok(

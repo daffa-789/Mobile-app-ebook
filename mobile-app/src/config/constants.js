@@ -20,13 +20,18 @@ export const API_CONFIG = {
   timeoutMs: Number(procEnv.EXPO_PUBLIC_API_TIMEOUT_MS) || 20000,
 };
 
+const GOOGLE_CALLBACK_PATH = '/api/auth/google/callback';
+
 export const OAUTH_CONFIG = {
   googleClientId:
     procEnv.EXPO_PUBLIC_GOOGLE_CLIENT_ID ||
     '8108075809-kpcgb73h2d1t7klg785svrlqc9to3n9t.apps.googleusercontent.com',
+  callbackPath: GOOGLE_CALLBACK_PATH,
   redirectUri:
     procEnv.EXPO_PUBLIC_GOOGLE_REDIRECT_URI ||
-    'https://mobile-app-expo-sooty.vercel.app/api/auth/google/callback',
+    `https://mobile-app-expo-sooty.vercel.app${GOOGLE_CALLBACK_PATH}`,
+  localWebRedirectUri:
+    procEnv.EXPO_PUBLIC_GOOGLE_LOCAL_REDIRECT_URI || `http://localhost:3000${GOOGLE_CALLBACK_PATH}`,
   authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
 };
 

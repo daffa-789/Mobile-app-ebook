@@ -83,12 +83,7 @@ test('Adversarial Suite 1: APK Download URL Network Validity & Uniformity', asyn
     const landingSrc = path.join(ROOT_DIR, 'landing-page', 'src');
     const jsxFiles = getFilesRecursively(landingSrc, (name) => name.endsWith('.jsx'));
 
-    const componentsWithApk = [
-      'LandingNavbar.jsx',
-      'HeroSection.jsx',
-      'PreviewSection.jsx',
-      'DownloadCtaSection.jsx',
-    ];
+    const componentsWithApk = ['LandingNavbar.jsx', 'HeroSection.jsx', 'PreviewSection.jsx'];
 
     // M2: URL APK disentralisasi ke src/config/constants.js. Komponen tidak boleh
     // lagi menyimpan URL hardcoded, melainkan mengimpor konstanta terpusat.
@@ -133,9 +128,6 @@ test('Adversarial Suite 2: Element IDs & Anchor Navigation Integrity', async (t)
     const requiredAnchors = [
       { id: 'fitur', comp: 'FeaturesSection.jsx' },
       { id: 'preview', comp: 'PreviewSection.jsx' },
-      { id: 'panduan', comp: 'InstallGuideSection.jsx' },
-      { id: 'faq', comp: 'FaqSection.jsx' },
-      { id: 'unduh', comp: 'DownloadCtaSection.jsx' },
     ];
 
     for (const item of requiredAnchors) {

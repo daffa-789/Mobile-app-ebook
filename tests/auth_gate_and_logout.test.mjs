@@ -29,14 +29,19 @@ describe('Auth Gate & Logout Behavior Verification', () => {
     );
   });
 
-  it('2. AuthContext: provides login, register, loginWithUser, and clean logout with SecureStore sync', () => {
+  it('2. AuthContext: provides login, register, and clean logout with SecureStore sync', () => {
     const authContextPath = path.resolve(rootDir, 'mobile-app/src/context/AuthContext.js');
     const src = fs.readFileSync(authContextPath, 'utf-8');
 
     assert.ok(src.includes('const login = async'), 'login function exists');
     assert.ok(src.includes('const register = async'), 'register function exists');
     assert.ok(src.includes('const logout = async'), 'logout function exists');
-    assert.ok(src.includes('const loginWithUser = async'), 'loginWithUser function exists');
+
+    // Tidak boleh ada jalur login mock/demo yang memberi sesi palsu saat offline
+    assert.ok(!src.includes('loginWithUser'), 'mock loginWithUser must be removed');
+    assert.ok(!src.includes('demo-token'), 'demo token must be removed');
+    assert.ok(!src.includes('mock-token'), 'mock token fallback must be removed');
+    assert.ok(!src.includes('DEFAULT_USER'), 'hardcoded default user profile must be removed');
 
     // SecureStore synchronization
     assert.ok(

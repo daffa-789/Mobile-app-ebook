@@ -1,18 +1,8 @@
 import React from 'react';
-import {
-  Home,
-  Calendar,
-  Sparkles,
-  UserRound,
-  LayoutDashboard,
-  BookOpen,
-  Users,
-  CalendarDays,
-  Menu,
-} from 'lucide-react';
+import { Home, Calendar, Sparkles, UserRound } from 'lucide-react';
 
-export const MobileBottomNav = React.memo(({ isAdmin, activeKeys, onNavClick, onOpenMenu }) => {
-  const userItems = [
+export const MobileBottomNav = React.memo(({ activeKeys, onNavClick }) => {
+  const items = [
     {
       id: 'home',
       label: 'Beranda',
@@ -43,40 +33,6 @@ export const MobileBottomNav = React.memo(({ isAdmin, activeKeys, onNavClick, on
     },
   ];
 
-  const adminItems = [
-    {
-      id: 'admin-overview',
-      label: 'Ringkasan',
-      icon: LayoutDashboard,
-      target: 'admin:overview',
-      isActive: activeKeys.includes('admin-overview'),
-    },
-    {
-      id: 'admin-books',
-      label: 'Koleksi',
-      icon: BookOpen,
-      target: 'admin:books',
-      isActive: activeKeys.includes('admin-books'),
-    },
-    {
-      id: 'admin-users',
-      label: 'Pengguna',
-      icon: Users,
-      target: 'admin:users',
-      isActive: activeKeys.includes('admin-users'),
-    },
-    {
-      id: 'admin-events',
-      label: 'Agenda',
-      icon: CalendarDays,
-      target: 'admin:events',
-      isActive: activeKeys.includes('admin-events'),
-    },
-    { id: 'admin-menu', label: 'Menu', icon: Menu, isMenu: true, isActive: false },
-  ];
-
-  const items = isAdmin ? adminItems : userItems;
-
   return (
     <nav
       aria-label="Navigasi bawah mobile"
@@ -90,13 +46,7 @@ export const MobileBottomNav = React.memo(({ isAdmin, activeKeys, onNavClick, on
           <button
             key={item.id}
             type="button"
-            onClick={() => {
-              if (item.isMenu) {
-                onOpenMenu();
-              } else {
-                onNavClick(item.target);
-              }
-            }}
+            onClick={() => onNavClick(item.target)}
             aria-current={isActive ? 'page' : undefined}
             className={`group relative flex flex-1 flex-col items-center justify-center min-h-[50px] py-1 px-1 rounded-2xl transition-all duration-200 cursor-pointer active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
               isActive

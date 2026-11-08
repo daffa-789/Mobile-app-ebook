@@ -94,7 +94,6 @@ export const PATH_TO_SCREEN = {
   '/admin/koleksi': 'admin-dashboard',
   '/admin/pengguna': 'admin-dashboard',
   '/admin/agenda': 'admin-dashboard',
-  '/admin/carousel': 'admin-dashboard',
   '/admin/log': 'admin-dashboard',
 };
 
@@ -109,7 +108,6 @@ const ADMIN_PATH_TO_TAB = {
   '/admin/koleksi': 'books',
   '/admin/pengguna': 'users',
   '/admin/agenda': 'events',
-  '/admin/carousel': 'carousel',
   '/admin/log': 'logs',
 };
 
@@ -117,7 +115,7 @@ const ADMIN_PATH_TO_TAB = {
  * Dapatkan ID tab admin berdasarkan path URL browser.
  *
  * @param {string} pathname - Path URL browser saat ini
- * @returns {string} ID tab admin ('overview', 'books', 'users', 'events', 'carousel', 'logs')
+ * @returns {string} ID tab admin ('overview', 'books', 'users', 'events', 'logs')
  */
 export const tabIdFromPath = (pathname) =>
   ADMIN_PATH_TO_TAB[normalizePath(pathname)] || ADMIN_DEFAULT_TAB;

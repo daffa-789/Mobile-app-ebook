@@ -154,47 +154,6 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
     },
   );
 
-  await t.test('InstallGuideSection has 4-step APK installation workflow', () => {
-    const guidePath = path.join(landingSrc, 'components', 'sections', 'InstallGuideSection.jsx');
-    assert.ok(fs.existsSync(guidePath), 'InstallGuideSection.jsx must exist');
-    const content = fs.readFileSync(guidePath, 'utf8');
-
-    assert.ok(content.includes('01'), 'Must have Step 01');
-    assert.ok(content.includes('02'), 'Must have Step 02');
-    assert.ok(content.includes('03'), 'Must have Step 03');
-    assert.ok(content.includes('04'), 'Must have Step 04');
-    assert.ok(
-      content.includes('id="panduan"'),
-      'InstallGuideSection must have id="panduan" anchor',
-    );
-  });
-
-  await t.test('FaqSection has accordion questions and answers', () => {
-    const faqPath = path.join(landingSrc, 'components', 'sections', 'FaqSection.jsx');
-    assert.ok(fs.existsSync(faqPath), 'FaqSection.jsx must exist');
-    const content = fs.readFileSync(faqPath, 'utf8');
-
-    assert.ok(content.includes('id="faq"'), 'FaqSection must have id="faq" anchor');
-    assert.ok(
-      content.includes('Apa itu aplikasi Wahidiyah Book?'),
-      'Must answer what is Wahidiyah Book',
-    );
-    assert.ok(content.includes('Play Store'), 'Must address Play Store status');
-  });
-
-  await t.test('DownloadCtaSection has bottom CTA and QR Code', () => {
-    const ctaPath = path.join(landingSrc, 'components', 'sections', 'DownloadCtaSection.jsx');
-    assert.ok(fs.existsSync(ctaPath), 'DownloadCtaSection.jsx must exist');
-    const content = fs.readFileSync(ctaPath, 'utf8');
-
-    assert.ok(
-      content.includes('APK_DOWNLOAD_URL') || content.includes(EXPECTED_APK_URL),
-      'Must include expected APK URL or centralized constant',
-    );
-    assert.ok(content.includes('QRCodeSVG'), 'Must include QRCodeSVG');
-    assert.ok(content.includes('id="unduh"'), 'Must have id="unduh" anchor');
-  });
-
   await t.test('LandingFooter has official attribution and clean minimalist structure', () => {
     const footerPath = path.join(landingSrc, 'components', 'layout', 'LandingFooter.jsx');
     assert.ok(fs.existsSync(footerPath), 'LandingFooter.jsx must exist');
@@ -235,10 +194,13 @@ test('M2-3: Vite Landing Configuration & Manual Chunks Optimization', async (t) 
     assert.ok(!content.includes('node_modules/mammoth'), 'Must not chunk mammoth');
   });
 
-  await t.test('rollupOptions.output.manualChunks includes vendor, icons, and qrcode', () => {
+  await t.test('rollupOptions.output.manualChunks includes vendor and icons only', () => {
     assert.ok(content.includes("'icons'"), 'Must define icons chunk');
-    assert.ok(content.includes("'qrcode'"), 'Must define qrcode chunk');
     assert.ok(content.includes("'vendor'"), 'Must define vendor chunk');
+    assert.ok(
+      !content.includes("'qrcode'"),
+      'Landing tidak lagi memakai qrcode.react, chunk-nya harus dihapus',
+    );
   });
 });
 
@@ -340,14 +302,6 @@ test('M2-5: Centralized Landing Configuration & Constants', async (t) => {
       const componentPaths = [
         path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'layout', 'LandingNavbar.jsx'),
         path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'sections', 'HeroSection.jsx'),
-        path.join(
-          ROOT_DIR,
-          'landing-page',
-          'src',
-          'components',
-          'sections',
-          'DownloadCtaSection.jsx',
-        ),
         path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'sections', 'PreviewSection.jsx'),
       ];
 

@@ -5,6 +5,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { OAUTH_CONFIG } from '@/config/constants';
 
 const generateState = () => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -57,7 +58,7 @@ export const GoogleAuthButton = ({ disabled = false, onError, mode = 'login' }) 
   }, []);
 
   const handleGoogleLogin = () => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const clientId = OAUTH_CONFIG.googleClientId;
     if (!clientId) {
       onError?.('Konfigurasi VITE_GOOGLE_CLIENT_ID belum diisi di .env.');
       return;
@@ -66,10 +67,10 @@ export const GoogleAuthButton = ({ disabled = false, onError, mode = 'login' }) 
     const state = generateState();
     document.cookie = `google_oauth_state=${encodeURIComponent(state)}; Path=/; Max-Age=600; SameSite=Lax`;
 
-    const redirectUri = `${window.location.origin}/api/auth/google/callback`;
-    const scope = encodeURIComponent('openid email profile');
+    const redirectUri = `${window.location.origin}${OAUTH_CONFIG.callbackPath}`;
+    const scope = encodeURIComponent(OAUTH_CONFIG.scope);
     const authUrl =
-      `https://accounts.google.com/o/oauth2/v2/auth` +
+      `${OAUTH_CONFIG.googleAuthUrl}` +
       `?client_id=${encodeURIComponent(clientId)}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&response_type=code` +

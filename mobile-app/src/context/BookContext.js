@@ -217,8 +217,8 @@ export const BookProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await apiRequest('/api/books');
-      if (res?.data && Array.isArray(res.data) && res.data.length > 0) {
-        setBooks(res.data);
+      if (Array.isArray(res?.books) && res.books.length > 0) {
+        setBooks(res.books);
       }
     } catch {
       // Pertahankan buku default

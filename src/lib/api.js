@@ -6,12 +6,14 @@
  * @module src/lib/api
  */
 
-export const API_FALLBACK_ORIGIN = 'http://localhost:5000';
+import { API_CONFIG, DEV_HOSTNAMES, STORAGE_KEYS } from '@/config/constants';
+
+export const API_FALLBACK_ORIGIN = API_CONFIG.fallbackOrigin;
 
 const canUseApiFallback = (path) =>
   import.meta.env?.DEV === true &&
   typeof window !== 'undefined' &&
-  ['localhost', '127.0.0.1', '::1', '[::1]'].includes(window.location.hostname) &&
+  DEV_HOSTNAMES.includes(window.location.hostname) &&
   typeof path === 'string' &&
   path.startsWith('/') &&
   !path.startsWith('//');
@@ -22,9 +24,9 @@ const offlineError = () => {
   return error;
 };
 
-const SESSION_STORAGE_KEY = 'buku-wahidiyah:auth-session';
+const SESSION_STORAGE_KEY = STORAGE_KEYS.session;
 
-const INTENDED_LOCATION_STORAGE_KEY = 'buku-wahidiyah:intended-location';
+const INTENDED_LOCATION_STORAGE_KEY = STORAGE_KEYS.intendedLocation;
 
 export const getStoredSession = () => {
   try {
@@ -46,7 +48,7 @@ export const clearSession = () => {
   window.localStorage.removeItem(SESSION_STORAGE_KEY);
 };
 
-const LAST_PAYMENT_STORAGE_KEY = 'buku-wahidiyah:last-payment';
+const LAST_PAYMENT_STORAGE_KEY = STORAGE_KEYS.lastPayment;
 
 export const getStoredLastPayment = () => {
   try {
@@ -71,7 +73,7 @@ export const clearLastPayment = () => {
   window.sessionStorage.removeItem(LAST_PAYMENT_STORAGE_KEY);
 };
 
-const PENDING_VERIFICATION_STORAGE_KEY = 'buku-wahidiyah:pending-verification';
+const PENDING_VERIFICATION_STORAGE_KEY = STORAGE_KEYS.pendingVerification;
 
 export const getPendingVerification = () => {
   try {
@@ -113,7 +115,7 @@ export const clearIntendedLocation = () => {
 export const authHeaders = (token = getStoredSession()?.token) =>
   token ? { Authorization: `Bearer ${token}` } : {};
 
-const REQUEST_TIMEOUT_MS = 20000;
+const REQUEST_TIMEOUT_MS = API_CONFIG.timeoutMs;
 
 const timeoutError = () => {
   const error = new Error('Server tidak membalas dalam batas waktu.');

@@ -16,10 +16,6 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./landing-page/src', import.meta.url)),
-        '@features': fileURLToPath(new URL('./landing-page/src/features', import.meta.url)),
-        '@ui': fileURLToPath(new URL('./landing-page/src/components/ui', import.meta.url)),
-        '@lib': fileURLToPath(new URL('./landing-page/src/lib', import.meta.url)),
-        '@shared': fileURLToPath(new URL('./shared', import.meta.url)),
       },
     },
     build: {
@@ -31,9 +27,6 @@ export default defineConfig(({ mode }) => {
           manualChunks(id) {
             if (id.includes('node_modules/lucide-react')) {
               return 'icons';
-            }
-            if (id.includes('node_modules/qrcode.react')) {
-              return 'qrcode';
             }
             if (
               id.includes('node_modules/react/') ||

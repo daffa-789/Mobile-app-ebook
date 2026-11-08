@@ -149,7 +149,16 @@ describe('Milestone 1: Monorepo Architecture & Workspace Setup', () => {
     });
 
     test('Client default port is 5000 and not 3001', () => {
-      assert.ok(clientSrc.includes(':5000/api'), 'Default API URL must use port 5000');
+      const constantsSrc = fs.readFileSync(
+        path.join(rootDir, 'mobile-app/src/config/constants.js'),
+        'utf8',
+      );
+      assert.ok(constantsSrc.includes(':5000/api'), 'Default API URL must use port 5000');
+      assert.ok(!constantsSrc.includes(':3001'), 'Must not reference port 3001');
+      assert.ok(
+        !clientSrc.includes('Platform.select'),
+        'client.js must read the default origin from API_CONFIG instead of redefining it',
+      );
       assert.ok(!clientSrc.includes(':3001'), 'Must not reference port 3001');
     });
 

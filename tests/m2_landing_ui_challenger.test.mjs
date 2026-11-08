@@ -487,15 +487,6 @@ test('Challenger Suite 3: PaywallModal Lock Interaction & Dialog Focus Trap', as
       false,
       'Landing page must not mount reader or paywall (moved out in M1)',
     );
-
-    const ctaContent = fs.readFileSync(
-      'landing-page/src/components/sections/DownloadCtaSection.jsx',
-      'utf8',
-    );
-    assert.ok(
-      ctaContent.includes('APK_DOWNLOAD_URL'),
-      'DownloadCtaSection must expose the direct APK download CTA',
-    );
   });
 
   await t.test('3.3 Dialog Focus Trap logic verification (useDialogFocusTrap.js)', () => {

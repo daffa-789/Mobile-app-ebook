@@ -102,49 +102,14 @@ const Shell = ({ children }) => (
 );
 
 /**
- * Guard rute khusus pengguna reguler (mengalihkan admin ke portal /admin).
- *
- * @param {object} props - Properti komponen
- * @param {import('react').ReactNode} props.children - Komponen anak
- * @returns {import('react').JSX.Element}
- */
-export const UserOnly = ({ children }) => {
-  const { authReady, user } = useApp();
-  if (!authReady) return <AuthBoot />;
-  if (user?.role === 'admin') return <Navigate to="/admin" replace />;
-  return children;
-};
-
-/**
  * Pembungkus halaman pengguna berbingkai lengkap dengan Suspense dan pengingat.
  *
  * @param {import('react').ReactNode} node - Halaman anak
  * @returns {import('react').JSX.Element}
  */
 export const shellPage = (node) => (
-  <UserOnly>
-    <Shell>
-      <Suspense fallback={<ScreenLoading />}>{node}</Suspense>
-      <InAppReminders />
-    </Shell>
-  </UserOnly>
+  <Shell>
+    <Suspense fallback={<ScreenLoading />}>{node}</Suspense>
+    <InAppReminders />
+  </Shell>
 );
-
-/**
- * Guard rute khusus role Admin (mengalihkan pengguna non-admin ke beranda).
- *
- * @param {object} props - Properti komponen
- * @param {import('react').ReactNode} props.children - Komponen anak
- * @returns {import('react').JSX.Element}
- */
-export const AdminRoute = ({ children }) => {
-  const { isLoggedIn, authReady, user } = useApp();
-  if (!authReady) return <AuthBoot />;
-
-  if (!isLoggedIn) return <Navigate to="/login" replace />;
-
-  if (user?.role !== 'admin') {
-    return <Navigate to="/" replace />;
-  }
-  return children;
-};

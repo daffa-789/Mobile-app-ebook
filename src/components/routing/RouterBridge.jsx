@@ -38,10 +38,10 @@ export const RouterBridge = () => {
  * @returns {null}
  */
 export const ProfileRoutePreloader = ({ loaders = [] }) => {
-  const { authReady, isLoggedIn, user } = useApp();
+  const { authReady, isLoggedIn } = useApp();
 
   useEffect(() => {
-    if (!authReady || !isLoggedIn || user?.role === 'admin' || loaders.length === 0) {
+    if (!authReady || !isLoggedIn || loaders.length === 0) {
       return undefined;
     }
 
@@ -64,7 +64,7 @@ export const ProfileRoutePreloader = ({ loaders = [] }) => {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [authReady, isLoggedIn, user?.role, loaders]);
+  }, [authReady, isLoggedIn, loaders]);
 
   return null;
 };

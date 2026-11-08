@@ -19,7 +19,6 @@ import {
   saveSession,
 } from '@lib/api';
 import { EMPTY_USER, normalizeUser, userSignature } from '@lib/normalizers';
-import { PATH_TO_SCREEN } from '@lib/navigation';
 import { useCatalogSlice } from './slices/useCatalogSlice';
 import { usePaymentSlice, isQrisPaymentMethod } from './slices/usePaymentSlice';
 import { useNavigationSlice } from './slices/useNavigationSlice';
@@ -54,7 +53,7 @@ export const AppProvider = ({ children, initialScreen }) => {
     );
   }, []);
 
-  const nav = useNavigationSlice({ initialScreen, userRole: user.role });
+  const nav = useNavigationSlice({ initialScreen });
   const catalog = useCatalogSlice({ navigateTo: nav.navigateTo });
   const payment = usePaymentSlice({ patchUser });
 
@@ -89,30 +88,6 @@ export const AppProvider = ({ children, initialScreen }) => {
         setSessionToken(storedSession.token);
         setUser(restoredUser);
         setIsLoggedIn(true);
-
-        const bootPath = window.location.pathname;
-        if (restoredUser.role !== 'admin') {
-          if (
-            bootPath === '/admin' ||
-            bootPath === '/admin-dashboard' ||
-            nav.currentScreen === 'admin-dashboard'
-          ) {
-            nav.screenRef.current = 'home';
-            nav.setCurrentScreen('home');
-            nav.setCurrentPath('/');
-            nav.routerNavigatorRef.current?.('/', { replace: true });
-          }
-        } else {
-          const bootIsAdminPath = PATH_TO_SCREEN[bootPath] === 'admin-dashboard';
-          nav.screenRef.current = 'admin-dashboard';
-          nav.setCurrentScreen('admin-dashboard');
-          if (bootIsAdminPath) {
-            nav.setCurrentPath(bootPath);
-          } else {
-            nav.setCurrentPath('/admin');
-            nav.routerNavigatorRef.current?.('/admin', { replace: true });
-          }
-        }
 
         try {
           await payment.refreshSubscriptions();
@@ -240,11 +215,8 @@ export const AppProvider = ({ children, initialScreen }) => {
       setIsLoggedIn(true);
       setAuthReady(true);
 
-      const destScreen = nav.consumeIntendedScreen(loggedInUser.role);
-      nav.navigateTo(destScreen, {
-        replace: true,
-        currentRole: loggedInUser.role,
-      });
+      const destScreen = nav.consumeIntendedScreen();
+      nav.navigateTo(destScreen, { replace: true });
     },
     [nav],
   );

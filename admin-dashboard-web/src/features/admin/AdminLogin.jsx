@@ -66,12 +66,6 @@ export function AdminLogin() {
     }
   };
 
-  const fillSeededAdmin = () => {
-    setEmail('admin@wahidiyah.com');
-    setPassword('AdminWahidiyah2026!');
-    setErrorMessage('');
-  };
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-cream-50 p-4 font-sans">
       <div className="w-full max-w-sm rounded-2xl border border-cream-200 bg-ui-card p-8">
@@ -131,14 +125,6 @@ export function AdminLogin() {
             {isLoading ? 'Memeriksa…' : 'Masuk'}
           </button>
         </form>
-
-        <button
-          type="button"
-          onClick={fillSeededAdmin}
-          className="mt-5 w-full text-center text-xs text-ink-400 transition hover:text-ink-700 cursor-pointer"
-        >
-          Gunakan akun bawaan
-        </button>
       </div>
     </div>
   );

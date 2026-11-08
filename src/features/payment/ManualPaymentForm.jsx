@@ -41,7 +41,7 @@ export const ManualPaymentForm = ({
             setPhone(e.target.value);
             if (error) clearError();
           }}
-          placeholder="Contoh: 082377464017"
+          placeholder="Contoh: 081234567890"
           className="w-full px-4 py-3.5 text-sm rounded-2xl border border-cream-300 focus:border-brand-500 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-50 focus-visible:bg-cream-50 transition font-medium text-ink-900 placeholder:text-ink-400 bg-cream-100/50 shadow-sm"
         />
       </div>

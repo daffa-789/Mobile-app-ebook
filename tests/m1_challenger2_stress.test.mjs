@@ -134,16 +134,29 @@ test('Challenger 2 Suite: Milestone 1 Monorepo Stress & Boundary Verification', 
     const appFile = path.resolve('src/App.jsx');
     assert.ok(fs.existsSync(appFile), 'src/App.jsx must exist for @ alias');
 
-    // Verify all 3 Vite configs configure these aliases
-    const viteFiles = ['vite.config.js', 'vite.config.landing.js', 'vite.config.admin.js'];
-    for (const vf of viteFiles) {
-      const content = fs.readFileSync(vf, 'utf8');
-      assert.ok(content.includes("'@':"), `${vf} missing @ alias`);
-      assert.ok(content.includes("'@features':"), `${vf} missing @features alias`);
-      assert.ok(content.includes("'@ui':"), `${vf} missing @ui alias`);
-      assert.ok(content.includes("'@lib':"), `${vf} missing @lib alias`);
-      assert.ok(content.includes("'@shared':"), `${vf} missing @shared alias`);
+    // Setiap config Vite hanya boleh membawa alias yang benar-benar dipakai
+    // aplikasinya; alias mati menyembunyikan import yang sudah tidak ada.
+    const expectedViteAliases = {
+      'vite.config.js': ['@', '@features', '@ui', '@lib', '@data', '@context', '@theme', '@shared'],
+      'vite.config.landing.js': ['@'],
+      'vite.config.admin.js': ['@', '@ui', '@lib', '@data', '@context'],
+    };
+
+    for (const [viteFile, aliases] of Object.entries(expectedViteAliases)) {
+      const content = fs.readFileSync(viteFile, 'utf8');
+      for (const alias of aliases) {
+        assert.ok(content.includes(`'${alias}':`), `${viteFile} missing ${alias} alias`);
+      }
     }
+
+    assert.ok(
+      !fs.readFileSync('vite.config.landing.js', 'utf8').includes("'@features':"),
+      'vite.config.landing.js must not keep the dead @features alias',
+    );
+    assert.ok(
+      !fs.readFileSync('vite.config.admin.js', 'utf8').includes("'@shared':"),
+      'vite.config.admin.js must not keep the dead @shared alias',
+    );
   });
 
   await t.test('4. Build Pipeline Artifacts Validity', () => {

@@ -41,6 +41,30 @@ describe('Empirical Adversarial Challenge — Milestone 1 Dead Code Cleanup', ()
     // Root secrets
     'client_secret_8108075809-5lfbtqmkq9gkbn869jmvd8hhajinl1k2.apps.googleusercontent.com.json',
     'client_secret_8108075809-kpcgb73h2d1t7klg785svrlqc9to3n9t.apps.googleusercontent.com.json',
+    // Audit lanjutan: klaster carousel admin yang tidak pernah dirender, lib yatim,
+    // section landing yang diparkir, dan script satu-pakai tanpa rujukan.
+    'admin-dashboard-web/src/features/admin/CarouselTab.jsx',
+    'admin-dashboard-web/src/features/admin/carousel',
+    'admin-dashboard-web/src/features/admin/hooks/useAdminCarouselEditor.js',
+    'admin-dashboard-web/src/features/admin/events/PushStatusBanner.jsx',
+    'admin-dashboard-web/src/lib/utils.js',
+    'admin-dashboard-web/src/lib/phone.js',
+    'admin-dashboard-web/src/lib/useSubmit.js',
+    'src/lib/sanitizeHtml.js',
+    'landing-page/src/components/sections/FaqSection.jsx',
+    'landing-page/src/components/sections/InstallGuideSection.jsx',
+    'landing-page/src/components/sections/DownloadCtaSection.jsx',
+    'landing-page/src/lib/supabaseConfig.js',
+    'scripts/capture-auth-gate.cjs',
+    'scripts/capture-mobile-screens.js',
+    'scripts/generate-google-icon.cjs',
+    'scripts/update-app-icons.js',
+    'mobile-app/app.json',
+    // Audit lanjutan: portal admin duplikat di PWA root (sudah pindah ke
+    // admin-dashboard-web yang di-deploy terpisah) beserta lib yatimnya.
+    'src/features/admin',
+    'src/lib/excelExport.js',
+    'src/lib/withToast.js',
   ];
 
   test('1. Absence Test: All deleted files and directories must NOT exist in working tree', () => {
@@ -57,7 +81,6 @@ describe('Empirical Adversarial Challenge — Milestone 1 Dead Code Cleanup', ()
       'admin-dashboard-web/src/lib/excelExport.js',
       'admin-dashboard-web/src/lib/withToast.js',
       'admin-dashboard-web/src/features/admin/AdminLogin.jsx',
-      'landing-page/src/lib/supabaseConfig.js',
       'shared/sanitizeHtml.js',
       'landing-page/src/App.jsx',
       'landing-page/src/main.jsx',
@@ -137,24 +160,8 @@ describe('Empirical Adversarial Challenge — Milestone 1 Dead Code Cleanup', ()
   test('4. Alias Purity: vite.config.landing.js contains only active aliases', () => {
     const landingViteConfig = fs.readFileSync(path.join(rootDir, 'vite.config.landing.js'), 'utf8');
     assert.ok(landingViteConfig.includes("'@':"), "Missing '@' alias in vite.config.landing.js");
-    assert.ok(
-      landingViteConfig.includes("'@features':"),
-      "Missing '@features' alias in vite.config.landing.js",
-    );
-    assert.ok(
-      landingViteConfig.includes("'@ui':"),
-      "Missing '@ui' alias in vite.config.landing.js",
-    );
-    assert.ok(
-      landingViteConfig.includes("'@lib':"),
-      "Missing '@lib' alias in vite.config.landing.js",
-    );
-    assert.ok(
-      landingViteConfig.includes("'@shared':"),
-      "Missing '@shared' alias in vite.config.landing.js",
-    );
 
-    const deadAliases = ['@data', '@context', '@theme'];
+    const deadAliases = ['@features', '@ui', '@lib', '@shared', '@data', '@context', '@theme'];
     for (const alias of deadAliases) {
       assert.ok(
         !landingViteConfig.includes(`'${alias}'`) && !landingViteConfig.includes(`"${alias}"`),
@@ -183,7 +190,6 @@ describe('Empirical Adversarial Challenge — Milestone 1 Dead Code Cleanup', ()
     assert.ok(assetFiles.some((f) => f.startsWith('index-') && f.endsWith('.js')));
     assert.ok(assetFiles.some((f) => f.startsWith('vendor-') && f.endsWith('.js')));
     assert.ok(assetFiles.some((f) => f.startsWith('icons-') && f.endsWith('.js')));
-    assert.ok(assetFiles.some((f) => f.startsWith('qrcode-') && f.endsWith('.js')));
     assert.ok(assetFiles.some((f) => f.startsWith('index-') && f.endsWith('.css')));
   });
 

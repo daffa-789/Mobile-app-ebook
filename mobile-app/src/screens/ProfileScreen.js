@@ -14,6 +14,7 @@ import * as Updates from 'expo-updates';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { APP_CONFIG } from '../config/constants';
 
 export const ProfileScreen = ({ onOpenRiwayat, onOpenAuth }) => {
   const { user, isPro, updateUser, logout } = useAuth();
@@ -240,7 +241,7 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenAuth }) => {
               onPress={() =>
                 Alert.alert(
                   'Pusat Bantuan',
-                  'Untuk bantuan, pertanyaan seputar Sholawat Wahidiyah, atau transaksi, silakan hubungi tim sekretariat kami di info@wahidiyah.org.',
+                  `Untuk bantuan, pertanyaan seputar Sholawat Wahidiyah, atau transaksi, silakan hubungi tim sekretariat kami di ${APP_CONFIG.supportEmail}.`,
                 )
               }
               activeOpacity={0.7}

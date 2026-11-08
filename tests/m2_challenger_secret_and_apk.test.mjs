@@ -294,13 +294,11 @@ test('Challenger Suite 4: Dynamic APK Download URL Propagation Across Landing UI
   const landingComponentsDir = path.join(ROOT_DIR, 'landing-page', 'src', 'components');
   const targetUiFiles = [
     path.join(landingComponentsDir, 'layout', 'LandingNavbar.jsx'),
-    path.join(landingComponentsDir, 'layout', 'LandingFooter.jsx'),
     path.join(landingComponentsDir, 'sections', 'HeroSection.jsx'),
-    path.join(landingComponentsDir, 'sections', 'DownloadCtaSection.jsx'),
     path.join(landingComponentsDir, 'sections', 'PreviewSection.jsx'),
   ];
 
-  await t.test('4.1 All 5 target UI components import APK_DOWNLOAD_URL from constants', () => {
+  await t.test('4.1 All 3 target UI components import APK_DOWNLOAD_URL from constants', () => {
     for (const filePath of targetUiFiles) {
       assert.ok(fs.existsSync(filePath), `File must exist: ${filePath}`);
       const content = fs.readFileSync(filePath, 'utf8');

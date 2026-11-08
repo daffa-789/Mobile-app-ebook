@@ -9,7 +9,7 @@ const procEnv = typeof process !== 'undefined' && process.env ? process.env : {}
 export const APK_DOWNLOAD_URL =
   metaEnv.VITE_APK_DOWNLOAD_URL ||
   procEnv.VITE_APK_DOWNLOAD_URL ||
-  'https://expo.dev/artifacts/eas/Ed9NJ755J7BnDSR2zNqX6FjLFXevov8oC7G-JCxiSU0.apk';
+  'https://expo.dev/artifacts/eas/cyW3wk_E8RsNFtjxernyE6bxs6lU8qukEVC984dKTJ0.apk';
 
 export const API_CONFIG = {
   baseUrl: metaEnv.VITE_API_URL || procEnv.VITE_API_URL || '',

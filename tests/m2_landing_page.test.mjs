@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
 const EXPECTED_APK_URL =
-  'https://expo.dev/artifacts/eas/Ed9NJ755J7BnDSR2zNqX6FjLFXevov8oC7G-JCxiSU0.apk';
+  'https://expo.dev/artifacts/eas/cyW3wk_E8RsNFtjxernyE6bxs6lU8qukEVC984dKTJ0.apk';
 
 test('M2-1: Node.js 24 and Monorepo Environment Configuration', async (t) => {
   await t.test('.nvmrc specifies Node 24', () => {

@@ -16,7 +16,7 @@ import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { APP_CONFIG } from '../config/constants';
 
-export const ProfileScreen = ({ onOpenRiwayat, onOpenAuth }) => {
+export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
   const { user, isPro, updateUser, logout } = useAuth();
   const [fullName, setFullName] = useState(user?.name || user?.fullName || '');
   const [phone, setPhone] = useState(user?.phone || '');
@@ -219,6 +219,25 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenAuth }) => {
           <Text style={styles.sectionCaption}>LAYANAN & LANGGANAN</Text>
 
           <View style={styles.menuCard}>
+            {!isPro && onOpenPro && (
+              <TouchableOpacity
+                style={[styles.menuRow, styles.menuRowBorder]}
+                onPress={onOpenPro}
+                activeOpacity={0.7}
+              >
+                <View style={styles.menuRowLeft}>
+                  <View style={styles.menuIconBoxBrand}>
+                    <Feather name="award" size={18} color="#B8860B" />
+                  </View>
+                  <View>
+                    <Text style={styles.menuLabel}>Berlangganan Member Pro</Text>
+                    <Text style={styles.menuSubLabel}>Buka seluruh kitab & amalan eksklusif</Text>
+                  </View>
+                </View>
+                <Feather name="chevron-right" size={18} color="#CFCAC2" />
+              </TouchableOpacity>
+            )}
+
             <TouchableOpacity style={styles.menuRow} onPress={onOpenRiwayat} activeOpacity={0.7}>
               <View style={styles.menuRowLeft}>
                 <View style={styles.menuIconBoxBrand}>

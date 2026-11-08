@@ -9,9 +9,9 @@ import {
   Platform,
   useWindowDimensions,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import * as Linking from 'expo-linking';
 import { theme } from './src/theme';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { BookProvider } from './src/context/BookContext';
@@ -48,8 +48,8 @@ function MainNavigator() {
       const url = typeof event === 'string' ? event : event?.url;
       if (!url) return;
       try {
-        const parsed = Linking.parse(url);
-        const code = parsed?.queryParams?.code || url.match(/[?&]code=([^&#]+)/)?.[1];
+        const match = url.match(/[?&]code=([^&#]+)/);
+        const code = match ? match[1] : null;
         if (code && !handledCodes.has(code)) {
           handledCodes.add(code);
           await exchangeGoogleCode(decodeURIComponent(code));
@@ -174,6 +174,7 @@ function MainNavigator() {
         {activeTab === 'profile' && (
           <ProfileScreen
             onOpenRiwayat={() => setShowRiwayat(true)}
+            onOpenPro={() => setActiveTab('pro')}
             onOpenAuth={() => setAuthModalVisible(true)}
           />
         )}

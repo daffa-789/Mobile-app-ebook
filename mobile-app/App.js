@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import * as Linking from 'expo-linking';
 import { theme } from './src/theme';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { BookProvider } from './src/context/BookContext';
@@ -31,7 +32,7 @@ const TABS = [
 ];
 
 function MainNavigator() {
-  const { user, loading } = useAuth();
+  const { user, loading, exchangeGoogleCode } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [activeBook, setActiveBook] = useState(null);
   const [showRiwayat, setShowRiwayat] = useState(false);
@@ -39,6 +40,34 @@ function MainNavigator() {
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === 'web' && windowWidth > 500;
+
+  // Tangani Deep Link OAuth Google (scheme: mobileappebook://auth/success?code=...)
+  React.useEffect(() => {
+    let handledCodes = new Set();
+    const handleUrl = async (event) => {
+      const url = typeof event === 'string' ? event : event?.url;
+      if (!url) return;
+      try {
+        const parsed = Linking.parse(url);
+        const code = parsed?.queryParams?.code || url.match(/[?&]code=([^&#]+)/)?.[1];
+        if (code && !handledCodes.has(code)) {
+          handledCodes.add(code);
+          await exchangeGoogleCode(decodeURIComponent(code));
+        }
+      } catch (err) {
+        console.warn('[DeepLink] Gagal memproses callback auth:', err);
+      }
+    };
+
+    Linking.getInitialURL().then((url) => {
+      if (url) handleUrl(url);
+    });
+
+    const subscription = Linking.addEventListener('url', handleUrl);
+    return () => {
+      if (subscription?.remove) subscription.remove();
+    };
+  }, [exchangeGoogleCode]);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {

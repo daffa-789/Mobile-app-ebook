@@ -4,6 +4,7 @@
     "slug": "mobile-app-ebook",
     "owner": "jualendfield1610s-team",
     "version": "0.1.0",
+    "scheme": "mobileappebook",
     "orientation": "portrait",
     "icon": "./mobile-app/assets/icon.png",
     "userInterfaceStyle": "light",

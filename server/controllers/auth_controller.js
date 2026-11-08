@@ -10,7 +10,7 @@
  */
 
 import { DB_DOWN_MESSAGE, authFailureMessage, internalErrorDetail, isDbDown } from '../lib/http.js';
-import { createOneTimeCode } from '../lib/oneTimeCode.js';
+import { createOneTimeCode, redeemOneTimeCode } from '../lib/oneTimeCode.js';
 import { logger } from '../logger.js';
 import { createSessionToken, toPublicUser } from '../auth.js';
 import { resolveFrontendOrigin } from '../lib/origin.js';
@@ -211,6 +211,33 @@ export async function googleSupabase(req, res) {
   }
 }
 
+/** POST /api/auth/google/mobile-start — inisialisasi OAuth untuk mobile native */
+export async function googleMobileStart(req, res) {
+  try {
+    const clientId = process.env.GOOGLE_CLIENT_ID || '';
+    if (!clientId) {
+      return res.status(500).json({
+        success: false,
+        message: 'Google OAuth belum dikonfigurasi di server.',
+      });
+    }
+    const frontendOrigin = resolveFrontendOrigin({ FRONTEND_ORIGIN }, req, ALLOWED_ORIGINS) || '';
+    const redirectUri =
+      process.env.GOOGLE_OAUTH_REDIRECT_URI || `${frontendOrigin}/api/auth/google/callback`;
+
+    const state = await createOneTimeCode(
+      { kind: 'oauth_state', platform: 'mobile' },
+      { ttlMs: 5 * 60 * 1000 },
+    );
+    const scope = encodeURIComponent('openid email profile');
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${encodeURIComponent(state)}&prompt=select_account`;
+
+    return res.json({ success: true, url, state });
+  } catch (error) {
+    return replyAuthFailure(res, error);
+  }
+}
+
 const parseCookies = (header) => {
   const out = {};
   if (!header) return out;
@@ -224,7 +251,7 @@ const parseCookies = (header) => {
   return out;
 };
 
-/** GET /api/auth/google/callback — ujung OAuth direct (redirect browser). */
+/** GET /api/auth/google/callback — ujung OAuth direct (redirect browser & deep link mobile). */
 export async function googleCallback(req, res) {
   /* Tujuan redirect hanya boleh berasal dari konfigurasi atau allowlist —
    * tidak pernah dari `Host`/`X-Forwarded-Proto` mentah (VULN-04).
@@ -248,7 +275,14 @@ export async function googleCallback(req, res) {
       );
   }
 
+  let isMobile = false;
   const failRedirect = (message, code = 'google_oauth') => {
+    if (isMobile) {
+      const scheme = process.env.MOBILE_AUTH_SCHEME || 'mobileappebook';
+      return res.redirect(
+        `${scheme}://auth/failure?error=${encodeURIComponent(code)}&message=${encodeURIComponent(message)}`,
+      );
+    }
     const url = new URL('/login', frontendOrigin);
     url.searchParams.set('error', code);
     url.searchParams.set('message', message);
@@ -266,8 +300,19 @@ export async function googleCallback(req, res) {
     const cookies = parseCookies(req.headers.cookie || '');
     const expectedState = cookies.google_oauth_state;
 
-    res.setHeader('Set-Cookie', 'google_oauth_state=; Path=/; Max-Age=0; SameSite=Lax');
-    if (!expectedState || expectedState !== state) {
+    let validState = false;
+    if (expectedState && expectedState === state) {
+      validState = true;
+      res.setHeader('Set-Cookie', 'google_oauth_state=; Path=/; Max-Age=0; SameSite=Lax');
+    } else {
+      const redeemed = await redeemOneTimeCode(state);
+      if (redeemed && redeemed.kind === 'oauth_state' && redeemed.platform === 'mobile') {
+        validState = true;
+        isMobile = true;
+      }
+    }
+
+    if (!validState) {
       return failRedirect(
         'State OAuth tidak cocok (kemungkinan CSRF). Coba lagi dari halaman masuk.',
       );
@@ -299,6 +344,11 @@ export async function googleCallback(req, res) {
     const token = createSessionToken(account.user);
     const user = toPublicUser(account.user);
     const sessionCode = await createOneTimeCode({ token, user });
+
+    if (isMobile) {
+      const scheme = process.env.MOBILE_AUTH_SCHEME || 'mobileappebook';
+      return res.redirect(`${scheme}://auth/success?code=${encodeURIComponent(sessionCode)}`);
+    }
 
     const successUrl = new URL('/auth/success', frontendOrigin);
     successUrl.searchParams.set('code', sessionCode);

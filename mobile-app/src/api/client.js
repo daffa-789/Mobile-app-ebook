@@ -1,8 +1,39 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_CONFIG } from '../config/constants';
+import { API_CONFIG } from '../config/constants.js';
 
 export const API_BASE_URL = API_CONFIG.baseUrl;
 export const API_TIMEOUT_MS = API_CONFIG.timeoutMs;
+
+/**
+ * Daftar endpoint yang bebas sesi (tidak memerlukan token otentikasi valid
+ * dan tidak boleh memicu auto-logout saat merespons 401).
+ */
+export const SESSION_FREE_ENDPOINTS = [
+  '/api/auth/login',
+  '/api/auth/register',
+  '/api/auth/verify-registration',
+  '/api/auth/request-password-reset',
+  '/api/auth/reset-password',
+  '/api/auth/resend-verification',
+  '/api/auth/exchange',
+  '/api/auth/google/mobile-start',
+  '/api/auth/google-supabase',
+];
+
+export function isSessionFreeEndpoint(endpoint) {
+  const clean = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const path = clean.startsWith('/api') ? clean : `/api${clean}`;
+  return SESSION_FREE_ENDPOINTS.some((ep) => path === ep || path.startsWith(`${ep}/`));
+}
+
+let onUnauthorizedCallback = null;
+
+/**
+ * Daftarkan handler saat menerima respons 401 Unauthorized pada endpoint terproteksi.
+ */
+export function setUnauthorizedHandler(fn) {
+  onUnauthorizedCallback = typeof fn === 'function' ? fn : null;
+}
 
 /**
  * Normalisasi URL untuk memastikan endpoint selalu memiliki prefix `/api`
@@ -43,8 +74,19 @@ async function getStoredToken() {
 }
 
 /**
+ * Dapatkan objek headers dengan Authorization Bearer token jika tersedia.
+ */
+export async function getAuthHeaders(extraToken) {
+  const token = extraToken || (await getStoredToken());
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+/**
  * Fetch wrapper dengan penanganan token JWT otomatis, batas waktu (timeout) via AbortController,
- * & amplop standard { success, message, data }.
+ * penanganan 401 terpusat, & amplop standar { success, message, data }.
  */
 export async function apiRequest(endpoint, options = {}) {
   const token = await getStoredToken();
@@ -75,6 +117,18 @@ export async function apiRequest(endpoint, options = {}) {
       const error = new Error(errorMsg);
       error.status = res.status;
       error.data = data;
+
+      // Tangani 401 terpusat: jika token kedaluwarsa pada endpoint terproteksi, picu logout
+      if (res.status === 401 && !isSessionFreeEndpoint(endpoint)) {
+        if (typeof onUnauthorizedCallback === 'function') {
+          try {
+            onUnauthorizedCallback(error);
+          } catch (handlerErr) {
+            console.warn('[API] Gagal mengeksekusi unauthorized handler:', handlerErr);
+          }
+        }
+      }
+
       throw error;
     }
 

@@ -14,6 +14,7 @@ import { wrap } from '../lib/http.js';
 import {
   exchange,
   googleCallback,
+  googleMobileStart,
   googleSupabase,
   login,
   me,
@@ -39,6 +40,8 @@ authRouter.post('/reset-password', wrap(resetPassword));
 authRouter.post('/resend-verification', wrap(resendVerification));
 
 authRouter.post('/google-supabase', wrap(googleSupabase));
+
+authRouter.post('/google/mobile-start', wrap(googleMobileStart));
 
 authRouter.get('/google/callback', wrap(googleCallback));
 

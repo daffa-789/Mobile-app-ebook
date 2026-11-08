@@ -17,10 +17,19 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { OAUTH_CONFIG, APP_CONFIG } from '../config/constants';
+import { VerificationScreen } from './VerificationScreen';
 
 export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
-  const { login, register } = useAuth();
+  const { login, register, requestPasswordReset, startGoogleMobile } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab); // 'login' | 'register'
+  const [viewMode, setViewMode] = useState('auth'); // 'auth' | 'verification' | 'request-reset'
+  const [resetIdentifier, setResetIdentifier] = useState('');
+  const [verificationState, setVerificationState] = useState({
+    mode: 'register',
+    identifier: '',
+    method: 'email',
+    initialDevOtp: '',
+  });
   const [sharedEmail, setSharedEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -113,12 +122,22 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
       });
 
       if (res.success) {
-        Alert.alert(
-          'Pendaftaran Berhasil',
-          res.message || 'Akun Anda berhasil didaftarkan! Silakan masuk.',
-        );
-        setActiveTab('login');
-        setNoticeMessage('Akun berhasil dibuat. Silakan masukkan password Anda untuk masuk.');
+        if (res.requiresVerification) {
+          setVerificationState({
+            mode: 'register',
+            identifier: res.identifier || trimmedEmail,
+            method: res.method || 'email',
+            initialDevOtp: res.devOtp || '',
+          });
+          setViewMode('verification');
+        } else {
+          Alert.alert(
+            'Pendaftaran Berhasil',
+            res.message || 'Akun Anda berhasil didaftarkan! Silakan masuk.',
+          );
+          setActiveTab('login');
+          setNoticeMessage('Akun berhasil dibuat. Silakan masukkan password Anda untuk masuk.');
+        }
       } else {
         setErrorMessage(res.error || 'Pendaftaran belum dapat diproses.');
       }
@@ -133,6 +152,14 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
     setErrorMessage('');
     setIsSubmitting(true);
     try {
+      if (Platform.OS !== 'web') {
+        const res = await startGoogleMobile();
+        if (!res.success) {
+          setErrorMessage(res.error || 'Gagal memulai otorisasi Google.');
+        }
+        return;
+      }
+
       const clientId = OAUTH_CONFIG.googleClientId;
 
       const isWeb = Platform.OS === 'web';
@@ -175,10 +202,141 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
   };
 
   const handleForgotPassword = () => {
-    setNoticeMessage(
-      `Untuk memulihkan kata sandi, silakan hubungi tim sekretariat di ${APP_CONFIG.supportEmail} atau buka portal web resmi.`,
-    );
+    setResetIdentifier(sharedEmail || '');
+    setErrorMessage('');
+    setViewMode('request-reset');
   };
+
+  const handleRequestResetSubmit = async () => {
+    setErrorMessage('');
+    const cleanId = resetIdentifier.trim();
+    if (!cleanId) {
+      setErrorMessage('Masukkan alamat email atau nomor WhatsApp akun Anda.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const isEmail = cleanId.includes('@');
+      const method = isEmail ? 'email' : 'whatsapp';
+      const res = await requestPasswordReset({
+        identifier: cleanId,
+        method,
+      });
+
+      if (res.success) {
+        setVerificationState({
+          mode: 'reset-password',
+          identifier: res.identifier || cleanId,
+          method: res.method || method,
+          initialDevOtp: res.devOtp || '',
+        });
+        setViewMode('verification');
+      } else {
+        setErrorMessage(res.error || 'Gagal mengajukan pemulihan kata sandi.');
+      }
+    } catch (err) {
+      setErrorMessage(err.message || 'Terjadi gangguan koneksi saat mengajukan reset.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (viewMode === 'verification') {
+    return (
+      <VerificationScreen
+        mode={verificationState.mode}
+        identifier={verificationState.identifier}
+        method={verificationState.method}
+        initialDevOtp={verificationState.initialDevOtp}
+        onBack={() => setViewMode('auth')}
+        onSuccess={(result) => {
+          if (result?.user) {
+            onAuthSuccess?.(result.user);
+          } else {
+            setViewMode('auth');
+            setActiveTab('login');
+            setNoticeMessage(
+              verificationState.mode === 'reset-password'
+                ? 'Kata sandi berhasil diperbarui. Silakan masuk dengan kata sandi baru.'
+                : 'Akun Anda berhasil diverifikasi. Silakan masuk.',
+            );
+          }
+        }}
+      />
+    );
+  }
+
+  if (viewMode === 'request-reset') {
+    return (
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.authCard}>
+            <TouchableOpacity
+              style={styles.backButtonInline}
+              onPress={() => setViewMode('auth')}
+              activeOpacity={0.7}
+            >
+              <Feather name="arrow-left" size={18} color="#1D1B17" />
+              <Text style={styles.backButtonInlineText}>Kembali ke Masuk</Text>
+            </TouchableOpacity>
+
+            <View style={styles.brandHeader}>
+              <Text style={styles.brandTitle}>Lupa Kata Sandi</Text>
+              <Text style={styles.brandSubtitle}>
+                Masukkan alamat email atau nomor WhatsApp akun Anda untuk menerima kode pemulihan.
+              </Text>
+            </View>
+
+            {errorMessage ? (
+              <View style={styles.errorAlert}>
+                <Feather name="alert-circle" size={16} color="#C00511" />
+                <Text style={styles.errorAlertText}>{errorMessage}</Text>
+              </View>
+            ) : null}
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.fieldLabel}>EMAIL ATAU NOMOR WHATSAPP</Text>
+              <View style={styles.inputWrap}>
+                <Feather name="mail" size={18} color="#7C756C" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.textInput}
+                  value={resetIdentifier}
+                  onChangeText={setResetIdentifier}
+                  placeholder="nama@email.com atau 081234..."
+                  placeholderTextColor="#A8A199"
+                  autoCapitalize="none"
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={[styles.primaryButton, isSubmitting && styles.primaryButtonDisabled]}
+              onPress={handleRequestResetSubmit}
+              disabled={isSubmitting}
+              activeOpacity={0.85}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#FBF8F3" />
+              ) : (
+                <>
+                  <Text style={styles.primaryButtonText}>Kirim Kode Verifikasi</Text>
+                  <Feather name="arrow-right" size={18} color="#FBF8F3" />
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -740,6 +898,18 @@ const styles = StyleSheet.create({
   googleButtonText: {
     fontSize: 13,
     fontWeight: 'bold',
+    color: '#1D1B17',
+  },
+  backButtonInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+    alignSelf: 'flex-start',
+  },
+  backButtonInlineText: {
+    fontSize: 13,
+    fontWeight: '700',
     color: '#1D1B17',
   },
   footerWrap: {

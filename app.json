@@ -30,6 +30,7 @@
     "runtimeVersion": {
       "policy": "appVersion"
     },
+    "jsEngine": "jsc",
     "plugins": [
       [
         "expo-build-properties",

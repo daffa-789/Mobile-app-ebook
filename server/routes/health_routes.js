@@ -12,6 +12,7 @@ healthRouter.get('/health', async (req, res) => {
     status: dbHealth.ok ? 'ok' : 'degraded',
     database: dbHealth.ok ? 'connected' : 'disconnected',
     databaseMessage: dbHealth.message || 'Database Supabase Cloud terhubung aktif',
+    databaseDetail: dbHealth.detail || null,
     server: 'running',
 
     port: LISTEN_PORT,

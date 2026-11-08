@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     root: fileURLToPath(new URL('./admin-dashboard-web', import.meta.url)),
+    envDir: fileURLToPath(new URL('.', import.meta.url)),
     publicDir: fileURLToPath(new URL('./public', import.meta.url)),
     plugins: [tailwindcss(), react()],
     resolve: {

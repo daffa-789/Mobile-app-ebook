@@ -12,14 +12,14 @@ dist-ssr/
 dist-*/
 *.local
 
-# Environment & Secrets
+# Environment & Secrets (Strictly single .env at root, never committed)
 .env
 .env.local
 .env.*
-!.env.example
-!.env.*.example
-!.env.*.sample
-!.env.*.template
+.env*
+**/.env
+**/.env.*
+**/.env*
 server/.env
 client_secret_*.json
 
@@ -98,7 +98,4 @@ supabase/.temp/
 .agents/
 
 .vercel
-.env*
-!**/.env.example
-!**/.env.*.example
 laptop_desktop_preview.png

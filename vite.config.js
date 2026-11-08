@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => {
   const backendPort = Number(env.PORT || 5000);
 
   return {
+    envDir: fileURLToPath(new URL('.', import.meta.url)),
     plugins: [tailwindcss(), react()],
     resolve: {
       // Alias path — R29 (restrukturisasi folder).

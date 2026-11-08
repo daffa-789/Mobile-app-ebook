@@ -31,45 +31,38 @@ function getFilesRecursively(dir, filterFn) {
 }
 
 // =========================================================================
-// SUITE 1: Git Tracking, .gitignore Security & Secret Isolation
+// SUITE 1: Git Tracking, .gitignore Security & Single Root .env Architecture
 // =========================================================================
-test('Challenger Suite 1: Git Tracking & .gitignore Protection', async (t) => {
-  const exampleFiles = [
-    path.join(ROOT_DIR, '.env.example'),
-    path.join(ROOT_DIR, 'landing-page', '.env.example'),
-    path.join(ROOT_DIR, 'admin-dashboard-web', '.env.example'),
-    path.join(ROOT_DIR, 'mobile-app', '.env.example'),
-    path.join(ROOT_DIR, 'server', '.env.example'),
-  ];
-
-  await t.test('1.1 All 5 .env.example files exist on disk and are not empty', () => {
-    for (const filePath of exampleFiles) {
-      assert.ok(fs.existsSync(filePath), `File must exist: ${filePath}`);
-      const content = fs.readFileSync(filePath, 'utf8').trim();
-      assert.ok(content.length > 50, `File must contain configuration templates: ${filePath}`);
-    }
+test('Challenger Suite 1: Single Root .env Architecture & .gitignore Protection', async (t) => {
+  await t.test('1.1 Zero .env.example files exist in the entire repository', () => {
+    const allExampleFiles = getFilesRecursively(ROOT_DIR, (name) => {
+      return name.includes('.env.example') || (name.includes('.env.') && name.endsWith('.example'));
+    });
+    assert.deepEqual(
+      allExampleFiles,
+      [],
+      `Expected zero .env.example files under single root .env architecture, found: ${allExampleFiles.join(', ')}`,
+    );
   });
 
-  await t.test(
-    '1.2 Git check-ignore verifies all 5 .env.example are NOT ignored (can be tracked)',
-    () => {
-      const relPaths = exampleFiles.map((p) => path.relative(ROOT_DIR, p).replace(/\\/g, '/'));
-      const cmd = `git check-ignore -v ${relPaths.join(' ')}`;
-      try {
-        const output = execSync(cmd, { cwd: ROOT_DIR, encoding: 'utf8' });
-        // Negation lines should contain '!**/.env.example'
-        for (const rel of relPaths) {
-          assert.ok(
-            output.includes(`!**/.env.example\t${rel}`) || output.includes(`!.env.example\t${rel}`),
-            `Expected git check-ignore to negate ${rel}, got:\n${output}`,
-          );
-        }
-      } catch (err) {
-        // If check-ignore exits with code 1, it means none were ignored (which is also valid)
-        assert.strictEqual(err.status, 1, 'Check-ignore exit 1 means not ignored');
-      }
-    },
-  );
+  await t.test('1.2 Exactly one .env file exists at root, no duplicates in subfolders', () => {
+    assert.ok(
+      fs.existsSync(envPath),
+      'Root .env must exist for local and production environment configuration',
+    );
+    const subfolderEnvs = [
+      path.join(ROOT_DIR, 'landing-page', '.env'),
+      path.join(ROOT_DIR, 'admin-dashboard-web', '.env'),
+      path.join(ROOT_DIR, 'mobile-app', '.env'),
+      path.join(ROOT_DIR, 'server', '.env'),
+    ];
+    for (const subEnv of subfolderEnvs) {
+      assert.ok(
+        !fs.existsSync(subEnv),
+        `Subfolder env should not exist under One .env architecture: ${subEnv}`,
+      );
+    }
+  });
 
   await t.test('1.3 Git check-ignore confirms actual .env files ARE strictly ignored', () => {
     const sensitiveFiles = [
@@ -107,7 +100,7 @@ test('Challenger Suite 1: Git Tracking & .gitignore Protection', async (t) => {
 
     const leakedEnvFiles = trackedFiles.filter((f) => {
       const base = path.basename(f);
-      return base.startsWith('.env') && !base.includes('.example') && !base.includes('.sample');
+      return base.startsWith('.env');
     });
 
     assert.deepEqual(
@@ -119,18 +112,10 @@ test('Challenger Suite 1: Git Tracking & .gitignore Protection', async (t) => {
 });
 
 // =========================================================================
-// SUITE 2: Real Secret Absence in .env.example Templates
+// SUITE 2: Real Secret Isolation & Single Root .env Integrity
 // =========================================================================
-test('Challenger Suite 2: Absence of Real Production Secrets in .env.example', async (t) => {
-  const exampleFiles = [
-    path.join(ROOT_DIR, '.env.example'),
-    path.join(ROOT_DIR, 'landing-page', '.env.example'),
-    path.join(ROOT_DIR, 'admin-dashboard-web', '.env.example'),
-    path.join(ROOT_DIR, 'mobile-app', '.env.example'),
-    path.join(ROOT_DIR, 'server', '.env.example'),
-  ];
-
-  // Specific real secrets from local .env that must NEVER appear in .env.example
+test('Challenger Suite 2: Secret Isolation and Single Root .env Configuration', async (t) => {
+  // Specific real secrets from local .env that must NEVER appear in tracked files
   const knownSecrets = [
     actualEnv.JWT_SECRET,
     actualEnv.SUPABASE_SECRET_KEY,
@@ -142,40 +127,68 @@ test('Challenger Suite 2: Absence of Real Production Secrets in .env.example', a
     actualEnv.VAPID_PRIVATE_KEY,
   ].filter((s) => typeof s === 'string' && s.length >= 8);
 
-  await t.test('2.1 None of the known real secret values appear in any .env.example', () => {
-    for (const filePath of exampleFiles) {
-      const content = fs.readFileSync(filePath, 'utf8');
-      for (const secret of knownSecrets) {
+  await t.test(
+    '2.1 None of the known real secret values appear in git-tracked source files',
+    () => {
+      const trackedFiles = execSync('git ls-files', { cwd: ROOT_DIR, encoding: 'utf8' })
+        .split(/\r?\n/)
+        .filter(Boolean)
+        .filter((f) => /\.(js|jsx|mjs|cjs|ts|tsx|json|html|css|md)$/i.test(f))
+        .filter((f) => !f.includes('package-lock.json'));
+
+      for (const relPath of trackedFiles) {
+        const fullPath = path.join(ROOT_DIR, relPath);
+        if (!fs.existsSync(fullPath)) continue;
+        const content = fs.readFileSync(fullPath, 'utf8');
+        for (const secret of knownSecrets) {
+          assert.ok(
+            !content.includes(secret),
+            `Real secret "${secret.substring(0, 6)}..." detected in tracked file ${relPath}!`,
+          );
+        }
+      }
+    },
+  );
+
+  await t.test(
+    '2.2 Root .env contains all essential environment keys required for production',
+    () => {
+      const essentialKeys = [
+        'PORT',
+        'JWT_SECRET',
+        'SUPABASE_URL',
+        'SUPABASE_PUBLISHABLE_KEY',
+        'SUPABASE_SECRET_KEY',
+        'VITE_SUPABASE_URL',
+        'VITE_SUPABASE_ANON_KEY',
+        'MIDTRANS_SERVER_KEY',
+        'MIDTRANS_CLIENT_KEY',
+        'WHATSAPP_PROVIDER',
+        'FONNTE_TOKEN',
+        'VAPID_PUBLIC_KEY',
+        'VAPID_PRIVATE_KEY',
+      ];
+
+      for (const key of essentialKeys) {
         assert.ok(
-          !content.includes(secret),
-          `Real secret "${secret.substring(0, 6)}..." detected in ${path.basename(filePath)}!`,
+          actualEnv[key] && String(actualEnv[key]).trim().length > 0,
+          `Root .env must define essential key: ${key}`,
         );
       }
-    }
-  });
+    },
+  );
 
-  await t.test('2.2 Templates use obvious placeholder tokens for secret variables', () => {
-    const serverExample = fs.readFileSync(path.join(ROOT_DIR, 'server', '.env.example'), 'utf8');
-    const parsed = dotenv.parse(serverExample);
-
-    // Verify critical sensitive keys are clearly marked as placeholders
-    assert.match(parsed.JWT_SECRET, /your-.*secret/i, 'JWT_SECRET must be a dummy placeholder');
-    assert.match(
-      parsed.SUPABASE_SECRET_KEY,
-      /your-.*secret/i,
-      'SUPABASE_SECRET_KEY must be a placeholder',
+  await t.test('2.3 Vite configurations direct env loading to root directory', () => {
+    const adminVite = fs.readFileSync(path.join(ROOT_DIR, 'vite.config.admin.js'), 'utf8');
+    const landingVite = fs.readFileSync(path.join(ROOT_DIR, 'vite.config.landing.js'), 'utf8');
+    assert.ok(
+      adminVite.includes('envDir:'),
+      'vite.config.admin.js must specify envDir pointing to root',
     );
-    assert.match(
-      parsed.MIDTRANS_SERVER_KEY,
-      /Mid-server-your/i,
-      'MIDTRANS_SERVER_KEY must be a placeholder',
+    assert.ok(
+      landingVite.includes('envDir:'),
+      'vite.config.landing.js must specify envDir pointing to root',
     );
-    assert.match(
-      parsed.GMAIL_REFRESH_TOKEN,
-      /your-.*refresh-token/i,
-      'GMAIL_REFRESH_TOKEN must be a placeholder',
-    );
-    assert.match(parsed.FONNTE_TOKEN, /your-.*token/i, 'FONNTE_TOKEN must be a placeholder');
   });
 });
 

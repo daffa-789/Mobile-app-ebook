@@ -64,10 +64,12 @@ export async function isDatabaseHealthy() {
     if (error) throw error;
     return { ok: true, provider: 'supabase', message: 'Database Supabase Cloud terhubung aktif' };
   } catch (error) {
+    logger.error('DB', 'isDatabaseHealthy failed', { message: error.message, code: error.code });
     return {
       ok: false,
       code: error.code || 'UNKNOWN',
       message: 'Koneksi Supabase tidak tersedia.',
+      detail: error.message,
     };
   }
 }

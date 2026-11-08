@@ -2,8 +2,63 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { runInNewContext } from 'node:vm';
+import { parse } from '@babel/parser';
 
 const rootDir = process.cwd();
+
+function runBrowserAuthEffect(platform, browserWindow) {
+  const source = fs.readFileSync(path.resolve(rootDir, 'mobile-app/App.js'), 'utf8');
+  const ast = parse(source, { sourceType: 'module', plugins: ['jsx'] });
+  const navigator = ast.program.body.find(
+    (node) => node.type === 'FunctionDeclaration' && node.id.name === 'MainNavigator',
+  );
+  const effect = navigator.body.body
+    .filter((node) => node.type === 'ExpressionStatement')
+    .map((node) => node.expression)
+    .find(
+      (node) =>
+        node.type === 'CallExpression' &&
+        node.callee.object?.name === 'React' &&
+        node.callee.property?.name === 'useEffect' &&
+        source.slice(node.start, node.end).includes('__openAuthModal'),
+    );
+  assert.ok(effect, 'Efek autentikasi browser harus ditemukan di MainNavigator');
+  const callback = effect.arguments[0];
+  const opened = [];
+  const context = {
+    Platform: { OS: platform },
+    window: browserWindow,
+    setAuthModalVisible: (visible) => opened.push(visible),
+  };
+  runInNewContext(`(${source.slice(callback.start, callback.end)})()`, context);
+  return opened;
+}
+
+describe('Kompatibilitas startup autentikasi native dan web', () => {
+  for (const platform of ['android', 'ios']) {
+    it(`${platform}: window tanpa location tidak menyebabkan crash`, () => {
+      const nativeWindow = {};
+      nativeWindow.window = nativeWindow;
+      assert.deepEqual(runBrowserAuthEffect(platform, nativeWindow), []);
+      assert.equal(nativeWindow.__openAuthModal, undefined);
+    });
+  }
+
+  it('web: query auth=1 tetap membuka autentikasi', () => {
+    const browserWindow = { location: { search: '?auth=1' } };
+    assert.deepEqual(runBrowserAuthEffect('web', browserWindow), [true]);
+    assert.equal(typeof browserWindow.__openAuthModal, 'function');
+  });
+
+  it('web: tanpa query, autentikasi hanya dibuka lewat callback', () => {
+    const browserWindow = { location: { search: '' } };
+    const opened = runBrowserAuthEffect('web', browserWindow);
+    assert.deepEqual(opened, []);
+    browserWindow.__openAuthModal();
+    assert.deepEqual(opened, [true]);
+  });
+});
 
 describe('Auth Gate & Logout Behavior Verification', () => {
   it('1. AuthContext: initial state must not force auto-login if storage is empty', () => {

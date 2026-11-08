@@ -13,13 +13,41 @@ import fs from 'node:fs';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { transformSync } from '@babel/core';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
+test('Expo menyisipkan URL API publik ke bundle Android produksi', () => {
+  const previous = process.env.EXPO_PUBLIC_API_URL;
+  const apiUrl = 'https://mobile-app-ebook.vercel.app/api';
+  process.env.EXPO_PUBLIC_API_URL = apiUrl;
+  try {
+    const source = fs.readFileSync(
+      path.join(ROOT_DIR, 'mobile-app/src/config/constants.js'),
+      'utf8',
+    );
+    const { code } = transformSync(source, {
+      filename: 'mobile-app/src/config/constants.js',
+      babelrc: false,
+      configFile: false,
+      presets: ['babel-preset-expo'],
+      caller: { name: 'metro', bundler: 'metro', platform: 'android', isDev: false },
+    });
+    assert.ok(
+      code.includes(apiUrl),
+      'URL server harus tertanam di bundle, bukan dibaca saat runtime',
+    );
+    assert.ok(!code.includes('process.env.EXPO_PUBLIC_API_URL'));
+  } finally {
+    if (previous === undefined) delete process.env.EXPO_PUBLIC_API_URL;
+    else process.env.EXPO_PUBLIC_API_URL = previous;
+  }
+});
+
 const DEFAULT_APK =
-  'https://expo.dev/artifacts/eas/cyW3wk_E8RsNFtjxernyE6bxs6lU8qukEVC984dKTJ0.apk';
+  'https://expo.dev/artifacts/eas/nZG8qlaABNxRjAz_jBldJYlxghHw-ai4ecU1iYEVWSs.apk';
 
 // Helper to run code in an isolated subprocess with specific env variables
 async function runInSubprocess(moduleRelativePath, envOverrides = {}) {

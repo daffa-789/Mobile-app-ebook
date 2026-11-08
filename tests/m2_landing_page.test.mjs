@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
 const EXPECTED_APK_URL =
-  'https://expo.dev/artifacts/eas/cyW3wk_E8RsNFtjxernyE6bxs6lU8qukEVC984dKTJ0.apk';
+  'https://expo.dev/artifacts/eas/nZG8qlaABNxRjAz_jBldJYlxghHw-ai4ecU1iYEVWSs.apk';
 
 test('M2-1: Node.js 24 and Monorepo Environment Configuration', async (t) => {
   await t.test('.nvmrc specifies Node 24', () => {
@@ -100,7 +100,8 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
     assert.ok(fs.existsSync(heroPath), 'HeroSection.jsx must exist');
     const content = fs.readFileSync(heroPath, 'utf8');
 
-    assert.ok(content.includes('v0.1.0 (Alpha)'), 'HeroSection must state v0.1.0 (Alpha)');
+    const { expo } = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'app.json'), 'utf8'));
+    assert.ok(content.includes(`v${expo.version} (Alpha)`), 'Versi unduhan harus sesuai app.json');
     assert.ok(
       content.includes('APK_DOWNLOAD_URL') || content.includes(EXPECTED_APK_URL),
       'HeroSection must link to official APK URL or centralized constant',

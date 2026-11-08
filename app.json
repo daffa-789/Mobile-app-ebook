@@ -3,7 +3,7 @@
     "name": "Mobile-app-ebook",
     "slug": "mobile-app-ebook",
     "owner": "jualendfield1610s-team",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "scheme": "mobileappebook",
     "orientation": "portrait",
     "icon": "./mobile-app/assets/icon.png",
@@ -13,6 +13,7 @@
     },
     "android": {
       "package": "id.wahidiyah.book",
+      "versionCode": 2,
       "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#067554",

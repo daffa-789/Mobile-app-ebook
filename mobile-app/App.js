@@ -70,7 +70,7 @@ function MainNavigator() {
   }, [exchangeGoogleCode]);
 
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
       window.__openAuthModal = () => setAuthModalVisible(true);
       if (window.location.search.includes('auth=1')) {
         setAuthModalVisible(true);

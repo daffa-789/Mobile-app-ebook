@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
 const EXPECTED_APK_URL =
-  'https://expo.dev/artifacts/eas/nZG8qlaABNxRjAz_jBldJYlxghHw-ai4ecU1iYEVWSs.apk';
+  'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.1/wahidiyah-v0.1.1.apk';
 
 test('M2-1: Node.js 24 and Monorepo Environment Configuration', async (t) => {
   await t.test('.nvmrc specifies Node 24', () => {
@@ -279,7 +279,7 @@ test('M2-5: Centralized Landing Configuration & Constants', async (t) => {
       assert.strictEqual(
         constants.APK_DOWNLOAD_URL,
         EXPECTED_APK_URL,
-        'Default APK_DOWNLOAD_URL must equal official EAS URL',
+        'Default APK_DOWNLOAD_URL must equal official GitHub Release URL',
       );
 
       assert.ok(constants.API_CONFIG, 'API_CONFIG must be exported');

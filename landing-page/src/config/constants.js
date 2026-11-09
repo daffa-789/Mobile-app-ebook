@@ -9,7 +9,7 @@ const procEnv = typeof process !== 'undefined' && process.env ? process.env : {}
 export const APK_DOWNLOAD_URL =
   metaEnv.VITE_APK_DOWNLOAD_URL ||
   procEnv.VITE_APK_DOWNLOAD_URL ||
-  'https://expo.dev/artifacts/eas/nZG8qlaABNxRjAz_jBldJYlxghHw-ai4ecU1iYEVWSs.apk';
+  'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.1/wahidiyah-v0.1.1.apk';
 
 export const API_CONFIG = {
   baseUrl: metaEnv.VITE_API_URL || procEnv.VITE_API_URL || '',

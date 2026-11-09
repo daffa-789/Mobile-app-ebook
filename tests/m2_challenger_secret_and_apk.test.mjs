@@ -371,7 +371,7 @@ test('Challenger Suite 4: Dynamic APK Download URL Propagation Across Landing UI
       let foundOverrideCount = 0;
       let compiledWithFallback = false;
       const DEFAULT_APK_URL =
-        'https://expo.dev/artifacts/eas/nZG8qlaABNxRjAz_jBldJYlxghHw-ai4ecU1iYEVWSs.apk';
+        'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.1/wahidiyah-v0.1.1.apk';
 
       for (const jsFile of testAssets) {
         const content = fs.readFileSync(jsFile, 'utf8');

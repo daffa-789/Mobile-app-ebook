@@ -47,7 +47,7 @@ test('Expo menyisipkan URL API publik ke bundle Android produksi', () => {
 });
 
 const DEFAULT_APK =
-  'https://expo.dev/artifacts/eas/nZG8qlaABNxRjAz_jBldJYlxghHw-ai4ecU1iYEVWSs.apk';
+  'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.1/wahidiyah-v0.1.1.apk';
 
 // Helper to run code in an isolated subprocess with specific env variables
 async function runInSubprocess(moduleRelativePath, envOverrides = {}) {

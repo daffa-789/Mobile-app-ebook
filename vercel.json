@@ -6,12 +6,12 @@
   "redirects": [
     {
       "source": "/download",
-      "destination": "https://expo.dev/artifacts/eas/xA4OBPWr4r68oBF-zo0p9olad0QSUX0bR4vsbf7pX-s.apk",
+      "destination": "https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.1/wahidiyah-v0.1.1.apk",
       "permanent": false
     },
     {
       "source": "/download/apk",
-      "destination": "https://expo.dev/artifacts/eas/xA4OBPWr4r68oBF-zo0p9olad0QSUX0bR4vsbf7pX-s.apk",
+      "destination": "https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.1/wahidiyah-v0.1.1.apk",
       "permanent": false
     }
   ],

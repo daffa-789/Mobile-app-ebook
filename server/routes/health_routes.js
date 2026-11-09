@@ -20,10 +20,13 @@ healthRouter.get('/health', async (req, res) => {
   });
 });
 
+// Rilis stabil v0.1.1 (Hermes, armeabi-v7a) — build v0.1.2 dengan JSC
+// force close di Android 9 32-bit. Jangan arahkan kembali ke artefak JSC
+// sebelum ada build Hermes baru yang lolos uji di perangkat nyata.
 healthRouter.get('/download/apk', (req, res) => {
   res.redirect(
     302,
-    'https://expo.dev/artifacts/eas/xA4OBPWr4r68oBF-zo0p9olad0QSUX0bR4vsbf7pX-s.apk',
+    'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.1/wahidiyah-v0.1.1.apk',
   );
 });
 

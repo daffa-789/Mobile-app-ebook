@@ -22,7 +22,7 @@ export const HeroSection = () => {
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
           <a
             href={APK_DOWNLOAD_URL}
-            download="wahidiyah-v0.1.2.apk"
+            download="wahidiyah-v0.1.1-stabil.apk"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-3.5 px-8 py-4 rounded-2xl bg-brand-700 text-white font-bold text-base hover:bg-brand-800 shadow-lg shadow-brand-900/15 hover:shadow-brand-900/25 transition duration-200 hover:-translate-y-0.5 group cursor-pointer"
           >
             <div className="w-9 h-9 rounded-xl bg-brand-600/80 flex items-center justify-center group-hover:bg-brand-500 transition">
@@ -34,6 +34,9 @@ export const HeroSection = () => {
               </div>
               <div className="text-xs font-normal text-brand-200">
                 v0.1.2 (Alpha) • Android 8.0+ • 32-bit & 64-bit
+              </div>
+              <div className="text-xs font-normal text-brand-200">
+                Unduhan saat ini: rilis stabil v0.1.1 (Hermes)
               </div>
             </div>
           </a>

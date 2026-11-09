@@ -13,7 +13,7 @@
     },
     "android": {
       "package": "id.wahidiyah.book",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "backgroundColor": "#067554",
         "foregroundImage": "./mobile-app/assets/android-icon-foreground.png",
@@ -31,7 +31,6 @@
       "policy": "appVersion"
     },
     "plugins": [
-      "./mobile-app/plugins/withJscEngine.cjs",
       [
         "expo-build-properties",
         {

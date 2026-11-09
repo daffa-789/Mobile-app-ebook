@@ -16,3 +16,6 @@ buku-siap-upload/
 public/
 supabase_database/
 package-lock.json
+
+# Artefak pengujian sementara
+tests/.temp*

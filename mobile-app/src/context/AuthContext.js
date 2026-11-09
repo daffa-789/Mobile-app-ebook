@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Linking } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest, setUnauthorizedHandler } from '../api/client';
 
@@ -302,11 +302,26 @@ export const AuthProvider = ({ children }) => {
       const res = await apiRequest('/api/auth/google/mobile-start', {
         method: 'POST',
       });
-      if (res?.url) {
-        await Linking.openURL(res.url);
-        return { success: true, url: res.url };
+      if (!res?.url) {
+        return { success: false, error: 'URL Google OAuth tidak valid dari server.' };
       }
-      return { success: false, error: 'URL Google OAuth tidak valid dari server.' };
+
+      // Penangan deep link menjadi satu-satunya penukar kode sekali-pakai.
+      const redirectUrl = 'mobileappebook://auth/';
+      const result = await WebBrowser.openAuthSessionAsync(res.url, redirectUrl);
+
+      if (result.type === 'success' && result.url) {
+        const code = result.url.match(/[?&]code=([^&#]+)/);
+        if (code) return { success: true };
+        const failMessage = result.url.match(/[?&]message=([^&#]+)/);
+        return {
+          success: false,
+          error: failMessage
+            ? decodeURIComponent(failMessage[1])
+            : 'Login Google gagal. Silakan coba lagi.',
+        };
+      }
+      return { success: false, error: 'Login Google dibatalkan.' };
     } catch (err) {
       return { success: false, error: err.message || 'Gagal memulai otorisasi Google.' };
     }

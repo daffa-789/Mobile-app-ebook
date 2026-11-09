@@ -99,3 +99,5 @@ supabase/.temp/
 
 .vercel
 laptop_desktop_preview.png
+test_*.png
+tests/.temp*

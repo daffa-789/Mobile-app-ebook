@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { register } from 'node:module';
+import vm from 'node:vm';
 
 // Register ESM loader for react-native mocks
 register('./helpers/rn_loader.mjs', import.meta.url);
@@ -80,6 +81,56 @@ test('Mobile Auth Plumbing & Invariants Suite', async (t) => {
       content.includes('export const VerificationScreen'),
       'Must export VerificationScreen',
     );
+  });
+
+  await t.test('Google membuka sesi browser dengan callback skema aplikasi', async () => {
+    const source = fs.readFileSync(authContextPath, 'utf8');
+    const start = source.indexOf('const startGoogleMobile =');
+    const end = source.indexOf('const exchangeGoogleCode =', start);
+    assert.ok(start >= 0 && end > start);
+    const appConfig = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
+    const redirectUrl = `${appConfig.expo.scheme}://auth/`;
+    const googleUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
+    const scenarios = [
+      [{ type: 'success', url: `${redirectUrl}success?code=test-code` }, true, undefined],
+      [{ type: 'cancel' }, false, 'Login Google dibatalkan.'],
+      [
+        { type: 'success', url: `${redirectUrl}failure?message=Akses%20ditolak` },
+        false,
+        'Akses ditolak',
+      ],
+    ];
+
+    for (const [browserResult, success, error] of scenarios) {
+      const calls = [];
+      const context = {
+        Linking: {},
+        apiRequest: async (url, options) => {
+          assert.equal(url, '/api/auth/google/mobile-start');
+          assert.equal(options.method, 'POST');
+          return { url: googleUrl };
+        },
+        WebBrowser: {
+          openAuthSessionAsync: async (...args) => {
+            calls.push(args);
+            return browserResult;
+          },
+        },
+      };
+      const result = await vm.runInNewContext(
+        `${source.slice(start, end)} startGoogleMobile()`,
+        context,
+      );
+      assert.deepEqual(calls, [[googleUrl, redirectUrl]]);
+      assert.equal(result.success, success);
+      assert.equal(result.error, error);
+    }
+  });
+
+  await t.test('Versi yang ditampilkan sama dengan versi APK', async () => {
+    const appConfig = JSON.parse(fs.readFileSync(appJsonPath, 'utf8'));
+    const { APP_VERSION } = await import('../mobile-app/src/config/constants.js');
+    assert.equal(APP_VERSION, appConfig.expo.version);
   });
 
   await t.test('6. AuthContext.js implements OTP and Google session methods', () => {

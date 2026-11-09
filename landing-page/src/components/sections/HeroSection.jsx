@@ -34,7 +34,7 @@ export const HeroSection = () => {
                 Unduh APK Langsung (.apk)
               </div>
               <div className="text-xs font-normal text-brand-200">
-                v0.1.1 (Alpha) • Android 8.0+ • 32-bit & 64-bit
+                v0.1.2 (Alpha) • Android 8.0+ • 32-bit & 64-bit
               </div>
             </div>
           </a>

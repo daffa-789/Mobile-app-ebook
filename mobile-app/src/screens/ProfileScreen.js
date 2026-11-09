@@ -14,7 +14,7 @@ import * as Updates from 'expo-updates';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
-import { APP_CONFIG } from '../config/constants';
+import { APP_CONFIG, APP_VERSION } from '../config/constants';
 
 export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
   const { user, isPro, updateUser, logout } = useAuth();
@@ -76,7 +76,7 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
       } else {
         Alert.alert(
           'Aplikasi Sudah Versi Terbaru',
-          'Anda sudah menggunakan versi terbaru (v0.1.0 Alpha). Tidak ada pembaruan baru saat ini.',
+          `Anda sudah menggunakan versi terbaru (v${APP_VERSION} Alpha). Tidak ada pembaruan baru saat ini.`,
         );
       }
     } catch (error) {
@@ -293,7 +293,7 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
                   <Text style={styles.menuSubLabel}>
                     {isCheckingUpdate
                       ? 'Memeriksa pembaruan...'
-                      : 'v0.1.0 (Alpha) • Ketuk untuk cek versi baru'}
+                      : `v${APP_VERSION} (Alpha) • Ketuk untuk cek versi baru`}
                   </Text>
                 </View>
               </View>
@@ -305,7 +305,7 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
               onPress={() =>
                 Alert.alert(
                   'Tentang Aplikasi',
-                  'E-Book Wahidiyah v0.1.0 (Alpha) — Perpustakaan Digital Sholawat Wahidiyah resmi untuk membaca lembaran Sholawat dan khazanah literatur Islam.',
+                  `E-Book Wahidiyah v${APP_VERSION} (Alpha) — Perpustakaan Digital Sholawat Wahidiyah resmi untuk membaca lembaran Sholawat dan khazanah literatur Islam.`,
                 )
               }
               activeOpacity={0.7}

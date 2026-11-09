@@ -10,6 +10,7 @@ import {
   useWindowDimensions,
   ActivityIndicator,
   Linking,
+  BackHandler,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { theme } from './src/theme';
@@ -37,6 +38,9 @@ function MainNavigator() {
   const [activeBook, setActiveBook] = useState(null);
   const [showRiwayat, setShowRiwayat] = useState(false);
   const [authModalVisible, setAuthModalVisible] = useState(false);
+  const [exitToastVisible, setExitToastVisible] = useState(false);
+  const lastBackPressRef = React.useRef(0);
+  const exitToastTimerRef = React.useRef(null);
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === 'web' && windowWidth > 500;
@@ -87,6 +91,59 @@ function MainNavigator() {
       setAuthModalVisible(false);
     }
   }, [user]);
+
+  // Back Android: tutup layer teratas / kembali ke Beranda dari tab lain;
+  // di Beranda wajib dua kali (dengan snackbar) sebelum keluar app.
+  React.useEffect(() => {
+    if (Platform.OS !== 'android') return undefined;
+
+    const dismissToast = () => {
+      setExitToastVisible(false);
+      lastBackPressRef.current = 0;
+    };
+
+    const onBackPress = () => {
+      if (authModalVisible) {
+        setAuthModalVisible(false);
+        dismissToast();
+        return true;
+      }
+      if (activeBook) {
+        setActiveBook(null);
+        dismissToast();
+        return true;
+      }
+      if (showRiwayat) {
+        setShowRiwayat(false);
+        dismissToast();
+        return true;
+      }
+      if (activeTab !== 'home') {
+        setActiveTab('home');
+        dismissToast();
+        return true;
+      }
+      const now = Date.now();
+      if (now - lastBackPressRef.current < 2000) {
+        BackHandler.exitApp();
+        return true;
+      }
+      lastBackPressRef.current = now;
+      setExitToastVisible(true);
+      if (exitToastTimerRef.current) clearTimeout(exitToastTimerRef.current);
+      exitToastTimerRef.current = setTimeout(() => {
+        setExitToastVisible(false);
+        lastBackPressRef.current = 0;
+      }, 2000);
+      return true;
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => {
+      subscription.remove();
+      if (exitToastTimerRef.current) clearTimeout(exitToastTimerRef.current);
+    };
+  }, [activeTab, activeBook, showRiwayat, authModalVisible]);
 
   // Frame container mock-up perangkat mobile
   const renderFramed = (children) => (
@@ -193,8 +250,17 @@ function MainNavigator() {
           onTabPress={(tabId) => {
             setShowRiwayat(false);
             setActiveTab(tabId);
+            setExitToastVisible(false);
+            lastBackPressRef.current = 0;
           }}
         />
+      )}
+
+      {/* Snackbar "tekan back lagi untuk keluar" ala Instagram */}
+      {exitToastVisible && (
+        <View style={styles.exitToast} pointerEvents="none">
+          <Text style={styles.exitToastText}>Tekan BACK sekali lagi untuk keluar</Text>
+        </View>
       )}
 
       {/* Modal Masuk / Daftar Akun untuk switch akun atau tindakan pro */}
@@ -325,5 +391,21 @@ const styles = StyleSheet.create({
   navLabelActive: {
     fontWeight: 'bold',
     color: '#082D20', // text-brand-900
+  },
+  exitToast: {
+    position: 'absolute',
+    bottom: 76,
+    alignSelf: 'center',
+    maxWidth: '80%',
+    backgroundColor: 'rgba(29, 27, 23, 0.92)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  exitToastText: {
+    color: '#FBF8F3',
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });

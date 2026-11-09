@@ -99,10 +99,28 @@ describe('Milestone 1: Monorepo Architecture & Workspace Setup', () => {
     assert.ok(jsconfig.include.includes('mobile-app/**/*'));
   });
 
-  test('app.json contains package id, usesCleartextTraffic, and EAS ID', () => {
+  test('Dependensi native mengikuti versi SDK Expo', () => {
+    const { dependencies } = JSON.parse(
+      fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'),
+    );
+    const sdkVersions = JSON.parse(
+      fs.readFileSync(path.join(rootDir, 'node_modules/expo/bundledNativeModules.json'), 'utf8'),
+    );
+    for (const name of ['react', 'react-dom', 'expo-font']) {
+      assert.equal(dependencies[name], sdkVersions[name], `${name} harus mengikuti versi SDK`);
+    }
+  });
+
+  test('Konfigurasi Android memakai plugin resmi dan mempertahankan ABI 32-bit', () => {
     const appJson = JSON.parse(fs.readFileSync(path.join(rootDir, 'app.json'), 'utf8'));
+    const buildProperties = appJson.expo.plugins.find(
+      (plugin) => Array.isArray(plugin) && plugin[0] === 'expo-build-properties',
+    );
     assert.equal(appJson.expo.android.package, 'id.wahidiyah.book');
-    assert.equal(appJson.expo.android.usesCleartextTraffic, true);
+    assert.equal(appJson.expo.android.usesCleartextTraffic, undefined);
+    assert.equal(appJson.expo.jsEngine, undefined);
+    assert.equal(buildProperties?.[1].android.usesCleartextTraffic, true);
+    assert.deepEqual(buildProperties?.[1].android.buildArchs, ['armeabi-v7a', 'arm64-v8a']);
     assert.ok(
       appJson.expo.extra?.eas?.projectId === 'ef5df259-9b15-4288-80de-5fdff2510d5a' ||
         appJson.expo.extra?.eas?.projectId === 'ef5df259-9b15-4288-80de-5fdff2510d5a',

@@ -22,11 +22,17 @@ test('Challenger 2 Suite: Milestone 1 Monorepo Stress & Boundary Verification', 
       'id.wahidiyah.book',
       'android.package must be id.wahidiyah.book',
     );
-    assert.strictEqual(
-      config.android?.usesCleartextTraffic,
-      true,
-      'android.usesCleartextTraffic must be true for local HTTP emulator testing',
+    const buildProperties = config.plugins.find(
+      (plugin) => Array.isArray(plugin) && plugin[0] === 'expo-build-properties',
     );
+    assert.strictEqual(config.android?.usesCleartextTraffic, undefined);
+    assert.strictEqual(config.jsEngine, undefined);
+    assert.strictEqual(
+      buildProperties?.[1].android.usesCleartextTraffic,
+      true,
+      'Plugin Android harus mengizinkan HTTP untuk emulator lokal',
+    );
+    assert.deepEqual(buildProperties?.[1].android.buildArchs, ['armeabi-v7a', 'arm64-v8a']);
 
     // 1.3 Asset paths referenced in app.json must physically exist on disk
     const assets = [

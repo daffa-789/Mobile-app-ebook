@@ -6,16 +6,16 @@
 const metaEnv = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {};
 const procEnv = typeof process !== 'undefined' && process.env ? process.env : {};
 
-/* Rollback 9 Nov 2026: build v0.1.2 mematikan Hermes lewat config plugin
- * (`hermesEnabled=false`). Expo SDK 58 / RN 0.88 tidak lagi mendukung JSC,
- * sehingga APK itu force close saat startup di perangkat 32-bit Android 9.
- * Sampai build Hermes baru lolos uji perangkat, tautan unduh dikembalikan ke
- * rilis v0.1.1 yang sudah terverifikasi jalan di J7 Prime (armeabi-v7a). */
-const STABLE_APK_URL =
-  'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.1/wahidiyah-v0.1.1.apk';
+/* 10 Nov 2026: rilis v0.1.3 dibangun ulang dari sumber 0.1.2 tanpa menghapus
+ * fitur, memakai Hermes V1 dan ABI armeabi-v7a + arm64-v8a. Build v0.1.2
+ * mematikan Hermes (`hermesEnabled=false`) sehingga memakai JSC dan force
+ * close di perangkat 32-bit; Expo SDK 58 / RN 0.88 tidak lagi mendukung JSC.
+ * Artefak JSC tidak boleh pernah dipakai lagi sebagai tautan unduh. */
+const RELEASE_APK_URL =
+  'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.3/wahidiyah-v0.1.3-hermes-32bit.apk';
 
 export const APK_DOWNLOAD_URL =
-  metaEnv.VITE_APK_DOWNLOAD_URL || procEnv.VITE_APK_DOWNLOAD_URL || STABLE_APK_URL;
+  metaEnv.VITE_APK_DOWNLOAD_URL || procEnv.VITE_APK_DOWNLOAD_URL || RELEASE_APK_URL;
 
 export const API_CONFIG = {
   baseUrl: metaEnv.VITE_API_URL || procEnv.VITE_API_URL || '',

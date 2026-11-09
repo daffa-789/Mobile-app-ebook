@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
 const EXPECTED_APK_URL =
-  'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.1/wahidiyah-v0.1.1.apk';
+  'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.3/wahidiyah-v0.1.3-hermes-32bit.apk';
 
 test('M2-1: Node.js 24 and Monorepo Environment Configuration', async (t) => {
   await t.test('.nvmrc specifies Node 24', () => {

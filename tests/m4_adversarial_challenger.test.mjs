@@ -13,7 +13,7 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 
 const LIVE_VERCEL_URL = 'https://mobile-app-ebook.vercel.app';
 const OFFICIAL_APK_URL =
-  'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.1/wahidiyah-v0.1.1.apk';
+  'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.3/wahidiyah-v0.1.3-hermes-32bit.apk';
 
 // Helper: HTTP GET request with redirect resolution
 function fetchWithRedirects(url, maxRedirects = 5) {

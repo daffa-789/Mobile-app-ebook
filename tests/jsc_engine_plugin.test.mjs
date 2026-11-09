@@ -73,9 +73,9 @@ test('versionCode naik di atas build JSC v0.1.2 yang cacat (4)', () => {
   );
 });
 
-test('semua jalur unduh menunjuk ke rilis Hermes terverifikasi, bukan artefak JSC', () => {
-  const stableApkUrl =
-    'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.1/wahidiyah-v0.1.1.apk';
+test('semua jalur unduh menunjuk ke GitHub Release v0.1.3, bukan artefak JSC', () => {
+  const releaseApkUrl =
+    'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.3/wahidiyah-v0.1.3-hermes-32bit.apk';
   const jscArtifact = 'xA4OBPWr4r68oBF-zo0p9olad0QSUX0bR4vsbf7pX-s.apk';
   const sources = {
     'landing-page': fs.readFileSync(
@@ -87,17 +87,21 @@ test('semua jalur unduh menunjuk ke rilis Hermes terverifikasi, bukan artefak JS
   };
 
   for (const [name, content] of Object.entries(sources)) {
-    assert.ok(content.includes(stableApkUrl), `${name} harus mengarah ke rilis stabil Hermes`);
+    assert.ok(content.includes(releaseApkUrl), `${name} harus mengarah ke rilis v0.1.3 Hermes`);
     assert.ok(!content.includes(jscArtifact), `${name} tidak boleh menyebarkan APK JSC`);
     assert.ok(
       !content.includes('https://expo.dev/artifacts/eas/'),
       `${name} tidak boleh menunjuk artefak EAS yang belum terverifikasi di perangkat 32-bit`,
     );
+    assert.ok(
+      !content.includes('releases/download/v0.1.2/'),
+      `${name} tidak boleh menunjuk rilis v0.1.2 yang force close`,
+    );
   }
 
   const vercelConfig = JSON.parse(sources.vercel);
   for (const redirect of vercelConfig.redirects) {
-    assert.equal(redirect.destination, stableApkUrl, `${redirect.source} harus ke APK stabil`);
+    assert.equal(redirect.destination, releaseApkUrl, `${redirect.source} harus ke APK v0.1.3`);
   }
 });
 

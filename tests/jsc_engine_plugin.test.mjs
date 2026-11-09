@@ -100,3 +100,23 @@ test('semua jalur unduh menunjuk ke rilis Hermes terverifikasi, bukan artefak JS
     assert.equal(redirect.destination, stableApkUrl, `${redirect.source} harus ke APK stabil`);
   }
 });
+
+test('rilis 0.1.3 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => {
+  assert.equal(appJson.expo.version, '0.1.3', 'versi rilisan harus 0.1.3');
+  assert.ok(appJson.expo.android.versionCode > 4);
+
+  const buildProperties = appJson.expo.plugins.find(
+    (entry) => Array.isArray(entry) && entry[0] === 'expo-build-properties',
+  );
+  const androidProps = buildProperties?.[1]?.android ?? {};
+  assert.equal(androidProps.minSdkVersion, 24, 'J7 Prime (API 26/28) harus tetap didukung');
+  assert.notEqual(androidProps.useHermesV1, false, 'Hermes V1 tidak boleh dimatikan');
+
+  const plugins = appJson.expo.plugins.map((entry) => (Array.isArray(entry) ? entry[0] : entry));
+  for (const plugin of ['expo-build-properties', 'expo-font']) {
+    assert.ok(plugins.includes(plugin), `${plugin} tidak boleh hilang dari build 0.1.3`);
+  }
+  assert.equal(appJson.expo.jsEngine, undefined, 'jsEngine jsc tidak didukung SDK 58');
+  assert.equal(appJson.expo.runtimeVersion?.policy, 'appVersion');
+  assert.ok(appJson.expo.updates?.url, 'expo-updates harus tetap aktif');
+});

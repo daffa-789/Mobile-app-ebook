@@ -19,7 +19,59 @@
 
 ---
 
+## ⛔ ATURAN KERAS 0 — DILARANG MEMAKAI JSC / MEMATIKAN HERMES
+
+> **Berlaku selamanya selama proyek memakai Expo SDK 58 / React Native 0.88.1. BACA SEBELUM MENYENTUH `app.json`, `eas.json`, config plugin, atau build Android.**
+> Regresi 9 November 2026: dialog sistem **"Mobile-app-ebook terus berhenti"** pada Samsung Galaxy J7 Prime (32-bit `armeabi-v7a`, Android 9 32-bit, kernel Linux 3.18 / Exynos 7870).
+
+**DILARANG KERAS** — tidak ada alasan "kompatibilitas kernel lama" yang membenarkannya:
+
+- Menaruh `"jsEngine": "jsc"` (atau nilai `jsc` apa pun) di `app.json` / `eas.json`.
+- Menjalankan config plugin yang menyuntik `hermesEnabled=false` ke `gradle.properties` — dulu `mobile-app/plugins/withJscEngine.cjs`, **sudah dihapus**, direktori kosongnya pun sudah dibuang.
+- Membuat ulang plugin sejenis, menyertakan `libjsc.so`, atau mendistribusikan APK ber-engine JSC.
+- Mengganti bundel HBC dengan bundel JS polos atas nama "dukungan 32-bit".
+
+**Mengapa:** Expo SDK 58 / RN 0.88.1 **hanya mendukung Hermes V1** (`useHermesV1: true`, default sejak RN 0.84). `jsEngine: "jsc"` tidak diterima skema SDK 58 (diabaikan), sedangkan plugin `hermesEnabled=false` benar-benar menghasilkan APK dengan `libjsc.so` + bundel JS polos (magic `76617220` = `"var "`) — **satu-satunya build yang force close** (`versionCode 4`, 48.318.860 byte). Anggapan "Hermes crash di kernel 3.18" **terbukti keliru**: yang memperbaiki crash lama adalah guard `window.location` khusus platform web (commit `1b83232`), bukan JSC. Masalah 32-bit sesungguhnya bukan soal ABI — semua build sudah memuat `armeabi-v7a` + `arm64-v8a` dengan `minSdk 24`.
+
+**Konfigurasi yang BENAR dan tidak boleh diubah:**
+
+```json
+"plugins": [
+  [
+    "expo-build-properties",
+    {
+      "android": {
+        "buildArchs": ["armeabi-v7a", "arm64-v8a"],
+        "minSdkVersion": 24,
+        "useHermesV1": true,
+        "usesCleartextTraffic": true
+      }
+    }
+  ],
+  "expo-font"
+]
+```
+
+`app.json` saat ini: `version 0.1.3`, `versionCode 5`, **tanpa** `jsEngine`, **tanpa** plugin JSC.
+
+**Cek biner wajib sebelum APK dipublikasikan** (jangan hanya percaya pada config):
+
+- `lib/armeabi-v7a/libhermesvm.so` → **ADA**.
+- `lib/arm64-v8a/libhermesvm.so` → **ADA**.
+- `libjsc.so` di ABI mana pun → **TIDAK BOLEH ADA**.
+- Magic `assets/index.android.bundle` → `c61fbc03` (HBC), bukan `76617220`.
+- `minSdkVersion` 24; `versionCode` selalu naik, tidak pernah turun.
+
+**Artefak cacat sudah dihapus pada 10 November 2026:** `.expo/builds/mobile-app-ebook-0.1.2-jsc.apk` dan **GitHub Release `v0.1.2`** (aset `mobile-app-ebook-0.1.2-jsc.apk`, URL unduhnya kini 404). Tag git `v0.1.2` sengaja dipertahankan hanya sebagai jejak histori, tanpa aset unduhan. Rilis yang sah: **v0.1.3** (`wahidiyah-v0.1.3-hermes-32bit.apk`). Semua jalur unduh (landing page, `/download`, `/download/apk`, Vercel) mengarah ke sana. Regresi dikunci otomatis oleh `tests/jsc_engine_plugin.test.mjs` — **jangan dilonggarkan atau dihapus**.
+
+> ⚠️ **Peringatan untuk agent/sesi berikutnya:** catatan lama di `.agents/teamwork/**/handoff.md`, `DISPATCH.md`, dan `PROJECT.md` masih memuji plugin JSC sebagai "PASS / benar / kompatibel 32-bit". Itu **dokumen usang dan SALAH** — abaikan. Berkas ini adalah satu-satunya sumber kebenaran.
+
+---
+
 ## 📑 Daftar Isi
+
+> ⛔ **Baca dulu bagian "ATURAN KERAS 0 — DILARANG MEMAKAI JSC / MEMATIKAN HERMES" tepat di atas**, sebelum mengikuti bagian mana pun di bawah.
+
 1. [Ringkasan Eksekutif & Tech Stack](#1-ringkasan-eksekutif--tech-stack)
 2. [Fitur Unggulan Sistem](#2-fitur-unggulan-sistem)
 3. [Arsitektur Sistem & Rekayasa Perangkat Lunak (Modular Layered Monolith)](#3-arsitektur-sistem--rekayasa-perangkat-lunak-modular-layered-monolith)

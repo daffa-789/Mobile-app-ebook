@@ -3,6 +3,18 @@
   "version": 2,
   "framework": "vite",
   "regions": ["sin1"],
+  "redirects": [
+    {
+      "source": "/download",
+      "destination": "https://expo.dev/artifacts/eas/xA4OBPWr4r68oBF-zo0p9olad0QSUX0bR4vsbf7pX-s.apk",
+      "permanent": false
+    },
+    {
+      "source": "/download/apk",
+      "destination": "https://expo.dev/artifacts/eas/xA4OBPWr4r68oBF-zo0p9olad0QSUX0bR4vsbf7pX-s.apk",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",

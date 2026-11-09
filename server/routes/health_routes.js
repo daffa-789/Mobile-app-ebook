@@ -20,6 +20,13 @@ healthRouter.get('/health', async (req, res) => {
   });
 });
 
+healthRouter.get('/download/apk', (req, res) => {
+  res.redirect(
+    302,
+    'https://expo.dev/artifacts/eas/xA4OBPWr4r68oBF-zo0p9olad0QSUX0bR4vsbf7pX-s.apk',
+  );
+});
+
 healthRouter.get('/stats', requireAuth, requireAdmin, async (req, res) => {
   try {
     const [

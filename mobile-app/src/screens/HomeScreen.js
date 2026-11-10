@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Image,
   useWindowDimensions,
 } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { useBooks } from '../context/BookContext';
 import { useAuth } from '../context/AuthContext';
@@ -16,25 +16,13 @@ import { useAuth } from '../context/AuthContext';
 const CARD_GAP = 16;
 
 export const HomeScreen = ({ onOpenBook, onOpenPro }) => {
-  const { books, carouselSlides } = useBooks();
+  const { books } = useBooks();
   const { isPro, user } = useAuth();
-  const [slideIndex, setSlideIndex] = useState(0);
 
   const { width: windowWidth } = useWindowDimensions();
   // Kunci lebar maksimal pada 440px (rasio mobile phone) dan hitung 2 kolom presisi
   const effectiveWidth = Math.min(windowWidth, 424);
   const cardWidth = Math.floor((effectiveWidth - 32 - CARD_GAP) / 2);
-
-  // Auto-play carousel slides
-  useEffect(() => {
-    if (!carouselSlides || carouselSlides.length <= 1) return;
-    const interval = setInterval(() => {
-      setSlideIndex((prev) => (prev + 1) % carouselSlides.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [carouselSlides]);
-
-  const activeSlide = carouselSlides[slideIndex] || carouselSlides[0];
 
   return (
     <ScrollView
@@ -42,56 +30,7 @@ export const HomeScreen = ({ onOpenBook, onOpenPro }) => {
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
-      {/* 1:1 Hero Carousel Banner */}
-      <View style={styles.carouselWrapper}>
-        <View style={styles.carouselCard}>
-          {/* Subtle Radial Glow Effect */}
-          <View style={styles.glowOverlay} />
-
-          <View style={styles.carouselContent}>
-            {activeSlide?.dateLabel && (
-              <View style={styles.datePill}>
-                <Feather name="calendar" size={12} color={theme.colors.goldLight} />
-                <Text style={styles.datePillText}>{activeSlide.dateLabel}</Text>
-              </View>
-            )}
-
-            <Text style={styles.carouselTitle} numberOfLines={2}>
-              {activeSlide?.title}
-            </Text>
-
-            {activeSlide?.description && (
-              <Text style={styles.carouselDesc} numberOfLines={3}>
-                {activeSlide.description}
-              </Text>
-            )}
-          </View>
-        </View>
-
-        {/* Carousel Indicator Dots */}
-        {carouselSlides && carouselSlides.length > 1 && (
-          <View style={styles.indicatorsRow}>
-            {carouselSlides.map((_, idx) => (
-              <TouchableOpacity
-                key={idx}
-                onPress={() => setSlideIndex(idx)}
-                style={[styles.dot, idx === slideIndex ? styles.dotActive : styles.dotInactive]}
-                activeOpacity={0.7}
-              />
-            ))}
-          </View>
-        )}
-      </View>
-
-      {/* Penanda mode tamu: katalog tetap bisa dijelajah, membaca butuh akun */}
-      {!user && (
-        <View style={styles.guestStrip}>
-          <Feather name="eye" size={14} color="#14523A" />
-          <Text style={styles.guestStripText}>
-            Mode tamu — jelajahi katalog bebas. Ketuk kitab untuk masuk &amp; membaca.
-          </Text>
-        </View>
-      )}
+      {/* Katalog langsung tampil: tanpa carousel hero hijau maupun strip tamu. */}
 
       {/* 2-Column Grid Buku (1:1 dengan Web Mobile) */}
       <View style={styles.bookGrid}>
@@ -178,87 +117,6 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 96,
   },
-  // Hero Carousel
-  carouselWrapper: {
-    marginBottom: 20,
-  },
-  carouselCard: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    borderRadius: 24,
-    backgroundColor: '#0E3D2C', // Brand 800
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(185, 219, 201, 0.4)',
-    shadowColor: '#082D20',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 4,
-    justifyContent: 'flex-end',
-  },
-  glowOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(20, 82, 58, 0.4)',
-  },
-  carouselContent: {
-    padding: 16,
-    justifyContent: 'flex-end',
-  },
-  datePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(184, 134, 11, 0.22)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(212, 175, 79, 0.4)',
-    marginBottom: 8,
-    gap: 6,
-  },
-  datePillText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#E5C877',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
-  },
-  carouselTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FBF8F3',
-    lineHeight: 24,
-    marginBottom: 4,
-    fontFamily: theme.typography.serif,
-  },
-  carouselDesc: {
-    fontSize: 12,
-    color: 'rgba(247, 242, 233, 0.85)',
-    lineHeight: 16,
-  },
-  indicatorsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: 6,
-    marginTop: 10,
-    paddingLeft: 2,
-  },
-  dot: {
-    height: 8,
-    borderRadius: 4,
-  },
-  dotActive: {
-    width: 28,
-    backgroundColor: '#14523A', // Brand 700
-  },
-  dotInactive: {
-    width: 8,
-    backgroundColor: '#B9DBC9', // Brand 200
-  },
-
   // Grid Buku
   bookGrid: {
     flexDirection: 'row',
@@ -338,25 +196,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1D1B17',
     lineHeight: 18,
-  },
-  guestStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#EAF4EE',
-    borderWidth: 1,
-    borderColor: '#C9DED2',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 16,
-  },
-  guestStripText: {
-    flex: 1,
-    fontSize: 11,
-    color: '#14523A',
-    lineHeight: 16,
-    fontWeight: '600',
   },
   bookGuestDesc: {
     fontSize: 10,

@@ -141,7 +141,7 @@ export const ProScreen = ({ onOpenAuth }) => {
    * Aksi diteruskan ke sheet login lalu dijalankan ulang setelah masuk. */
   const handleSubscribePress = () => {
     if (!user) {
-      onOpenAuth?.('Masuk untuk berlangganan Pro', () => chargeRef.current?.());
+      onOpenAuth?.('', () => chargeRef.current?.());
       return;
     }
     return chargeRef.current?.();

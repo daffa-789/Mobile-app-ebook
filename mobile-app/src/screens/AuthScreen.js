@@ -353,11 +353,6 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
           {/* 1:1 Header: Mobile-app-ebook */}
           <View style={styles.brandHeader}>
             <Text style={styles.brandTitle}>Mobile-app-ebook</Text>
-            <Text style={styles.brandSubtitle}>
-              {activeTab === 'login'
-                ? 'Masuk ke akun Anda untuk mengakses koleksi buku.'
-                : 'Daftar akun baru untuk mulai membaca dan berlangganan.'}
-            </Text>
           </View>
 
           {/* 1:1 Segmented Tab Switcher */}
@@ -618,14 +613,7 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
             </View>
           )}
 
-          {/* 1:1 Divider Atau */}
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>atau</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          {/* 1:1 Google Button */}
+          {/* 1:1 Google Button — tanpa pemisah "atau" dan tanpa tautan footer. */}
           <TouchableOpacity
             style={styles.googleButton}
             onPress={handleGoogleAuth}
@@ -641,25 +629,6 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
               {activeTab === 'register' ? 'Daftar dengan Google' : 'Masuk dengan Google'}
             </Text>
           </TouchableOpacity>
-
-          {/* 1:1 Footer Link */}
-          <View style={styles.footerWrap}>
-            {activeTab === 'login' ? (
-              <Text style={styles.footerPrompt}>
-                Belum memiliki akun?{' '}
-                <Text style={styles.footerAction} onPress={() => handleTabChange('register')}>
-                  Daftar sekarang
-                </Text>
-              </Text>
-            ) : (
-              <Text style={styles.footerPrompt}>
-                Sudah memiliki akun?{' '}
-                <Text style={styles.footerAction} onPress={() => handleTabChange('login')}>
-                  Masuk
-                </Text>
-              </Text>
-            )}
-          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -864,27 +833,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 16,
-    gap: 12,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E4D9C6',
-  },
-  dividerText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#8C857B',
-  },
   googleButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
+    marginTop: 16,
     backgroundColor: '#FFFDF9',
     borderRadius: 14,
     borderWidth: 1,
@@ -911,20 +865,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#1D1B17',
-  },
-  footerWrap: {
-    alignItems: 'center',
-    marginTop: 18,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#F0E8DA',
-  },
-  footerPrompt: {
-    fontSize: 12,
-    color: '#5A544C',
-  },
-  footerAction: {
-    fontWeight: 'bold',
-    color: '#14523A',
   },
 });

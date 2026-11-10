@@ -175,18 +175,18 @@ describe('Auth Gate & Logout Behavior Verification', () => {
 
     const src = fs.readFileSync(authScreenPath, 'utf-8');
 
-    // Brand header
+    // Brand header — subtitle penjelas di bawah judul sengaja dihapus.
     assert.ok(
       src.includes('Mobile-app-ebook') || src.includes('Wahidiyah Book'),
       'Contains brand header',
     );
     assert.ok(
-      src.includes('Masuk ke akun Anda untuk mengakses koleksi buku.'),
-      'Contains login subtitle',
+      !src.includes('Masuk ke akun Anda untuk mengakses koleksi buku.'),
+      'subtitle login tidak boleh muncul lagi',
     );
     assert.ok(
-      src.includes('Daftar akun baru untuk mulai membaca dan berlangganan.'),
-      'Contains register subtitle',
+      !src.includes('Daftar akun baru untuk mulai membaca dan berlangganan.'),
+      'subtitle daftar tidak boleh muncul lagi',
     );
 
     // Must NOT have hardcoded phantom server status banner that clutter user mobile view
@@ -213,7 +213,14 @@ describe('Auth Gate & Logout Behavior Verification', () => {
     assert.ok(src.includes('Daftar Sekarang'), 'Contains Daftar Sekarang button');
     assert.ok(src.includes('Masuk dengan Google'), 'Contains Google login action');
     assert.ok(src.includes('Daftar dengan Google'), 'Contains Google register action');
-    assert.ok(src.includes('atau'), 'Contains atau divider');
+    // Pemisah "atau" beserta dua tautan footer dihapus; tab tetap jadi
+    // satu-satunya cara berpindah Masuk <-> Daftar Akun.
+    assert.ok(!src.includes('dividerRow'), 'pemisah "atau" tidak boleh ada');
+    assert.ok(!src.includes('styles.dividerText}>atau'), 'kata "atau" tidak boleh ada');
+    assert.ok(!src.includes('Belum memiliki akun?'), 'tautan daftar di footer dihapus');
+    assert.ok(!src.includes('Sudah memiliki akun?'), 'tautan masuk di footer dihapus');
+    assert.ok(!src.includes('footerWrap'), 'footer tautan tidak dirender lagi');
+    assert.ok(src.includes('handleTabChange'), 'tab switcher tetap berfungsi');
   });
 
   it('5. ProfileScreen.js: provides working logout with confirmation dialog and race condition guard', () => {
@@ -305,7 +312,11 @@ describe('Auth Gate & Logout Behavior Verification', () => {
       'utf-8',
     );
     assert.ok(src.includes('if (!user)'), 'charge dicegah sebelum request');
-    assert.ok(src.includes('Masuk untuk berlangganan Pro'), 'pesan sheet kontekstual');
+    assert.ok(
+      !src.includes('Masuk untuk berlangganan Pro'),
+      'pesan kontekstual Pro dihapus, sheet dibuka tanpa kotak pesan',
+    );
+    assert.ok(src.includes("onOpenAuth?.(''"), 'sheet dibuka dengan pesan kosong');
     assert.ok(src.includes('chargeRef.current'), 'aksi dilanjutkan setelah login');
   });
 
@@ -314,7 +325,13 @@ describe('Auth Gate & Logout Behavior Verification', () => {
       path.resolve(rootDir, 'mobile-app/src/screens/HomeScreen.js'),
       'utf-8',
     );
-    assert.ok(src.includes('Mode tamu'), 'penanda mode tamu tampil');
+    // Strip "Mode tamu" dan carousel hero hijau dihapus: katalog langsung tampil.
+    assert.ok(
+      !src.includes('Mode tamu — jelajahi katalog bebas'),
+      'strip mode tamu tidak boleh muncul lagi',
+    );
+    assert.ok(!src.includes('carouselWrapper'), 'carousel hero hijau dihapus');
+    assert.ok(!src.includes('guestStrip'), 'style strip tamu ikut dibersihkan');
     assert.ok(src.includes('bookGuestDesc'), 'sinopsis publik memberi isi sebelum gerbang');
     assert.ok(src.includes('if (!user)'), 'semua kitab tamu diarahkan ke soft gate');
     assert.ok(src.includes('onOpenBook?.(book)'), 'ketuk kitab tetap memanggil navigasi');

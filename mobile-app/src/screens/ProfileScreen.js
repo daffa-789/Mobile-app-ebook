@@ -120,6 +120,114 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
     }
   };
 
+  /* MODE TAMU: tab Profil bukan dinding "harus login". Tamu tetap mendapat
+   * kartu Masuk, tombol Cek Pembaruan (penting untuk menjangkau OTA tanpa
+   * akun), bantuan, dan informasi versi. */
+  if (!user) {
+    return (
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Profil</Text>
+        </View>
+
+        <View style={styles.guestCard}>
+          <View style={styles.guestIconBox}>
+            <Feather name="user" size={26} color="#14523A" />
+          </View>
+          <Text style={styles.guestTitle}>Mode Tamu</Text>
+          <Text style={styles.guestText}>
+            Anda sedang menjelajah tanpa akun. Masuk untuk membaca kitab, menyimpan progres, dan
+            berlangganan Pro.
+          </Text>
+          <TouchableOpacity
+            style={styles.guestButton}
+            onPress={onOpenAuth}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+          >
+            <Feather name="log-in" size={15} color="#FBF8F3" />
+            <Text style={styles.guestButtonText}>Masuk / Daftar</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.sectionWrap}>
+          <Text style={styles.sectionCaption}>BANTUAN & INFO</Text>
+          <View style={styles.menuCard}>
+            <TouchableOpacity
+              style={[styles.menuRow, styles.menuRowBorder]}
+              onPress={handleCheckUpdate}
+              disabled={isCheckingUpdate}
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={styles.menuIconBoxBrand}>
+                  {isCheckingUpdate ? (
+                    <ActivityIndicator size="small" color="#14523A" />
+                  ) : (
+                    <Feather name="refresh-cw" size={18} color="#14523A" />
+                  )}
+                </View>
+                <View>
+                  <Text style={styles.menuLabel}>Pembaruan Aplikasi</Text>
+                  <Text style={styles.menuSubLabel}>
+                    {isCheckingUpdate
+                      ? 'Memeriksa pembaruan...'
+                      : `v${APP_VERSION} (Alpha) • Ketuk untuk cek versi baru`}
+                  </Text>
+                </View>
+              </View>
+              <Feather name="chevron-right" size={18} color="#CFCAC2" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.menuRow, styles.menuRowBorder]}
+              onPress={() =>
+                Alert.alert(
+                  'Pusat Bantuan',
+                  `Untuk bantuan, pertanyaan seputar Sholawat Wahidiyah, atau transaksi, silakan hubungi tim sekretariat kami di ${APP_CONFIG.supportEmail}.`,
+                )
+              }
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={styles.menuIconBoxMuted}>
+                  <Feather name="help-circle" size={18} color="#5A544C" />
+                </View>
+                <Text style={styles.menuLabel}>Pusat Bantuan</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color="#CFCAC2" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.menuRow}
+              onPress={() =>
+                Alert.alert(
+                  'Tentang Aplikasi',
+                  `E-Book Wahidiyah v${APP_VERSION} (Alpha) — Perpustakaan Digital Sholawat Wahidiyah resmi untuk membaca lembaran Sholawat dan khazanah literatur Islam.`,
+                )
+              }
+              activeOpacity={0.7}
+            >
+              <View style={styles.menuRowLeft}>
+                <View style={styles.menuIconBoxMuted}>
+                  <Feather name="info" size={18} color="#5A544C" />
+                </View>
+                <Text style={styles.menuLabel}>Tentang</Text>
+              </View>
+              <Feather name="chevron-right" size={18} color="#CFCAC2" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <Text style={styles.guestFooter}>Wahidiyah Book • v{APP_VERSION} (Alpha)</Text>
+      </ScrollView>
+    );
+  }
+
   return (
     <>
       <ScrollView
@@ -594,6 +702,58 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#7C756C',
     marginTop: 2,
+  },
+  guestCard: {
+    backgroundColor: '#FFFDF9',
+    borderWidth: 1,
+    borderColor: '#E4D9C6',
+    borderRadius: 18,
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  guestIconBox: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#EAF4EE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  guestTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#1D1B17',
+    marginBottom: 8,
+  },
+  guestText: {
+    fontSize: 12,
+    color: '#5A544C',
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  guestButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#14523A',
+  },
+  guestButtonText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#FBF8F3',
+  },
+  guestFooter: {
+    fontSize: 11,
+    color: '#A8A199',
+    textAlign: 'center',
+    marginTop: 24,
   },
 
   // Logout Modal Styles (1:1 with LogoutConfirmDialog)

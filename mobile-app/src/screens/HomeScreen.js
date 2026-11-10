@@ -17,7 +17,7 @@ const CARD_GAP = 16;
 
 export const HomeScreen = ({ onOpenBook, onOpenPro }) => {
   const { books, carouselSlides } = useBooks();
-  const { isPro } = useAuth();
+  const { isPro, user } = useAuth();
   const [slideIndex, setSlideIndex] = useState(0);
 
   const { width: windowWidth } = useWindowDimensions();
@@ -83,6 +83,16 @@ export const HomeScreen = ({ onOpenBook, onOpenPro }) => {
         )}
       </View>
 
+      {/* Penanda mode tamu: katalog tetap bisa dijelajah, membaca butuh akun */}
+      {!user && (
+        <View style={styles.guestStrip}>
+          <Feather name="eye" size={14} color="#14523A" />
+          <Text style={styles.guestStripText}>
+            Mode tamu — jelajahi katalog bebas. Ketuk kitab untuk masuk &amp; membaca.
+          </Text>
+        </View>
+      )}
+
       {/* 2-Column Grid Buku (1:1 dengan Web Mobile) */}
       <View style={styles.bookGrid}>
         {books.map((book) => {
@@ -94,6 +104,12 @@ export const HomeScreen = ({ onOpenBook, onOpenPro }) => {
               style={[styles.bookCard, { width: cardWidth }]}
               activeOpacity={0.88}
               onPress={() => {
+                /* Tamu: semua kitab mengarah ke sheet "Masuk untuk membaca".
+                 * Pengguna login & bukan Pro: kitab terkunci → tawaran Pro. */
+                if (!user) {
+                  onOpenBook?.(book);
+                  return;
+                }
                 if (isLocked) {
                   onOpenPro?.();
                 } else {
@@ -137,6 +153,12 @@ export const HomeScreen = ({ onOpenBook, onOpenPro }) => {
                 <Text style={styles.bookTitle} numberOfLines={2}>
                   {book.title}
                 </Text>
+                {/* Tamu tetap punya "isi" sebelum gerbang login: sinopsis publik. */}
+                {!user && book.description ? (
+                  <Text style={styles.bookGuestDesc} numberOfLines={2}>
+                    {book.description}
+                  </Text>
+                ) : null}
               </View>
             </TouchableOpacity>
           );
@@ -316,5 +338,30 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1D1B17',
     lineHeight: 18,
+  },
+  guestStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#EAF4EE',
+    borderWidth: 1,
+    borderColor: '#C9DED2',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  guestStripText: {
+    flex: 1,
+    fontSize: 11,
+    color: '#14523A',
+    lineHeight: 16,
+    fontWeight: '600',
+  },
+  bookGuestDesc: {
+    fontSize: 10,
+    color: '#7C756C',
+    lineHeight: 14,
+    marginTop: 4,
   },
 });

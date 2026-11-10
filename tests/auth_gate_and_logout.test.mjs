@@ -127,37 +127,46 @@ describe('Auth Gate & Logout Behavior Verification', () => {
     );
   });
 
-  it('3. App.js: Auth Gate blocks unauthenticated users and resets states upon logout', () => {
+  it('3. App.js: guest mode with one soft gate, contextual sheet and pending action replay', () => {
     const appPath = path.resolve(rootDir, 'mobile-app/App.js');
     assert.ok(fs.existsSync(appPath), 'App.js exists');
 
     const src = fs.readFileSync(appPath, 'utf-8');
 
-    // Must import AuthScreen
+    // Auth gate layar penuh SUDAH dihapus: tamu langsung masuk ke katalog.
     assert.ok(
-      src.includes("import { AuthScreen } from './src/screens/AuthScreen'"),
-      'App.js imports AuthScreen',
+      !src.includes("import { AuthScreen } from './src/screens/AuthScreen'"),
+      'App.js tidak boleh mengimpor AuthScreen untuk gate layar penuh',
+    );
+    assert.ok(
+      !src.includes('<AuthScreen'),
+      'App.js tidak boleh merender AuthScreen sebagai pengganti layar utama',
     );
 
-    // Must gate if (!user)
-    assert.ok(src.includes('if (!user)'), 'App.js contains Auth Gate checking if (!user)');
+    // Satu gerbang terpusat, bukan if (!user) tersebar di tiap layar.
+    assert.ok(src.includes('const requireAuth'), 'App.js menyediakan requireAuth terpusat');
+    assert.ok(src.includes('const openAuth'), 'App.js menyediakan openAuth untuk sheet login');
+    assert.ok(src.includes('pendingActionRef'), 'App.js menyimpan aksi yang tertunda');
+    assert.ok(
+      src.includes('setTimeout(() => action(), 0)'),
+      'aksi dijalankan ulang setelah user terisi',
+    );
+    assert.ok(src.includes('Masuk untuk membaca'), 'sheet menyebut kitab yang dipilih');
+    assert.ok(src.includes('Masuk untuk melihat riwayat langganan'));
 
-    // Auth gate renders AuthScreen
-    assert.ok(src.includes('<AuthScreen'), 'App.js renders AuthScreen when !user');
+    // Sheet menerima pesan kontekstual, penutup, dan callback sukses.
+    assert.ok(src.includes('message={authMessage}'), 'pesan kontekstual diteruskan ke sheet');
+    assert.ok(src.includes('onClose={handleCloseAuth}'), 'X / Nanti membatalkan aksi');
+    assert.ok(src.includes('onAuthSuccess={handleAuthSuccess}'), 'login sukses melanjutkan aksi');
+    assert.ok(
+      src.includes('pendingActionRef.current = null'),
+      'penutup sheet membatalkan aksi tertunda',
+    );
 
-    // Session reset on logout
-    assert.ok(
-      src.includes('setActiveBook(null)'),
-      'App.js clears activeBook when user is unauthenticated',
-    );
-    assert.ok(
-      src.includes('setShowRiwayat(false)'),
-      'App.js resets showRiwayat when user is unauthenticated',
-    );
-    assert.ok(
-      src.includes('setAuthModalVisible(false)'),
-      'App.js resets authModalVisible when user is unauthenticated',
-    );
+    // Reset sesi saat logout tetap terjaga.
+    assert.ok(src.includes('setActiveBook(null)'), 'logout membersihkan activeBook');
+    assert.ok(src.includes('setShowRiwayat(false)'), 'logout membersihkan riwayat');
+    assert.ok(src.includes('setAuthModalVisible(false)'), 'logout menutup sheet');
   });
 
   it('4. AuthScreen.js: matches user screenshots and 1:1 web reference design without phantom banner', () => {
@@ -251,5 +260,63 @@ describe('Auth Gate & Logout Behavior Verification', () => {
       src.includes("height: '92%'") || src.includes("height: '90%'"),
       'AuthModal sheet sets explicit height percentage',
     );
+  });
+
+  it('7. AuthModal.js: ikon X, Nanti, pesan kontekstual, dan callback login sukses', () => {
+    const src = fs.readFileSync(
+      path.resolve(rootDir, 'mobile-app/src/screens/AuthModal.js'),
+      'utf-8',
+    );
+
+    assert.ok(src.includes('accessibilityLabel="Tutup"'), 'ikon close diberi label aksesibilitas');
+    assert.ok(src.includes('<Feather name="x"'), 'ikon X tersedia untuk menutup sheet');
+    assert.ok(src.includes('onPress={onClose}'), 'X dan Nanti memanggil onClose');
+    assert.ok(src.includes('>Nanti</Text>'), 'tombol Nanti tersedia selain ikon X');
+    assert.ok(/message\s*=\s*''/.test(src), 'sheet menerima pesan kontekstual opsional');
+    assert.ok(src.includes('onAuthSuccess'), 'sheet meneruskan callback login sukses');
+    assert.ok(src.includes('handleAuthSuccess'), 'login sukses tidak sekadar menutup sheet');
+  });
+
+  it('8. ProfileScreen.js: halaman tamu menyediakan Masuk dan Cek Pembaruan OTA', () => {
+    const src = fs.readFileSync(
+      path.resolve(rootDir, 'mobile-app/src/screens/ProfileScreen.js'),
+      'utf-8',
+    );
+
+    assert.ok(src.includes('if (!user)'), 'ada cabang khusus tamu');
+    assert.ok(src.includes('Mode Tamu'), 'tab Profil bukan halaman kosong');
+    assert.ok(src.includes('Masuk / Daftar'), 'kartu login tersedia');
+    assert.ok(src.includes('onPress={onOpenAuth}'), 'kartu login membuka sheet');
+    assert.ok(src.includes('Pembaruan Aplikasi'), 'tombol update OTA tetap bisa dijangkau tamu');
+    assert.ok(src.includes('handleCheckUpdate'), 'tombol update memanggil pengecekan OTA');
+  });
+
+  it('9. api/client.js: 401 tanpa token tidak memicu auto-logout tamu', () => {
+    const src = fs.readFileSync(path.resolve(rootDir, 'mobile-app/src/api/client.js'), 'utf-8');
+    assert.ok(
+      src.includes('res.status === 401 && token && !isSessionFreeEndpoint(endpoint)'),
+      'auto-logout hanya untuk sesi tersimpan yang kedaluwarsa',
+    );
+  });
+
+  it('10. ProScreen.js: tamu tidak boleh membuat tagihan QRIS', () => {
+    const src = fs.readFileSync(
+      path.resolve(rootDir, 'mobile-app/src/screens/ProScreen.js'),
+      'utf-8',
+    );
+    assert.ok(src.includes('if (!user)'), 'charge dicegah sebelum request');
+    assert.ok(src.includes('Masuk untuk berlangganan Pro'), 'pesan sheet kontekstual');
+    assert.ok(src.includes('chargeRef.current'), 'aksi dilanjutkan setelah login');
+  });
+
+  it('11. HomeScreen.js: tamu menjelajah katalog lewat soft gate', () => {
+    const src = fs.readFileSync(
+      path.resolve(rootDir, 'mobile-app/src/screens/HomeScreen.js'),
+      'utf-8',
+    );
+    assert.ok(src.includes('Mode tamu'), 'penanda mode tamu tampil');
+    assert.ok(src.includes('bookGuestDesc'), 'sinopsis publik memberi isi sebelum gerbang');
+    assert.ok(src.includes('if (!user)'), 'semua kitab tamu diarahkan ke soft gate');
+    assert.ok(src.includes('onOpenBook?.(book)'), 'ketuk kitab tetap memanggil navigasi');
   });
 });

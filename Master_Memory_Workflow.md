@@ -378,6 +378,7 @@ Permukaan yang memang gelap secara desain (sidebar admin) memakai token `semanti
    - Formulir login, pendaftaran, dan pemulihan kata sandi yang bersih dan proporsional.
    - Tombol registrasi sederhana dengan label tunggal *"Daftar"*.
    - Verifikasi OTP registrasi via email terverifikasi, serta alokasi WhatsApp sebagai fallback pemulihan lupa sandi.
+   - **Mode tamu + soft gate (katalog tanpa login):** aplikasi langsung membuka beranda, agenda, dan halaman Pro tanpa akun. Endpoint publik `/api/books`, `/api/events`, `/api/carousel` sudah mendukungnya dan `BookContext` hanya memanggil `/api/subscriptions/my` bila ada `sessionToken`. Aksi beridentitas (membaca naskah, riwayat langganan, membuat tagihan QRIS) melewati **satu** `requireAuth()` terpusat di `App.js`: bottom sheet `AuthModal` memuat pesan kontekstual, ikon **X** / tombol **Nanti** untuk menutup sekaligus membatalkan aksi, dan `pendingAction` dijalankan ulang setelah login agar pengguna tidak kembali ke Beranda. Sudah login tetapi bukan Pro tidak mendapat sheet login — ia diarahkan ke penawaran Pro. Tab Profil tamu berisi kartu **Masuk / Daftar**, nomor versi, tombol **Cek Pembaruan OTA**, bantuan, dan tentang. `apiRequest` hanya memicu auto-logout saat 401 bila ada token tersimpan, sehingga tamu tidak terjebak logout loop. **Tidak ada perubahan server.**
 
 ### 4.8 Anti-Patterns & Banned Clichés
 * **DILARANG:** Gradien ungu-neon atau biru AI (`linear-gradient(to right, #8B5CF6, #EC4899)`).

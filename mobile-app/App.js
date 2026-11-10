@@ -22,7 +22,6 @@ import { ProScreen } from './src/screens/ProScreen';
 import { ProfileScreen } from './src/screens/ProfileScreen';
 import { SubscriptionHistoryScreen } from './src/screens/SubscriptionHistoryScreen';
 import { ReaderScreen } from './src/screens/ReaderScreen';
-import { AuthScreen } from './src/screens/AuthScreen';
 import { AuthModal } from './src/screens/AuthModal';
 
 const TABS = [
@@ -33,14 +32,20 @@ const TABS = [
 ];
 
 function MainNavigator() {
-  const { user, loading, exchangeGoogleCode } = useAuth();
+  const { user, isPro, loading, exchangeGoogleCode } = useAuth();
+  const isProRef = React.useRef(isPro);
+  isProRef.current = isPro;
   const [activeTab, setActiveTab] = useState('home');
   const [activeBook, setActiveBook] = useState(null);
   const [showRiwayat, setShowRiwayat] = useState(false);
   const [authModalVisible, setAuthModalVisible] = useState(false);
+  const [authMessage, setAuthMessage] = useState('');
   const [exitToastVisible, setExitToastVisible] = useState(false);
   const lastBackPressRef = React.useRef(0);
   const exitToastTimerRef = React.useRef(null);
+  /* Aksi yang tertunda saat tamu diminta masuk. Disimpan di ref (bukan state)
+   * karena state React akan memperlakukan fungsi sebagai updater. */
+  const pendingActionRef = React.useRef(null);
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === 'web' && windowWidth > 500;
@@ -89,7 +94,48 @@ function MainNavigator() {
       setActiveBook(null);
       setShowRiwayat(false);
       setAuthModalVisible(false);
+      pendingActionRef.current = null;
     }
+  }, [user]);
+
+  /* MODE TAMU — pola Shopee/Tokopedia: katalog, agenda, dan halaman Pro boleh
+   * dibuka tanpa akun; hanya aksi yang butuh identitas yang melewati gerbang.
+   * Satu gerbang terpusat supaya tidak ada `if (!user)` tersebar di tiap layar. */
+  const openAuth = (message = '', action = null) => {
+    setAuthMessage(message);
+    pendingActionRef.current = action;
+    setAuthModalVisible(true);
+  };
+
+  const requireAuth = (message, action) => {
+    if (user) {
+      action?.();
+      return;
+    }
+    openAuth(message, action);
+  };
+
+  /* Ikon X / tombol Nanti membatalkan aksi yang tertunda. */
+  const handleCloseAuth = () => {
+    setAuthModalVisible(false);
+    setAuthMessage('');
+    pendingActionRef.current = null;
+  };
+
+  /* Setelah login berhasil, aksi tadi DILANJUTKAN (bukan kembali ke Beranda).
+   * pendingActionRef sengaja tidak dihapus di sini; efek di bawah menunggu
+   * sampai `user` benar-benar terisi oleh AuthContext sebelum menjalankannya. */
+  const handleAuthSuccess = () => {
+    setAuthModalVisible(false);
+    setAuthMessage('');
+  };
+
+  React.useEffect(() => {
+    if (!user || !pendingActionRef.current) return undefined;
+    const action = pendingActionRef.current;
+    pendingActionRef.current = null;
+    const timer = setTimeout(() => action(), 0);
+    return () => clearTimeout(timer);
   }, [user]);
 
   // Back Android: tutup layer teratas / kembali ke Beranda dari tab lain;
@@ -104,7 +150,7 @@ function MainNavigator() {
 
     const onBackPress = () => {
       if (authModalVisible) {
-        setAuthModalVisible(false);
+        handleCloseAuth();
         dismissToast();
         return true;
       }
@@ -192,23 +238,9 @@ function MainNavigator() {
     );
   }
 
-  // 2. AUTH GATE (Wajib Login sebelum masuk aplikasi):
-  // Saat user belum login (user === null), tampilkan antarmuka AuthScreen secara langsung.
-  // Jangan render layar utama maupun bottom navigation bar.
-  if (!user) {
-    return renderFramed(
-      <AuthScreen
-        onAuthSuccess={() => {
-          setActiveTab('home');
-          setActiveBook(null);
-          setShowRiwayat(false);
-          setAuthModalVisible(false);
-        }}
-      />,
-    );
-  }
-
-  // 3. Layar Utama Aplikasi (hanya dapat diakses setelah login terverifikasi)
+  // 2. MODE TAMU: tidak ada auth gate di sini. Layar utama dan bottom bar
+  //    langsung tersedia; gerbang login dipasang per-aksi lewat requireAuth().
+  // 3. Layar Utama Aplikasi
   const renderCurrentScreen = () => {
     if (activeBook) {
       return <ReaderScreen book={activeBook} onBack={() => setActiveBook(null)} />;
@@ -222,17 +254,26 @@ function MainNavigator() {
       <View style={styles.screenContainer}>
         {activeTab === 'home' && (
           <HomeScreen
-            onOpenBook={(book) => setActiveBook(book)}
+            onOpenBook={(book) =>
+              requireAuth(`Masuk untuk membaca "${book.title}"`, () => {
+                /* Setelah login, akun gratis yang memilih kitab Pro diarahkan
+                 * ke penawaran Pro, bukan ke Reader yang akan ditolak server. */
+                if (book.is_locked && !isProRef.current) setActiveTab('pro');
+                else setActiveBook(book);
+              })
+            }
             onOpenPro={() => setActiveTab('pro')}
           />
         )}
         {activeTab === 'calendar' && <CalendarScreen />}
-        {activeTab === 'pro' && <ProScreen onOpenAuth={() => setAuthModalVisible(true)} />}
+        {activeTab === 'pro' && <ProScreen onOpenAuth={openAuth} />}
         {activeTab === 'profile' && (
           <ProfileScreen
-            onOpenRiwayat={() => setShowRiwayat(true)}
+            onOpenRiwayat={() =>
+              requireAuth('Masuk untuk melihat riwayat langganan', () => setShowRiwayat(true))
+            }
             onOpenPro={() => setActiveTab('pro')}
-            onOpenAuth={() => setAuthModalVisible(true)}
+            onOpenAuth={() => openAuth('Masuk ke akun Anda')}
           />
         )}
       </View>
@@ -263,8 +304,15 @@ function MainNavigator() {
         </View>
       )}
 
-      {/* Modal Masuk / Daftar Akun untuk switch akun atau tindakan pro */}
-      <AuthModal visible={authModalVisible} onClose={() => setAuthModalVisible(false)} />
+      {/* Sheet Masuk / Daftar: X atau "Nanti" menutup dan membatalkan aksi,
+          login berhasil menutup lalu melanjutkan aksi yang tertunda. */}
+      <AuthModal
+        visible={authModalVisible}
+        message={authMessage}
+        initialTab="login"
+        onClose={handleCloseAuth}
+        onAuthSuccess={handleAuthSuccess}
+      />
     </>,
   );
 }

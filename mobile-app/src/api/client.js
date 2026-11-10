@@ -119,7 +119,10 @@ export async function apiRequest(endpoint, options = {}) {
       error.data = data;
 
       // Tangani 401 terpusat: jika token kedaluwarsa pada endpoint terproteksi, picu logout
-      if (res.status === 401 && !isSessionFreeEndpoint(endpoint)) {
+      /* Tamu tidak punya token, jadi 401 dari endpoint publik/terproteksi
+       * tidak boleh memicu auto-logout berulang. Logout hanya relevan bila
+       * sesi yang tersimpan ternyata sudah kedaluwarsa. */
+      if (res.status === 401 && token && !isSessionFreeEndpoint(endpoint)) {
         if (typeof onUnauthorizedCallback === 'function') {
           try {
             onUnauthorizedCallback(error);

@@ -84,7 +84,10 @@ export const ProScreen = ({ onOpenAuth }) => {
     }, 5000);
   };
 
-  const handleSubscribePress = async () => {
+  /* Handler terbaru disimpan di ref: aksi yang dijalankan ulang setelah login
+   * harus memakai `user`/`isPro` dari render terkini, bukan closure lama. */
+  const chargeRef = useRef(null);
+  chargeRef.current = async () => {
     if (isPro) {
       Alert.alert(
         'Paket Aktif',
@@ -132,6 +135,16 @@ export const ProScreen = ({ onOpenAuth }) => {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  /* Tamu boleh melihat halaman Pro, tapi tidak boleh membuat tagihan QRIS.
+   * Aksi diteruskan ke sheet login lalu dijalankan ulang setelah masuk. */
+  const handleSubscribePress = () => {
+    if (!user) {
+      onOpenAuth?.('Masuk untuk berlangganan Pro', () => chargeRef.current?.());
+      return;
+    }
+    return chargeRef.current?.();
   };
 
   const handleManualCheck = async () => {

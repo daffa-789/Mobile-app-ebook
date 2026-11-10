@@ -13,6 +13,9 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 
 const LIVE_VERCEL_URL = 'https://mobile-app-ebook.vercel.app';
 const OFFICIAL_APK_URL = '/unduh/wahidiyah-v0.1.3-hermes-32bit.apk';
+// URL di sumber sengaja relatif (same-origin); untuk pemeriksaan jaringan
+// gabungkan dengan origin produksi.
+const ABSOLUTE_APK_URL = `${LIVE_VERCEL_URL}${OFFICIAL_APK_URL}`;
 
 // Helper: HTTP GET request with redirect resolution
 function fetchWithRedirects(url, maxRedirects = 5) {
@@ -177,9 +180,9 @@ test('M4 Suite 1: Live Production Vercel Deployment Empirical Audit', async (t) 
 // ============================================================================
 // SUITE 2: EAS APK Artifact Network Availability & Binary Integrity
 // ============================================================================
-test('M4 Suite 2: EAS APK Artifact Network Availability & Binary Integrity', async (t) => {
+test('M4 Suite 2: Same-origin APK Asset Network Availability & Binary Integrity', async (t) => {
   await t.test('2.1 URL APK menghasilkan HTTP 200 dengan berkas tidak kosong', async () => {
-    let curr = OFFICIAL_APK_URL;
+    let curr = ABSOLUTE_APK_URL;
     let hops = 0;
     let finalRes = null;
 
@@ -202,12 +205,16 @@ test('M4 Suite 2: EAS APK Artifact Network Availability & Binary Integrity', asy
       contentLength > 0,
       `Berkas APK harus memiliki ukuran positif, diterima: ${contentLength} byte`,
     );
+    assert.ok(
+      /^attachment;/.test(finalRes.headers.get('content-disposition') || ''),
+      'APK same-origin wajib memaksa unduhan (Content-Disposition: attachment)',
+    );
   });
 
   await t.test(
     '2.2 APK binary headers confirm authentic ZIP/APK structure (PK magic bytes)',
     async () => {
-      const res = await fetch(OFFICIAL_APK_URL);
+      const res = await fetch(ABSOLUTE_APK_URL);
       const reader = res.body.getReader();
       const { value } = await reader.read();
       await reader.cancel();

@@ -10,6 +10,7 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
 const OFFICIAL_APK_URL = '/unduh/wahidiyah-v0.1.3-hermes-32bit.apk';
+const LIVE_ORIGIN = 'https://mobile-app-ebook.vercel.app';
 
 // Helper: recursively find files
 function getFilesRecursively(dir, filterFn) {
@@ -32,7 +33,7 @@ function getFilesRecursively(dir, filterFn) {
 // ============================================================================
 test('Adversarial Suite 1: APK Download URL Network Validity & Uniformity', async (t) => {
   await t.test(
-    '1.1 Reachability of EAS APK artifact via HTTP HEAD & redirect resolution',
+    '1.1 Reachability of same-origin APK asset via HTTP HEAD & redirect resolution',
     async () => {
       function resolveHead(url, maxRedirects = 5) {
         return new Promise((resolve, reject) => {
@@ -56,7 +57,9 @@ test('Adversarial Suite 1: APK Download URL Network Validity & Uniformity', asyn
         });
       }
 
-      const res = await resolveHead(OFFICIAL_APK_URL);
+      // URL unduh sengaja relative (same-origin) agar atribut HTML `download`
+      // tidak diabaikan browser. Untuk pemeriksaan jaringan, gabungkan origin.
+      const res = await resolveHead(new URL(OFFICIAL_APK_URL, LIVE_ORIGIN).toString());
       assert.strictEqual(
         res.statusCode,
         200,
@@ -71,6 +74,10 @@ test('Adversarial Suite 1: APK Download URL Network Validity & Uniformity', asyn
         contentType.includes('application/octet-stream') ||
           contentType.includes('application/vnd.android.package-archive'),
         `Content type must be binary/apk, got: ${contentType}`,
+      );
+      assert.ok(
+        /^attachment;/.test(res.headers['content-disposition'] || ''),
+        'APK same-origin wajib memaksa unduhan lewat Content-Disposition: attachment',
       );
     },
   );

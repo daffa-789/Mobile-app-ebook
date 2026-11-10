@@ -83,6 +83,9 @@ memory-kerja/
 .otp-dev-store.json
 server/.otp-dev-store.json
 
+# Folder kerja sementara tool FigCraft (dibuat/dihapus saat ekspor desain)
+.figcraft-work/
+
 # Artefak verifikasi & perkakas lokal — bukan bagian proyek
 .playwright-cli/
 screenshots-verifikasi/

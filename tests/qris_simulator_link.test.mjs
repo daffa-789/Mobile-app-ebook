@@ -16,9 +16,10 @@ const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
  * `simulatorQrLink` dan `handleShareQrLink`, tetapi tidak pernah merendernya —
  * pengguna hanya melihat gambar QR tanpa tautan yang bisa disalin.
  *
- * Tes ini mengunci tiga hal: tautan tampil di dalam kartu QRIS aktif, bisa
- * dipilih/dibagikan tanpa modul native baru (aman dikirim lewat OTA), dan
- * server hanya membocorkan URL internal Midtrans pada mode sandbox.
+ * Tes ini mengunci: tautan tampil di dalam kartu QRIS aktif, bisa
+ * dipilih/dibagikan tanpa modul native baru (aman dikirim lewat OTA), server
+ * hanya membocorkan URL internal Midtrans pada mode sandbox, dan tombol
+ * "Unduh QR" menyimpan PNG lewat StorageAccessFramework yang SUDAH ada di APK.
  */
 
 test('kartu QRIS mobile merender tautan simulator yang bisa disalin', () => {
@@ -115,4 +116,62 @@ test('server menyusun URL gambar QR bila Midtrans hanya mengirim qr_string', () 
     /!MIDTRANS_IS_PRODUCTION && qrString && transactionId/,
     'fallback hanya untuk sandbox dan hanya bila QR valid',
   );
+});
+
+test('tombol Unduh QR menyimpan PNG lewat SAF yang sudah ada di APK', () => {
+  const src = read('mobile-app/src/screens/ProScreen.js');
+
+  assert.match(src, /onPress=\{handleDownloadQr\}/, 'tombol unduh harus terhubung ke handler');
+  assert.match(src, /Unduh QR \(Simpan ke Galeri\)/, 'label tombol harus jelas');
+  assert.match(
+    src,
+    /import\('expo-file-system\/legacy'\)/,
+    'pakai modul yang sudah ter-autolink, bukan modul native baru',
+  );
+  assert.match(src, /SAF\.requestDirectoryPermissionsAsync\(\)/, 'minta pengguna memilih folder');
+  assert.match(src, /SAF\.createFileAsync\(/, 'buat berkas PNG di folder pilihan');
+  assert.match(
+    src,
+    /SAF\.writeAsStringAsync\(fileUri, base64, \{ encoding: 'base64' \}\)/,
+    'tulis byte PNG, bukan teks',
+  );
+  assert.match(src, /Linking\.openURL\(fallbackUrl\)/, 'fallback browser bila SAF gagal');
+  assert.match(
+    src,
+    /generateQrPng\(activeOrder\.qrString/,
+    'PNG dihasilkan murni JS dari payload EMVCo',
+  );
+  assert.match(src, /bytesToBase64\(new Uint8Array/, 'cadangan ambil byte PNG dari URL Midtrans');
+});
+
+test('unduh QR tidak menambah dependensi native yang tidak bisa lewat OTA', () => {
+  const src = read('mobile-app/src/screens/ProScreen.js');
+  const pkg = JSON.parse(read('package.json'));
+  const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+
+  assert.ok(deps.expo, 'paket expo wajib ada: expo-file-system ikut ter-autolink dari sini');
+  for (const modul of ['expo-media-library', 'expo-sharing', 'expo-clipboard']) {
+    assert.ok(!deps[modul], `${modul} tidak boleh ditambahkan tanpa build APK baru`);
+    assert.doesNotMatch(src, new RegExp(`from\\s+['"]${modul}['"]`));
+  }
+  assert.ok(
+    !deps['expo-file-system'],
+    'expo-file-system jangan didaftarkan manual; ia sudah dependensi dari expo',
+  );
+});
+
+test('PNG yang diunduh valid dan base64-nya sama dengan byte aslinya', async () => {
+  const { generateQrPng, bytesToBase64 } = await import('../mobile-app/src/lib/qr.js');
+  const contoh =
+    '00020101021226600016ID.CO.SHOPEE.WWW011893600523000000000102152026110800000015204581253033605802ID5914Wahidiyah Book6006Kediri61056411562070703A016304ABCD';
+  const { dataUri, png } = generateQrPng(contoh, { cellSize: 8, margin: 4 });
+  const base64 = dataUri.slice(dataUri.indexOf(',') + 1);
+
+  assert.equal(base64, bytesToBase64(png), 'ekstraksi base64 dari dataUri harus benar');
+  assert.equal(
+    Buffer.from(base64, 'base64').subarray(0, 8).toString('hex'),
+    '89504e470d0a1a0a',
+    'byte yang ditulis ke folder harus berupa PNG',
+  );
+  assert.ok(png.length > 1000, 'PNG unduh harus berisi gambar, bukan berkas kosong');
 });

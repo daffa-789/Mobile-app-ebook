@@ -9,6 +9,8 @@ import {
   Image,
   ActivityIndicator,
   Share,
+  Linking,
+  Platform,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -21,7 +23,7 @@ import {
   reconcilePayment,
   getQrImageUrl,
 } from '../api/payments.js';
-import { generateQrPng } from '../lib/qr.js';
+import { generateQrPng, bytesToBase64 } from '../lib/qr.js';
 import { formatRupiah } from '../lib/catalog.js';
 
 export const ProScreen = ({ onOpenAuth }) => {
@@ -32,6 +34,7 @@ export const ProScreen = ({ onOpenAuth }) => {
   const [localQrUri, setLocalQrUri] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
+  const [isDownloadingQr, setIsDownloadingQr] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
   const [paidSuccess, setPaidSuccess] = useState(false);
@@ -231,6 +234,78 @@ export const ProScreen = ({ onOpenAuth }) => {
     }
   };
 
+  /* Sumber gambar untuk diunduh: utamakan PNG yang dihasilkan murni JS dari
+   * payload EMVCo (tidak bergantung jaringan, berlaku juga di produksi).
+   * Bila tagihan cuma punya URL gambar Midtrans, unduh byte-nya lewat fetch. */
+  const buildQrPngBase64 = async () => {
+    if (activeOrder?.qrString) {
+      const { dataUri } = generateQrPng(activeOrder.qrString, { cellSize: 8, margin: 4 });
+      return dataUri.slice(dataUri.indexOf(',') + 1);
+    }
+    if (activeOrder?.qrMidtransUrl) {
+      const response = await fetch(activeOrder.qrMidtransUrl);
+      if (!response.ok) throw new Error(`Gambar QR tidak dapat diunduh (HTTP ${response.status}).`);
+      return bytesToBase64(new Uint8Array(await response.arrayBuffer()));
+    }
+    throw new Error('Tagihan ini tidak memiliki gambar QR yang bisa diunduh.');
+  };
+
+  /* "Unduh QR" tanpa modul native baru: `expo-file-system` sudah ikut ter-
+   * autolink di APK 0.1.4 karena merupakan dependensi langsung paket `expo`.
+   * StorageAccessFramework meminta pengguna memilih folder (Download/DCIM),
+   * lalu menulis PNG di sana — tidak butuh izin penyimpanan maupun rebuild APK.
+   * Bila SAF gagal, fallback ke browser: tahan lama gambar → Simpan gambar. */
+  const handleDownloadQr = async () => {
+    if (isDownloadingQr) return;
+    setIsDownloadingQr(true);
+    try {
+      const base64 = await buildQrPngBase64();
+
+      if (Platform.OS !== 'android') {
+        if (!activeOrder?.qrMidtransUrl) throw new Error('Tautan gambar QR tidak tersedia.');
+        await Linking.openURL(activeOrder.qrMidtransUrl);
+        return;
+      }
+
+      const FileSystem = await import('expo-file-system/legacy');
+      const SAF = FileSystem.StorageAccessFramework;
+      const permissions = await SAF.requestDirectoryPermissionsAsync();
+      if (!permissions.granted) {
+        Alert.alert(
+          'Unduh dibatalkan',
+          'Pilih folder (misalnya Download atau DCIM) untuk menyimpan gambar QRIS.',
+        );
+        return;
+      }
+
+      const fileName = `QRIS-Wahidiyah-${Date.now()}`;
+      const fileUri = await SAF.createFileAsync(permissions.directoryUri, fileName, 'image/png');
+      await SAF.writeAsStringAsync(fileUri, base64, { encoding: 'base64' });
+
+      Alert.alert(
+        'QRIS tersimpan',
+        `${fileName}.png ada di folder yang Anda pilih. Buka galeri/File Manager, lalu pindai dengan DANA, GoPay, BCA, OVO, atau ShopeePay.`,
+      );
+    } catch (error) {
+      const fallbackUrl = activeOrder?.qrMidtransUrl;
+      if (fallbackUrl) {
+        Alert.alert(
+          'Penyimpanan langsung gagal',
+          'Gambar QR dibuka di browser. Tahan lama gambarnya, lalu pilih "Simpan gambar".',
+        );
+        try {
+          await Linking.openURL(fallbackUrl);
+        } catch {
+          Alert.alert('Gagal membuka gambar', 'Salin tautan QR di atas, lalu buka di browser.');
+        }
+      } else {
+        Alert.alert('Gagal mengunduh QR', error?.message || 'Coba lagi beberapa saat.');
+      }
+    } finally {
+      setIsDownloadingQr(false);
+    }
+  };
+
   return (
     <ScrollView
       style={styles.container}
@@ -381,6 +456,26 @@ export const ProScreen = ({ onOpenAuth }) => {
                   simulator.sandbox.midtrans.com/v2/qris/index
                 </Text>
               </View>
+
+              {/* Simpan PNG QRIS ke folder pilihan (bisa dipindai dari galeri) */}
+              <TouchableOpacity
+                style={styles.downloadQrBtn}
+                onPress={handleDownloadQr}
+                disabled={isDownloadingQr}
+                activeOpacity={0.85}
+              >
+                {isDownloadingQr ? (
+                  <ActivityIndicator size="small" color="#FBF8F3" />
+                ) : (
+                  <>
+                    <Feather name="download" size={15} color="#FBF8F3" />
+                    <Text style={styles.downloadQrBtnText}>Unduh QR (Simpan ke Galeri)</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+              <Text style={styles.downloadQrHint}>
+                Pilih folder penyimpanan saat diminta, lalu pindai berkas PNG dari galeri.
+              </Text>
 
               {/* Tombol Periksa Status Manual */}
               <TouchableOpacity
@@ -749,6 +844,29 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     marginTop: 10,
     textAlign: 'center',
+  },
+  downloadQrBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    width: '100%',
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#14523A',
+    marginBottom: 6,
+  },
+  downloadQrBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FBF8F3',
+  },
+  downloadQrHint: {
+    fontSize: 10,
+    color: '#7C756C',
+    textAlign: 'center',
+    lineHeight: 14,
+    marginBottom: 14,
   },
   checkStatusBtn: {
     flexDirection: 'row',

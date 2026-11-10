@@ -143,3 +143,21 @@ test('rilis 0.1.4 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => 
   assert.equal(appJson.expo.runtimeVersion?.policy, 'appVersion');
   assert.ok(appJson.expo.updates?.url, 'expo-updates harus tetap aktif');
 });
+
+/* Setelah OTA, bundel JS baru yang menentukan angka versi di layar Profil —
+ * bukan versionName di APK. Kalau konstanta ini tertinggal, pengguna 0.1.3
+ * yang sudah menerima update tetap melihat "v0.1.3". Kunci nilainya ke
+ * expo.version supaya rilis berikutnya tidak bisa lupa menaikkannya. */
+test('APP_VERSION mengikuti expo.version agar versi tampil tidak basi setelah OTA', () => {
+  const constants = fs.readFileSync(
+    path.join(root, 'mobile-app', 'src', 'config', 'constants.js'),
+    'utf8',
+  );
+  const match = constants.match(/export const APP_VERSION = '([^']+)'/);
+  assert.ok(match, 'APP_VERSION harus diekspor sebagai string literal');
+  assert.equal(
+    match[1],
+    appJson.expo.version,
+    'APP_VERSION wajib sama dengan expo.version agar versi di layar Profil mengikuti bundel aktif',
+  );
+});

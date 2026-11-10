@@ -223,7 +223,7 @@ export const ProScreen = ({ onOpenAuth }) => {
     '';
   const isDirectMidtransUrl = Boolean(activeOrder?.qrMidtransUrl);
 
-  /* Tidak memakai expo-clipboard: modul native itu tidak ada di APK 0.1.3/0.1.4,
+  /* Tidak memakai expo-clipboard: modul native itu tidak ada di APK 0.1.3–0.1.5,
    * sehingga tidak bisa dikirim lewat OTA. `Share` dan `Text selectable` murni
    * JS dan sudah tersedia di React Native — tahan lama teks untuk menyalin. */
   const handleShareQrLink = async () => {
@@ -264,7 +264,7 @@ export const ProScreen = ({ onOpenAuth }) => {
   };
 
   /* "Unduh QR" tanpa modul native baru: `expo-file-system` sudah ikut ter-
-   * autolink di APK 0.1.4 karena merupakan dependensi langsung paket `expo`.
+   * autolink di APK 0.1.4/0.1.5 karena merupakan dependensi langsung paket `expo`.
    * StorageAccessFramework meminta pengguna memilih folder (Download/DCIM),
    * lalu menulis PNG di sana — tidak butuh izin penyimpanan maupun rebuild APK.
    * Bila SAF gagal, fallback ke browser: tahan lama gambar → Simpan gambar. */

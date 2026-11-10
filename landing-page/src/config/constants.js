@@ -6,16 +6,17 @@
 const metaEnv = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {};
 const procEnv = typeof process !== 'undefined' && process.env ? process.env : {};
 
-/* 10 Nov 2026: rilis v0.1.3 dibangun ulang dari sumber 0.1.2 tanpa menghapus
- * fitur, memakai Hermes V1 dan ABI armeabi-v7a + arm64-v8a. Build v0.1.2
- * mematikan Hermes (`hermesEnabled=false`) sehingga memakai JSC dan force
- * close di perangkat 32-bit; Expo SDK 58 / RN 0.88 tidak lagi mendukung JSC.
- * Artefak JSC tidak boleh pernah dipakai lagi sebagai tautan unduh. */
-const RELEASE_APK_URL =
-  'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.3/wahidiyah-v0.1.3-hermes-32bit.apk';
+/* 10 Nov 2026: tautan unduh WAJIB same-origin. Kalau href menunjuk GitHub,
+ * browser mengabaikan atribut HTML `download` (cross-origin) dan malah
+ * menavigasi ke halaman github.com ("Mendownload...") alih-alih mengunduh.
+ * APK kini disajikan langsung dari `public/unduh/` dengan header
+ * Content-Disposition: attachment. GitHub Release v0.1.3 tetap menjadi arsip
+ * rilis kanonik, bukan tujuan unduh pengguna. Rilis v0.1.3 memakai Hermes V1
+ * + armeabi-v7a/arm64-v8a; build JSC v0.1.2 sudah dihapus (force close). */
+const DIRECT_APK_URL = '/unduh/wahidiyah-v0.1.3-hermes-32bit.apk';
 
 export const APK_DOWNLOAD_URL =
-  metaEnv.VITE_APK_DOWNLOAD_URL || procEnv.VITE_APK_DOWNLOAD_URL || RELEASE_APK_URL;
+  metaEnv.VITE_APK_DOWNLOAD_URL || procEnv.VITE_APK_DOWNLOAD_URL || DIRECT_APK_URL;
 
 export const API_CONFIG = {
   baseUrl: metaEnv.VITE_API_URL || procEnv.VITE_API_URL || '',

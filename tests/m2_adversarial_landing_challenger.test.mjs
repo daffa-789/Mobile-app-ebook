@@ -9,8 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
-const OFFICIAL_APK_URL =
-  'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.3/wahidiyah-v0.1.3-hermes-32bit.apk';
+const OFFICIAL_APK_URL = '/unduh/wahidiyah-v0.1.3-hermes-32bit.apk';
 
 // Helper: recursively find files
 function getFilesRecursively(dir, filterFn) {

@@ -20,15 +20,14 @@ healthRouter.get('/health', async (req, res) => {
   });
 });
 
-// Rilis v0.1.3 (Hermes V1, armeabi-v7a + arm64-v8a). Build v0.1.2 memakai
-// JSC dan force close di perangkat 32-bit — jangan arahkan kembali ke artefak
-// JSC. Pemasangan di perangkat dengan build lama wajib uninstall karena tiap
-// build EAS memakai sertifikat penandatanganan yang berbeda.
+// Unduhan langsung dari domain sendiri (same-origin). Jangan arahkan ke
+// github.com: atribut HTML `download` diabaikan browser untuk URL cross-origin
+// sehingga pengguna malah melihat halaman GitHub. Arsip rilis kanonik tetap di
+// GitHub Release v0.1.3. Build JSC v0.1.2 sudah dihapus (force close 32-bit).
+// Pemasangan di perangkat dengan build lama wajib uninstall karena tiap build
+// EAS memakai sertifikat penandatanganan yang berbeda.
 healthRouter.get('/download/apk', (req, res) => {
-  res.redirect(
-    302,
-    'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.3/wahidiyah-v0.1.3-hermes-32bit.apk',
-  );
+  res.redirect(302, '/unduh/wahidiyah-v0.1.3-hermes-32bit.apk');
 });
 
 healthRouter.get('/stats', requireAuth, requireAdmin, async (req, res) => {

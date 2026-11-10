@@ -73,9 +73,9 @@ test('versionCode naik di atas build JSC v0.1.2 yang cacat (4)', () => {
   );
 });
 
-test('semua jalur unduh menunjuk ke GitHub Release v0.1.3, bukan artefak JSC', () => {
-  const releaseApkUrl =
-    'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.3/wahidiyah-v0.1.3-hermes-32bit.apk';
+test('unduh terjadi langsung dari domain sendiri (same-origin), bukan ke GitHub', () => {
+  const apkPath = '/unduh/wahidiyah-v0.1.3-hermes-32bit.apk';
+  const sameOriginBase = 'https://mobile-app-ebook.vercel.app';
   const jscArtifact = 'xA4OBPWr4r68oBF-zo0p9olad0QSUX0bR4vsbf7pX-s.apk';
   const sources = {
     'landing-page': fs.readFileSync(
@@ -86,8 +86,17 @@ test('semua jalur unduh menunjuk ke GitHub Release v0.1.3, bukan artefak JSC', (
     vercel: fs.readFileSync(path.join(root, 'vercel.json'), 'utf8'),
   };
 
+  assert.ok(
+    fs.existsSync(path.join(root, 'public', apkPath.replace(/^\//, ''))),
+    'APK statis same-origin harus benar-benar ada di public/unduh',
+  );
+
   for (const [name, content] of Object.entries(sources)) {
-    assert.ok(content.includes(releaseApkUrl), `${name} harus mengarah ke rilis v0.1.3 Hermes`);
+    assert.ok(content.includes(apkPath), `${name} harus menunjuk APK same-origin`);
+    assert.ok(
+      !content.includes('github.com/daffa-789/Mobile-app-ebook/releases/download/'),
+      `${name} tidak boleh menavigasi pengguna ke halaman GitHub`,
+    );
     assert.ok(!content.includes(jscArtifact), `${name} tidak boleh menyebarkan APK JSC`);
     assert.ok(
       !content.includes('https://expo.dev/artifacts/eas/'),
@@ -101,8 +110,18 @@ test('semua jalur unduh menunjuk ke GitHub Release v0.1.3, bukan artefak JSC', (
 
   const vercelConfig = JSON.parse(sources.vercel);
   for (const redirect of vercelConfig.redirects) {
-    assert.equal(redirect.destination, releaseApkUrl, `${redirect.source} harus ke APK v0.1.3`);
+    assert.equal(
+      redirect.destination,
+      `${sameOriginBase}${apkPath}`,
+      `${redirect.source} harus tetap di domain sendiri`,
+    );
   }
+
+  const apkHeaders = vercelConfig.headers.find((h) => h.source === '/unduh/(.*)');
+  assert.ok(apkHeaders, 'vercel.json wajib memaksa header unduhan untuk /unduh/*');
+  const headerMap = Object.fromEntries(apkHeaders.headers.map((h) => [h.key, h.value]));
+  assert.match(headerMap['Content-Disposition'], /^attachment;/);
+  assert.equal(headerMap['Content-Type'], 'application/vnd.android.package-archive');
 });
 
 test('rilis 0.1.3 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => {

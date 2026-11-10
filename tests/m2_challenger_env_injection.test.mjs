@@ -46,8 +46,7 @@ test('Expo menyisipkan URL API publik ke bundle Android produksi', () => {
   }
 });
 
-const DEFAULT_APK =
-  'https://github.com/daffa-789/Mobile-app-ebook/releases/download/v0.1.3/wahidiyah-v0.1.3-hermes-32bit.apk';
+const DEFAULT_APK = '/unduh/wahidiyah-v0.1.3-hermes-32bit.apk';
 
 // Helper to run code in an isolated subprocess with specific env variables
 async function runInSubprocess(moduleRelativePath, envOverrides = {}) {
@@ -101,7 +100,7 @@ test('Landing Page Configuration Resilience & Env Injection', async (t) => {
       VITE_API_TIMEOUT_MS: '',
     });
 
-    assert.strictEqual(config.APK_DOWNLOAD_URL, DEFAULT_APK, 'Fallback to GitHub Release v0.1.3');
+    assert.strictEqual(config.APK_DOWNLOAD_URL, DEFAULT_APK, 'Fallback to same-origin APK path');
     assert.strictEqual(config.API_CONFIG.baseUrl, '', 'Default baseUrl is empty string');
     assert.strictEqual(config.API_CONFIG.fallbackOrigin, 'http://localhost:5000');
     assert.strictEqual(config.API_CONFIG.timeoutMs, 20000, 'Default timeout is 20000ms');

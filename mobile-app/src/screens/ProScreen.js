@@ -8,6 +8,7 @@ import {
   Alert,
   Image,
   ActivityIndicator,
+  Share,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -18,6 +19,7 @@ import {
   checkPaymentStatus,
   cancelPayment,
   reconcilePayment,
+  getQrImageUrl,
 } from '../api/payments.js';
 import { generateQrPng } from '../lib/qr.js';
 import { formatRupiah } from '../lib/catalog.js';
@@ -195,6 +197,40 @@ export const ProScreen = ({ onOpenAuth }) => {
     errorMessage,
   );
 
+  /* Kolom simulator Midtrans bernama "QR Code Image Url": yang ditempel HARUS
+   * URL gambar PNG, bukan payload EMVCo `qrString`. Server mengirim
+   * `qrMidtransUrl` (URL publik Midtrans) khusus mode sandbox; URL proxy
+   * `/qris/:id/qr.png` hanya cadangan karena simulator tidak punya token JWT. */
+  const simulatorQrLink =
+    activeOrder?.qrMidtransUrl ||
+    (activeOrder?.qrImageUrl && activeOrder?.orderId ? getQrImageUrl(activeOrder.orderId) : null) ||
+    '';
+  const isDirectMidtransUrl = Boolean(activeOrder?.qrMidtransUrl);
+
+  /* Tidak memakai expo-clipboard: modul native itu tidak ada di APK 0.1.3/0.1.4,
+   * sehingga tidak bisa dikirim lewat OTA. `Share` dan `Text selectable` murni
+   * JS dan sudah tersedia di React Native — tahan lama teks untuk menyalin. */
+  const handleShareQrLink = async () => {
+    if (!simulatorQrLink) {
+      Alert.alert(
+        'Tautan belum tersedia',
+        'Kode QRIS belum selesai dibuat. Coba lagi beberapa saat.',
+      );
+      return;
+    }
+    try {
+      await Share.share({
+        message: simulatorQrLink,
+        title: 'Tautan QRIS untuk Simulator Midtrans',
+      });
+    } catch {
+      Alert.alert(
+        'Gagal membagikan',
+        'Tahan teks tautan di bawah, lalu pilih Salin secara manual.',
+      );
+    }
+  };
+
   return (
     <ScrollView
       style={styles.container}
@@ -272,9 +308,9 @@ export const ProScreen = ({ onOpenAuth }) => {
               <View style={styles.qrImageContainer}>
                 {localQrUri ? (
                   <Image source={{ uri: localQrUri }} style={styles.qrImage} resizeMode="contain" />
-                ) : activeOrder.qrUrl ? (
+                ) : activeOrder.qrMidtransUrl ? (
                   <Image
-                    source={{ uri: activeOrder.qrUrl }}
+                    source={{ uri: activeOrder.qrMidtransUrl }}
                     style={styles.qrImage}
                     resizeMode="contain"
                   />
@@ -298,6 +334,51 @@ export const ProScreen = ({ onOpenAuth }) => {
                 <Text style={styles.amountLabel}>Total Tagihan:</Text>
                 <Text style={styles.amountValue}>
                   {formatRupiah(activeOrder.grossAmount || 25000)}
+                </Text>
+              </View>
+
+              {/* Tautan untuk ditempel ke simulator QRIS Midtrans (sandbox) */}
+              <View style={styles.simulatorBox}>
+                <View style={styles.simulatorHeader}>
+                  <Feather name="link" size={13} color="#14523A" />
+                  <Text style={styles.simulatorTitle}>Simulator QRIS Midtrans</Text>
+                </View>
+                <Text style={styles.simulatorHint}>
+                  Tempel tautan ini ke kolom "QR Code Image Url" simulator, lalu klik Scan QR.
+                </Text>
+
+                {simulatorQrLink ? (
+                  <>
+                    <Text selectable style={styles.simulatorLink}>
+                      {simulatorQrLink}
+                    </Text>
+                    <Text style={styles.simulatorCopyHint}>
+                      Tahan lama tautan di atas, lalu pilih Salin.
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.simulatorShareBtn}
+                      onPress={handleShareQrLink}
+                      activeOpacity={0.75}
+                    >
+                      <Feather name="share-2" size={13} color="#14523A" />
+                      <Text style={styles.simulatorShareBtnText}>Bagikan / Salin Tautan</Text>
+                    </TouchableOpacity>
+                    {!isDirectMidtransUrl ? (
+                      <Text style={styles.simulatorWarning}>
+                        Ini tautan cadangan lewat server kami (butuh login). Bila simulator menolak,
+                        batalkan lalu buat kode QR baru.
+                      </Text>
+                    ) : null}
+                  </>
+                ) : (
+                  <Text style={styles.simulatorWarning}>
+                    Tautan gambar QR belum tersedia untuk tagihan ini. Batalkan lalu buat kode QR
+                    baru, atau pindai QR di atas dengan dompet sungguhan.
+                  </Text>
+                )}
+
+                <Text selectable style={styles.simulatorAddress}>
+                  simulator.sandbox.midtrans.com/v2/qris/index
                 </Text>
               </View>
 
@@ -594,6 +675,80 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '900',
     color: '#14523A',
+  },
+  simulatorBox: {
+    width: '100%',
+    backgroundColor: '#FFFDF9',
+    borderWidth: 1,
+    borderColor: '#E4D9C6',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 14,
+  },
+  simulatorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  simulatorTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#14523A',
+  },
+  simulatorHint: {
+    fontSize: 11,
+    color: '#5A544C',
+    lineHeight: 16,
+    marginBottom: 8,
+  },
+  simulatorLink: {
+    width: '100%',
+    fontSize: 10,
+    lineHeight: 15,
+    fontFamily: 'monospace',
+    color: '#1D1B17',
+    backgroundColor: '#F4EEE3',
+    borderWidth: 1,
+    borderColor: '#E4D9C6',
+    borderRadius: 8,
+    padding: 8,
+  },
+  simulatorCopyHint: {
+    fontSize: 10,
+    color: '#7C756C',
+    marginTop: 6,
+  },
+  simulatorShareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    width: '100%',
+    height: 36,
+    marginTop: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#C9DED2',
+    backgroundColor: '#EAF4EE',
+  },
+  simulatorShareBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#14523A',
+  },
+  simulatorWarning: {
+    fontSize: 10,
+    color: '#92400E',
+    lineHeight: 15,
+    marginTop: 6,
+  },
+  simulatorAddress: {
+    fontSize: 9,
+    color: '#7C756C',
+    fontFamily: 'monospace',
+    marginTop: 10,
+    textAlign: 'center',
   },
   checkStatusBtn: {
     flexDirection: 'row',

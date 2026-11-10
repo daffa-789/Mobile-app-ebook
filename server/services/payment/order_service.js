@@ -105,7 +105,10 @@ export async function createQrisOrder({ planId, userId, fallbackUser, phone }) {
         refNo: pendingTx.ref_no,
         qrString: pendingTx.midtrans_qr_string || null,
         qrImageUrl: pendingTx.midtrans_qr_url ? `/api/payments/qris/${pendingTx.id}/qr.png` : null,
-        qrMidtransUrl: pendingTx.midtrans_qr_url || null,
+        /* URL internal Midtrans hanya untuk simulator sandbox. Jalur `reused`
+         * dulu selalu mengirimnya, termasuk saat produksi — samakan dengan
+         * jalur `created` (prinsip §6.2 nomor 7 panduan arsitektur). */
+        ...(MIDTRANS_IS_PRODUCTION ? {} : { qrMidtransUrl: pendingTx.midtrans_qr_url || null }),
         planName: pendingTx.plan_name,
         amount: pendingTx.amount,
         adminFee: pendingTx.admin_fee,
@@ -157,6 +160,20 @@ export async function createQrisOrder({ planId, userId, fallbackUser, phone }) {
   const qrString = extractQrString(charge);
   const qrAction = extractQrAction(charge);
 
+  /* Simulator QRIS Midtrans minta "QR Code Image Url", bukan payload EMVCo.
+   * Respons charge normalnya memuat `actions[]`, tetapi beberapa akun sandbox
+   * hanya mengirim `qr_string`. Karena format URL gambar QR terdokumentasi
+   * Midtrans sebagai `/v2/qris/<transaction_id>/qr-code`, susun URL itu dari
+   * `transaction_id` agar pengguna tetap punya tautan untuk ditempel.
+   * Hanya di sandbox: di produksi URL internal tidak boleh dibocorkan. */
+  const chargePayload = charge?.data && typeof charge.data === 'object' ? charge.data : {};
+  const transactionId = charge?.transaction_id || chargePayload?.transaction_id || null;
+  const sandboxQrFallback =
+    !MIDTRANS_IS_PRODUCTION && qrString && transactionId
+      ? `https://api.sandbox.midtrans.com/v2/qris/${encodeURIComponent(transactionId)}/qr-code`
+      : null;
+  const qrUrl = qrAction?.url || sandboxQrFallback;
+
   if (!qrString && !qrAction) {
     await rejectTransaction(pendingRow, 'tanpa QR');
     logger.error('MIDTRANS', 'Respons charge tidak berisi qr_string maupun URL QR', { orderId });
@@ -169,8 +186,8 @@ export async function createQrisOrder({ planId, userId, fallbackUser, phone }) {
   await supabaseServer
     .from('transactions')
     .update({
-      midtrans_transaction_id: charge?.transaction_id || null,
-      midtrans_qr_url: qrAction?.url || null,
+      midtrans_transaction_id: transactionId,
+      midtrans_qr_url: qrUrl || null,
       midtrans_qr_string: qrString || null,
       expires_at: expiredAt,
     })
@@ -191,8 +208,9 @@ export async function createQrisOrder({ planId, userId, fallbackUser, phone }) {
       // Sumber utama: payload EMVCo → dirender jadi QR di sisi klien (SVG tajam, tanpa latensi).
       qrString,
       // Cadangan: endpoint gambar kita sendiri (proxy PNG dari Midtrans).
-      qrImageUrl: qrAction ? `/api/payments/qris/${orderId}/qr.png` : null,
-      ...(MIDTRANS_IS_PRODUCTION ? {} : { qrMidtransUrl: qrAction?.url || null }),
+      qrImageUrl: qrUrl ? `/api/payments/qris/${orderId}/qr.png` : null,
+      // Tautan siap tempel ke kolom "QR Code Image Url" simulator (sandbox saja).
+      ...(MIDTRANS_IS_PRODUCTION ? {} : { qrMidtransUrl: qrUrl || null }),
       planName: plan.name,
       amount,
       adminFee,

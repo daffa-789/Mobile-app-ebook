@@ -83,7 +83,7 @@ test('Mobile Auth Plumbing & Invariants Suite', async (t) => {
     );
   });
 
-  await t.test('Google menukar kode sekali pakai lalu mengembalikan sesi', async () => {
+  await t.test('Google menukar kode sekali pakai dan tidak menggantung di browser', async () => {
     const source = fs.readFileSync(authContextPath, 'utf8');
     const start = source.indexOf('const startGoogleMobile =');
     const end = source.indexOf('const exchangeGoogleCode =', start);
@@ -109,11 +109,33 @@ test('Mobile Auth Plumbing & Invariants Suite', async (t) => {
         cancelled: true,
       },
       {
+        /* AppState kembali aktif tanpa deep link: bukan kegagalan yang boleh
+         * menampilkan galat "dibatalkan" secara menyesatkan. */
+        browserResult: { type: 'dismiss' },
+        exchange: null,
+        success: false,
+        error: 'Login Google dibatalkan.',
+        exchangedCodes: [],
+        cancelled: true,
+      },
+      {
         browserResult: { type: 'success', url: `${redirectUrl}failure?message=Akses%20ditolak` },
         exchange: null,
         success: false,
         error: 'Akses ditolak',
         exchangedCodes: [],
+      },
+      {
+        /* Custom Tab tidak pernah ditutup (batasan Android): timeout wajib
+         * melepaskan UI, tanpa galat karena deep link bisa saja sudah masuk. */
+        browserResult: new Promise(() => {}),
+        fakeTimeout: true,
+        exchange: null,
+        success: false,
+        error: undefined,
+        exchangedCodes: [],
+        cancelled: true,
+        timedOut: true,
       },
     ];
 
@@ -122,6 +144,17 @@ test('Mobile Auth Plumbing & Invariants Suite', async (t) => {
       const exchangedCodes = [];
       const context = {
         Linking: {},
+        setTimeout: (fn, ms) => {
+          if (scenario.fakeTimeout) {
+            assert.ok(ms > 0, 'timeout sesi Google harus berbatas waktu');
+            fn();
+            return 1;
+          }
+          return setTimeout(fn, ms);
+        },
+        clearTimeout: (id) => {
+          if (!scenario.fakeTimeout) clearTimeout(id);
+        },
         apiRequest: async (url, options) => {
           assert.equal(url, '/api/auth/google/mobile-start');
           assert.equal(options.method, 'POST');
@@ -147,6 +180,7 @@ test('Mobile Auth Plumbing & Invariants Suite', async (t) => {
       assert.equal(result.success, scenario.success);
       assert.equal(result.error, scenario.error);
       if (scenario.cancelled) assert.equal(result.cancelled, true);
+      if (scenario.timedOut) assert.equal(result.timedOut, true);
       if (scenario.user) assert.deepEqual(result.user, scenario.user);
     }
   });

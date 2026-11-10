@@ -311,9 +311,36 @@ export const AuthProvider = ({ children }) => {
       }
 
       const redirectUrl = 'mobileappebook://auth/';
-      const result = await WebBrowser.openAuthSessionAsync(res.url, redirectUrl);
+      /* Expo tidak bisa menutup Chrome Custom Tab dari JS di Android, jadi
+       * promise sesi TIDAK boleh menjadi satu-satunya jalur selesai. Server kini
+       * mengirim halaman handoff yang menavigasi ke `intent://`; deep link
+       * App.js menukar kode lebih dulu, dan timeout di bawah memastikan UI tidak
+       * pernah menggantung bila browser dibuka di luar Custom Tab. */
+      let timeoutId;
+      const timeoutPromise = new Promise((resolve) => {
+        timeoutId = setTimeout(() => resolve({ type: 'timeout' }), 120000);
+      });
+      let result;
+      try {
+        result = await Promise.race([
+          WebBrowser.openAuthSessionAsync(res.url, redirectUrl),
+          timeoutPromise,
+        ]);
+      } finally {
+        clearTimeout(timeoutId);
+      }
 
-      if (result.type === 'success' && result.url) {
+      /* iOS/web menyediakan dismissBrowser; Android tidak (bukan kegagalan). */
+      try {
+        WebBrowser.dismissBrowser?.();
+      } catch (_) {}
+
+      if (result?.type === 'timeout') {
+        /* Jangan tampilkan galat: deep link bisa saja baru saja mengisi sesi. */
+        return { success: false, cancelled: true, timedOut: true };
+      }
+
+      if (result?.type === 'success' && result.url) {
         const code = result.url.match(/[?&]code=([^&#]+)/);
         if (code) {
           /* Tukar kode di sini juga, bukan hanya lewat deep link: browser bisa
@@ -330,9 +357,9 @@ export const AuthProvider = ({ children }) => {
             : 'Login Google gagal. Silakan coba lagi.',
         };
       }
-      /* 'cancel' bukan selalu gagal: deep link bisa sudah menukar kode dan
-       * mengisi sesi. Jangan tampilkan galat yang menyesatkan; App.js akan
-       * menutup sheet begitu `user` terisi. */
+      /* 'cancel' / 'dismiss' bukan selalu gagal: deep link bisa sudah menukar
+       * kode dan mengisi sesi. Jangan tampilkan galat yang menyesatkan;
+       * App.js akan menutup sheet begitu `user` terisi. */
       return { success: false, cancelled: true, error: 'Login Google dibatalkan.' };
     } catch (err) {
       return { success: false, error: err.message || 'Gagal memulai otorisasi Google.' };

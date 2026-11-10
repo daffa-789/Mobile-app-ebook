@@ -14,6 +14,12 @@ import { createOneTimeCode, redeemOneTimeCode } from '../lib/oneTimeCode.js';
 import { logger } from '../logger.js';
 import { createSessionToken, toPublicUser } from '../auth.js';
 import { resolveFrontendOrigin } from '../lib/origin.js';
+import {
+  MOBILE_STATE_PREFIX,
+  MOBILE_HANDOFF_HEADERS,
+  buildMobileAuthUrls,
+  buildMobileHandoffHtml,
+} from '../lib/googleHandoff.js';
 import { ALLOWED_ORIGINS, FRONTEND_ORIGIN } from '../config.js';
 import { RESET_UNIFORM_RESPONSE, RESET_UNIFORM_WA_RESPONSE } from '../services/auth/messages.js';
 import {
@@ -211,6 +217,26 @@ export async function googleSupabase(req, res) {
   }
 }
 
+/* Nama paket dipakai Chrome pada URL `intent://` agar deep link diantar ke
+ * activity aplikasi, bukan dibiarkan mengambang di Custom Tab. */
+const MOBILE_ANDROID_PACKAGE = process.env.MOBILE_ANDROID_PACKAGE || 'id.wahidiyah.book';
+
+/** Kirim halaman serah-terima HTTPS untuk menggantikan 302 ke skema custom. */
+const replyMobileHandoff = (res, { status, path, params, message = '' }) => {
+  const scheme = process.env.MOBILE_AUTH_SCHEME || 'mobileappebook';
+  const { deepLinkUrl, intentUrl } = buildMobileAuthUrls({
+    scheme,
+    androidPackage: MOBILE_ANDROID_PACKAGE,
+    path,
+    params,
+  });
+  res.set(MOBILE_HANDOFF_HEADERS);
+  return res
+    .status(200)
+    .type('html')
+    .send(buildMobileHandoffHtml({ status, message, intentUrl, deepLinkUrl }));
+};
+
 /** POST /api/auth/google/mobile-start — inisialisasi OAuth untuk mobile native */
 export async function googleMobileStart(req, res) {
   try {
@@ -230,9 +256,14 @@ export async function googleMobileStart(req, res) {
       { ttlMs: 5 * 60 * 1000 },
     );
     const scope = encodeURIComponent('openid email profile');
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${encodeURIComponent(state)}&prompt=select_account`;
+    /* Prefiks `mob.` membuat callback tahu ini alur mobile bahkan ketika state
+     * sudah kedaluwarsa/gagal ditebus, sehingga kegagalan juga mendapat halaman
+     * handoff, bukan halaman /login web yang terlihat seperti "nyangkut".
+     * `prompt=select_account` sengaja dihapus: pemilih akun yang muncul berulang
+     * membuat pengguna merasa diarahkan ke Google lagi setelah login berhasil. */
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${encodeURIComponent(MOBILE_STATE_PREFIX + state)}`;
 
-    return res.json({ success: true, url, state });
+    return res.json({ success: true, url, state: MOBILE_STATE_PREFIX + state });
   } catch (error) {
     return replyAuthFailure(res, error);
   }
@@ -251,7 +282,7 @@ const parseCookies = (header) => {
   return out;
 };
 
-/** GET /api/auth/google/callback — ujung OAuth direct (redirect browser & deep link mobile). */
+/** GET /api/auth/google/callback — ujung OAuth direct (redirect web & handoff mobile). */
 export async function googleCallback(req, res) {
   /* Tujuan redirect hanya boleh berasal dari konfigurasi atau allowlist —
    * tidak pernah dari `Host`/`X-Forwarded-Proto` mentah (VULN-04).
@@ -277,35 +308,44 @@ export async function googleCallback(req, res) {
 
   let isMobile = false;
   const failRedirect = (message, code = 'google_oauth') => {
+    logger.warn('GOOGLE_OAUTH', message);
     if (isMobile) {
-      const scheme = process.env.MOBILE_AUTH_SCHEME || 'mobileappebook';
-      return res.redirect(
-        `${scheme}://auth/failure?error=${encodeURIComponent(code)}&message=${encodeURIComponent(message)}`,
-      );
+      return replyMobileHandoff(res, {
+        status: 'failure',
+        path: 'auth/failure',
+        params: { error: code, message },
+        message,
+      });
     }
     const url = new URL('/login', frontendOrigin);
     url.searchParams.set('error', code);
     url.searchParams.set('message', message);
-    logger.warn('GOOGLE_OAUTH', message);
     return res.redirect(url.toString());
   };
 
   try {
     const { code, state, error: oauthError } = req.query;
+    const rawState = typeof state === 'string' ? state : '';
+    /* Penanda platform dibaca SEBELUM state ditebus/ditolak supaya kegagalan
+     * (state kedaluwarsa, kode hilang, konsol Google error) tetap kembali ke
+     * aplikasi lewat halaman handoff, bukan halaman /login web. */
+    const mobileState = rawState.startsWith(MOBILE_STATE_PREFIX);
+    const stateToRedeem = mobileState ? rawState.slice(MOBILE_STATE_PREFIX.length) : rawState;
+    isMobile = mobileState;
 
     if (oauthError) return failRedirect(`Google mengembalikan kesalahan: ${oauthError}.`);
     if (!code) return failRedirect('Kode otorisasi tidak ditemukan.');
-    if (!state) return failRedirect('State OAuth tidak ditemukan.');
+    if (!rawState) return failRedirect('State OAuth tidak ditemukan.');
 
     const cookies = parseCookies(req.headers.cookie || '');
     const expectedState = cookies.google_oauth_state;
 
     let validState = false;
-    if (expectedState && expectedState === state) {
+    if (!mobileState && expectedState && expectedState === rawState) {
       validState = true;
       res.setHeader('Set-Cookie', 'google_oauth_state=; Path=/; Max-Age=0; SameSite=Lax');
     } else {
-      const redeemed = await redeemOneTimeCode(state);
+      const redeemed = await redeemOneTimeCode(stateToRedeem);
       if (redeemed && redeemed.kind === 'oauth_state' && redeemed.platform === 'mobile') {
         validState = true;
         isMobile = true;
@@ -346,8 +386,16 @@ export async function googleCallback(req, res) {
     const sessionCode = await createOneTimeCode({ token, user });
 
     if (isMobile) {
-      const scheme = process.env.MOBILE_AUTH_SCHEME || 'mobileappebook';
-      return res.redirect(`${scheme}://auth/success?code=${encodeURIComponent(sessionCode)}`);
+      /* JANGAN balas 302 langsung ke `mobileappebook://…`: Chrome Custom Tab
+       * tidak bisa merender skema custom sehingga tab tetap terlihat seperti
+       * halaman login Google dan pengguna harus menutupnya manual. Halaman
+       * handoff menavigasi ke `intent://` (menarik aplikasi ke depan) sambil
+       * menampilkan status berhasil sebagai jangkar visual. */
+      return replyMobileHandoff(res, {
+        status: 'success',
+        path: 'auth/success',
+        params: { code: sessionCode },
+      });
     }
 
     const successUrl = new URL('/auth/success', frontendOrigin);

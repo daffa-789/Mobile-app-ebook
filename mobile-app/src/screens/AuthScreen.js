@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  AppState,
   Image,
   Linking,
 } from 'react-native';
@@ -40,6 +41,21 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [noticeMessage, setNoticeMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  /* Status khusus sesi Google. Dipisah dari `isSubmitting` supaya formulir
+   * email/password tidak ikut membeku hanya karena browser OAuth sedang buka. */
+  const [googleWaiting, setGoogleWaiting] = useState(false);
+  const googleSessionRef = useRef(false);
+
+  /* Kembali ke latar depan = pengguna selesai (atau membatalkan) di browser.
+   * Sembunyikan status tunggu meski promise Custom Tab belum settle; sesi
+   * tetap diselesaikan oleh deep link + timeout di AuthContext. */
+  useEffect(() => {
+    if (!googleWaiting) return undefined;
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') setGoogleWaiting(false);
+    });
+    return () => subscription?.remove?.();
+  }, [googleWaiting]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -149,8 +165,16 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
   };
 
   const handleGoogleAuth = async () => {
+    /* Satu sesi browser pada satu waktu. expo-web-browser melempar galat bila
+     * ada sesi lain yang masih menunggu, jadi cegah ketukan berulang. */
+    if (googleSessionRef.current) {
+      setErrorMessage('Sesi login Google masih berjalan. Tutup browser untuk membatalkan.');
+      return;
+    }
     setErrorMessage('');
-    setIsSubmitting(true);
+    setNoticeMessage('');
+    googleSessionRef.current = true;
+    setGoogleWaiting(true);
     try {
       if (Platform.OS !== 'web') {
         const res = await startGoogleMobile();
@@ -158,6 +182,10 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
           /* Sama seperti login password: tutup sheet dan lanjutkan aksi
            * tertunda. Tanpa ini sesi sudah aktif tapi UI nyangkut di Masuk. */
           onAuthSuccess?.(res.user);
+        } else if (res.timedOut) {
+          setNoticeMessage(
+            'Waktu tunggu browser habis. Jika login di Google sudah selesai, aplikasi akan masuk otomatis.',
+          );
         } else if (!res.cancelled) {
           setErrorMessage(res.error || 'Gagal memulai otorisasi Google.');
         }
@@ -201,6 +229,8 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
     } catch (err) {
       setErrorMessage('Gagal membuka login Google: ' + err.message);
     } finally {
+      googleSessionRef.current = false;
+      setGoogleWaiting(false);
       setIsSubmitting(false);
     }
   };
@@ -402,6 +432,18 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
             <View style={styles.noticeAlert}>
               <Feather name="info" size={16} color="#14523A" />
               <Text style={styles.noticeAlertText}>{noticeMessage}</Text>
+            </View>
+          ) : null}
+
+          {/* Status sesi Google: beri tahu bahwa browser sedang terbuka dan
+              aplikasi akan masuk otomatis, bukan "nyangkut" tanpa penjelasan. */}
+          {googleWaiting ? (
+            <View style={styles.googleWaiting}>
+              <ActivityIndicator size="small" color="#14523A" />
+              <Text style={styles.googleWaitingText}>
+                Browser Google sedang terbuka. Selesaikan login di sana — aplikasi akan masuk
+                otomatis tanpa perlu menutup tab secara manual.
+              </Text>
             </View>
           ) : null}
 
@@ -621,7 +663,7 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
           <TouchableOpacity
             style={styles.googleButton}
             onPress={handleGoogleAuth}
-            disabled={isSubmitting}
+            disabled={isSubmitting || googleWaiting}
             activeOpacity={0.8}
           >
             <Image
@@ -630,7 +672,11 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
               resizeMode="contain"
             />
             <Text style={styles.googleButtonText}>
-              {activeTab === 'register' ? 'Daftar dengan Google' : 'Masuk dengan Google'}
+              {googleWaiting
+                ? 'Menunggu konfirmasi Google…'
+                : activeTab === 'register'
+                  ? 'Daftar dengan Google'
+                  : 'Masuk dengan Google'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -773,6 +819,24 @@ const styles = StyleSheet.create({
     color: '#14523A',
     fontWeight: '600',
     lineHeight: 16,
+  },
+  googleWaiting: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#DCEDE4',
+    borderColor: '#B9DBC9',
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 14,
+  },
+  googleWaitingText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#14523A',
+    fontWeight: '600',
+    lineHeight: 17,
   },
   formContainer: {
     gap: 12,

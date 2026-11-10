@@ -154,7 +154,11 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
     try {
       if (Platform.OS !== 'web') {
         const res = await startGoogleMobile();
-        if (!res.success) {
+        if (res.success) {
+          /* Sama seperti login password: tutup sheet dan lanjutkan aksi
+           * tertunda. Tanpa ini sesi sudah aktif tapi UI nyangkut di Masuk. */
+          onAuthSuccess?.(res.user);
+        } else if (!res.cancelled) {
           setErrorMessage(res.error || 'Gagal memulai otorisasi Google.');
         }
         return;

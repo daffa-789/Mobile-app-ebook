@@ -83,7 +83,7 @@ test('Mobile Auth Plumbing & Invariants Suite', async (t) => {
     );
   });
 
-  await t.test('Google membuka sesi browser dengan callback skema aplikasi', async () => {
+  await t.test('Google menukar kode sekali pakai lalu mengembalikan sesi', async () => {
     const source = fs.readFileSync(authContextPath, 'utf8');
     const start = source.indexOf('const startGoogleMobile =');
     const end = source.indexOf('const exchangeGoogleCode =', start);
@@ -92,17 +92,34 @@ test('Mobile Auth Plumbing & Invariants Suite', async (t) => {
     const redirectUrl = `${appConfig.expo.scheme}://auth/`;
     const googleUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
     const scenarios = [
-      [{ type: 'success', url: `${redirectUrl}success?code=test-code` }, true, undefined],
-      [{ type: 'cancel' }, false, 'Login Google dibatalkan.'],
-      [
-        { type: 'success', url: `${redirectUrl}failure?message=Akses%20ditolak` },
-        false,
-        'Akses ditolak',
-      ],
+      {
+        browserResult: { type: 'success', url: `${redirectUrl}success?code=test-code` },
+        exchange: { success: true, user: { id: 'u1' } },
+        success: true,
+        error: undefined,
+        exchangedCodes: ['test-code'],
+        user: { id: 'u1' },
+      },
+      {
+        browserResult: { type: 'cancel' },
+        exchange: null,
+        success: false,
+        error: 'Login Google dibatalkan.',
+        exchangedCodes: [],
+        cancelled: true,
+      },
+      {
+        browserResult: { type: 'success', url: `${redirectUrl}failure?message=Akses%20ditolak` },
+        exchange: null,
+        success: false,
+        error: 'Akses ditolak',
+        exchangedCodes: [],
+      },
     ];
 
-    for (const [browserResult, success, error] of scenarios) {
+    for (const scenario of scenarios) {
       const calls = [];
+      const exchangedCodes = [];
       const context = {
         Linking: {},
         apiRequest: async (url, options) => {
@@ -113,8 +130,12 @@ test('Mobile Auth Plumbing & Invariants Suite', async (t) => {
         WebBrowser: {
           openAuthSessionAsync: async (...args) => {
             calls.push(args);
-            return browserResult;
+            return scenario.browserResult;
           },
+        },
+        exchangeGoogleCode: async (code) => {
+          exchangedCodes.push(code);
+          return scenario.exchange;
         },
       };
       const result = await vm.runInNewContext(
@@ -122,9 +143,22 @@ test('Mobile Auth Plumbing & Invariants Suite', async (t) => {
         context,
       );
       assert.deepEqual(calls, [[googleUrl, redirectUrl]]);
-      assert.equal(result.success, success);
-      assert.equal(result.error, error);
+      assert.deepEqual(exchangedCodes, scenario.exchangedCodes);
+      assert.equal(result.success, scenario.success);
+      assert.equal(result.error, scenario.error);
+      if (scenario.cancelled) assert.equal(result.cancelled, true);
+      if (scenario.user) assert.deepEqual(result.user, scenario.user);
     }
+  });
+
+  await t.test('exchangeGoogleCode stabil dan menolak penukaran kode ganda', () => {
+    const src = fs.readFileSync(authContextPath, 'utf8');
+    assert.ok(src.includes('handledGoogleCodesRef'), 'dedup kode sekali pakai tersedia');
+    assert.ok(
+      src.includes('const exchangeGoogleCode = useCallback('),
+      'identitas fungsi distabilkan untuk effect deep-link App.js',
+    );
+    assert.ok(src.includes('alreadyHandled'), 'kode yang sama tidak ditukar dua kali');
   });
 
   await t.test('Versi yang ditampilkan sama dengan versi APK', async () => {

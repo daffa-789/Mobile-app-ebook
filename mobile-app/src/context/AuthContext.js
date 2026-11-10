@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest, setUnauthorizedHandler } from '../api/client';
@@ -9,6 +9,10 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [sessionToken, setSessionToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  /* Kode sesi Google sekali pakai bisa datang dua kali: dari hasil
+   * openAuthSessionAsync dan dari deep link App.js. Set ini memastikan
+   * penukaran hanya dilakukan sekali untuk kode yang sama. */
+  const handledGoogleCodesRef = useRef(new Set());
 
   // Simpan sesi ke penyimpanan lokal & SecureStore
   const persistSession = useCallback(async (token, profile) => {
@@ -306,13 +310,18 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: 'URL Google OAuth tidak valid dari server.' };
       }
 
-      // Penangan deep link menjadi satu-satunya penukar kode sekali-pakai.
       const redirectUrl = 'mobileappebook://auth/';
       const result = await WebBrowser.openAuthSessionAsync(res.url, redirectUrl);
 
       if (result.type === 'success' && result.url) {
         const code = result.url.match(/[?&]code=([^&#]+)/);
-        if (code) return { success: true };
+        if (code) {
+          /* Tukar kode di sini juga, bukan hanya lewat deep link: browser bisa
+           * ditutup pengguna sebelum event Linking sempat diproses. */
+          const exchanged = await exchangeGoogleCode(decodeURIComponent(code[1]));
+          if (exchanged.success) return exchanged;
+          return { success: false, error: exchanged.error };
+        }
         const failMessage = result.url.match(/[?&]message=([^&#]+)/);
         return {
           success: false,
@@ -321,30 +330,50 @@ export const AuthProvider = ({ children }) => {
             : 'Login Google gagal. Silakan coba lagi.',
         };
       }
-      return { success: false, error: 'Login Google dibatalkan.' };
+      /* 'cancel' bukan selalu gagal: deep link bisa sudah menukar kode dan
+       * mengisi sesi. Jangan tampilkan galat yang menyesatkan; App.js akan
+       * menutup sheet begitu `user` terisi. */
+      return { success: false, cancelled: true, error: 'Login Google dibatalkan.' };
     } catch (err) {
       return { success: false, error: err.message || 'Gagal memulai otorisasi Google.' };
     }
   };
 
-  const exchangeGoogleCode = async (code) => {
-    try {
-      const res = await apiRequest('/api/auth/exchange', {
-        method: 'POST',
-        body: JSON.stringify({ code }),
-      });
-
-      if (res?.token && res?.user) {
-        await persistSession(res.token, res.user);
-        setSessionToken(res.token);
-        setUser(res.user);
-        return { success: true, user: res.user };
+  /* useCallback sengaja dipakai: effect deep-link di App.js bergantung pada
+   * fungsi ini. Tanpa identitas stabil, listener didaftarkan ulang tiap render
+   * dan kode sekali-pakai berisiko ditukar dua kali. */
+  const exchangeGoogleCode = useCallback(
+    async (code) => {
+      const cleanCode = typeof code === 'string' ? code.trim() : '';
+      if (!cleanCode) {
+        return { success: false, error: 'Kode otentikasi Google tidak ditemukan.' };
       }
-      return { success: false, error: 'Kode otentikasi Google tidak valid.' };
-    } catch (err) {
-      return { success: false, error: err.message || 'Gagal menukar kode otorisasi Google.' };
-    }
-  };
+      if (handledGoogleCodesRef.current.has(cleanCode)) {
+        return { success: true, alreadyHandled: true };
+      }
+      handledGoogleCodesRef.current.add(cleanCode);
+
+      try {
+        const res = await apiRequest('/api/auth/exchange', {
+          method: 'POST',
+          body: JSON.stringify({ code: cleanCode }),
+        });
+
+        if (res?.token && res?.user) {
+          await persistSession(res.token, res.user);
+          setSessionToken(res.token);
+          setUser(res.user);
+          return { success: true, user: res.user };
+        }
+        handledGoogleCodesRef.current.delete(cleanCode);
+        return { success: false, error: 'Kode otentikasi Google tidak valid.' };
+      } catch (err) {
+        handledGoogleCodesRef.current.delete(cleanCode);
+        return { success: false, error: err.message || 'Gagal menukar kode otorisasi Google.' };
+      }
+    },
+    [persistSession],
+  );
 
   const refreshSession = async () => {
     if (!sessionToken) return { success: false, error: 'Tidak ada sesi aktif.' };

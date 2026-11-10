@@ -175,6 +175,20 @@ describe('Auth Gate & Logout Behavior Verification', () => {
     assert.ok(src.includes('setAuthModalVisible(false)'), 'logout menutup sheet');
   });
 
+  it('3b. App.js: sheet login tertutup otomatis setelah sesi Google terisi', () => {
+    const src = fs.readFileSync(path.resolve(rootDir, 'mobile-app/App.js'), 'utf-8');
+    const userEffects = [...src.matchAll(/useEffect\(\(\) => \{[\s\S]*?\}, \[user\]\);/g)].map(
+      (match) => match[0],
+    );
+    assert.ok(
+      userEffects.some((effect) =>
+        /if \(!user\)[\s\S]*?return;[\s\S]*?setAuthModalVisible\(false\)/.test(effect),
+      ),
+      'effect [user] menutup sheet saat sesi aktif (jalur deep link Google)',
+    );
+    assert.ok(src.includes('Login Google Gagal'), 'deep link gagal diberi umpan balik');
+  });
+
   it('4. AuthScreen.js: matches user screenshots and 1:1 web reference design without phantom banner', () => {
     const authScreenPath = path.resolve(rootDir, 'mobile-app/src/screens/AuthScreen.js');
     assert.ok(fs.existsSync(authScreenPath), 'AuthScreen.js exists');
@@ -227,6 +241,14 @@ describe('Auth Gate & Logout Behavior Verification', () => {
     assert.ok(!src.includes('Sudah memiliki akun?'), 'tautan masuk di footer dihapus');
     assert.ok(!src.includes('footerWrap'), 'footer tautan tidak dirender lagi');
     assert.ok(src.includes('handleTabChange'), 'tab switcher tetap berfungsi');
+    assert.ok(
+      src.includes('onAuthSuccess?.(res.user)'),
+      'login Google menutup sheet seperti login password',
+    );
+    assert.ok(
+      src.includes('res.cancelled'),
+      'pembatalan browser tidak memunculkan galat yang menyesatkan',
+    );
   });
 
   it('5. ProfileScreen.js: provides working logout with confirmation dialog and race condition guard', () => {

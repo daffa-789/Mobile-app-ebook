@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Linking,
   BackHandler,
+  Alert,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { theme } from './src/theme';
@@ -56,6 +57,16 @@ function MainNavigator() {
       const url = typeof event === 'string' ? event : event?.url;
       if (!url) return;
       try {
+        if (url.includes('/auth/failure')) {
+          const message = url.match(/[?&]message=([^&#]+)/);
+          Alert.alert(
+            'Login Google Gagal',
+            message
+              ? decodeURIComponent(message[1])
+              : 'Otorisasi Google tidak selesai. Silakan coba lagi.',
+          );
+          return;
+        }
         const match = url.match(/[?&]code=([^&#]+)/);
         const code = match ? match[1] : null;
         if (code && !handledCodes.has(code)) {
@@ -94,7 +105,14 @@ function MainNavigator() {
       setShowRiwayat(false);
       setAuthModalVisible(false);
       pendingActionRef.current = null;
+      return;
     }
+    /* Login Google selesai lewat deep link / WebBrowser, bukan lewat tombol
+     * AuthScreen, jadi onAuthSuccess tidak selalu terpanggil. Tutup sheet
+     * begitu sesi terisi agar pengguna tidak nyangkut di layar Masuk dan
+     * tidak mengetuk "Masuk dengan Google" untuk kedua kalinya. Aksi
+     * tertunda tetap dijalankan oleh effect [user] di bawah. */
+    setAuthModalVisible(false);
   }, [user]);
 
   /* MODE TAMU — pola Shopee/Tokopedia: katalog, agenda, dan halaman Pro boleh

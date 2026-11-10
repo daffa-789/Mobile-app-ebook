@@ -225,12 +225,17 @@ describe('CHALLENGER 2 — Integrated Monorepo, Build & Admin Auth Stress Harnes
       );
     });
 
-    test('Seeded Admin credentials successfully authenticate and return admin role', async () => {
+    test('Seeded Admin credentials successfully authenticate and return admin role', async (t) => {
       const { authenticateWithPassword } =
         await import('../server/services/auth/session_service.js');
+      const password = process.env.ADMIN_TEST_PASSWORD;
+      if (!password) {
+        t.skip('ADMIN_TEST_PASSWORD tidak diset di .env');
+        return;
+      }
       const auth = await authenticateWithPassword({
         email: 'admin@wahidiyah.com',
-        password: 'AdminWahidiyah2026!',
+        password,
       });
       assert.equal(auth.ok, true, 'Seeded admin authentication must succeed');
       assert.equal(auth.user.role, 'admin', 'Seeded admin role must be admin');

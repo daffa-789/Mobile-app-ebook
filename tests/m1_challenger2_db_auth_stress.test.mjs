@@ -61,9 +61,14 @@ test('Challenger 2 Suite: Backend Supabase Queries & Admin Auth Stress Verificat
   });
 
   // 3. Bcrypt Password Verification Adversarial Stress Tests
-  await t.test('3. verifyPassword adversarial & boundary cases', async () => {
+  await t.test('3. verifyPassword adversarial & boundary cases', async (t) => {
     const { verifyPassword } = await import('../server/auth.js');
     const { supabaseServer } = await import('../server/db.js');
+    const adminPassword = process.env.ADMIN_TEST_PASSWORD;
+    if (!adminPassword) {
+      t.skip('ADMIN_TEST_PASSWORD tidak diset di .env');
+      return;
+    }
 
     const { data: adminUser } = await supabaseServer
       .from('users')
@@ -75,7 +80,7 @@ test('Challenger 2 Suite: Backend Supabase Queries & Admin Auth Stress Verificat
 
     // 3.1 Correct password
     assert.equal(
-      await verifyPassword('AdminWahidiyah2026!', storedHash),
+      await verifyPassword(adminPassword, storedHash),
       true,
       'Valid password must verify to true',
     );
@@ -126,14 +131,19 @@ test('Challenger 2 Suite: Backend Supabase Queries & Admin Auth Stress Verificat
   });
 
   // 4. Auth Service authenticateWithPassword Integration Tests
-  await t.test('4. authenticateWithPassword service flow and boundary checks', async () => {
+  await t.test('4. authenticateWithPassword service flow and boundary checks', async (t) => {
     const { authenticateWithPassword } = await import('../server/services/auth/session_service.js');
     const { requireAdmin, hasActivePro } = await import('../server/auth.js');
+    const adminPassword = process.env.ADMIN_TEST_PASSWORD;
+    if (!adminPassword) {
+      t.skip('ADMIN_TEST_PASSWORD tidak diset di .env');
+      return;
+    }
 
     // 4.1 Valid login with correct credentials
     const validResult = await authenticateWithPassword({
       email: 'admin@wahidiyah.com',
-      password: 'AdminWahidiyah2026!',
+      password: adminPassword,
     });
 
     assert.equal(validResult.ok, true, 'Valid admin login must return ok: true');
@@ -150,21 +160,21 @@ test('Challenger 2 Suite: Backend Supabase Queries & Admin Auth Stress Verificat
     // 4.2 Case-insensitivity in email
     const mixedCaseResult = await authenticateWithPassword({
       email: 'Admin@Wahidiyah.COM',
-      password: 'AdminWahidiyah2026!',
+      password: adminPassword,
     });
     assert.equal(mixedCaseResult.ok, true, 'Email lookup must be case-insensitive');
 
     // 4.3 Whitespace in email
     const spacedEmailResult = await authenticateWithPassword({
       email: '   admin@wahidiyah.com   ',
-      password: 'AdminWahidiyah2026!',
+      password: adminPassword,
     });
     assert.equal(spacedEmailResult.ok, true, 'Email lookup must trim whitespace');
 
     // 4.4 Using identifier parameter
     const identifierResult = await authenticateWithPassword({
       identifier: 'admin@wahidiyah.com',
-      password: 'AdminWahidiyah2026!',
+      password: adminPassword,
     });
     assert.equal(identifierResult.ok, true, 'Login via identifier parameter must succeed');
 

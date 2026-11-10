@@ -19,3 +19,6 @@ package-lock.json
 
 # Artefak pengujian sementara
 tests/.temp*
+
+# Folder kerja sementara tool FigCraft (dibuat/dihapus saat ekspor desain)
+.figcraft-work/

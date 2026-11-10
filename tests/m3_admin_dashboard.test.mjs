@@ -48,13 +48,18 @@ test('Milestone 3 — Admin Dashboard Web Configuration & Deployment Suite', asy
     },
   );
 
-  await t.test('2. Seeded Admin user authentication capability', async () => {
+  await t.test('2. Seeded Admin user authentication capability', async (t) => {
     const { authenticateWithPassword } = await import('../server/services/auth/session_service.js');
+    const password = process.env.ADMIN_TEST_PASSWORD;
+    if (!password) {
+      t.skip('ADMIN_TEST_PASSWORD tidak diset di .env');
+      return;
+    }
 
     // Test valid seeded admin login
     const adminAuth = await authenticateWithPassword({
       email: 'admin@wahidiyah.com',
-      password: 'AdminWahidiyah2026!',
+      password,
     });
 
     assert.equal(adminAuth.ok, true, 'Seeded admin authentication must succeed');

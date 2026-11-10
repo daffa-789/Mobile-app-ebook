@@ -127,7 +127,7 @@ describe('Auth Gate & Logout Behavior Verification', () => {
     );
   });
 
-  it('3. App.js: guest mode with one soft gate, contextual sheet and pending action replay', () => {
+  it('3. App.js: guest mode with one soft gate, plain sheet and pending action replay', () => {
     const appPath = path.resolve(rootDir, 'mobile-app/App.js');
     assert.ok(fs.existsSync(appPath), 'App.js exists');
 
@@ -151,12 +151,18 @@ describe('Auth Gate & Logout Behavior Verification', () => {
       src.includes('setTimeout(() => action(), 0)'),
       'aksi dijalankan ulang setelah user terisi',
     );
-    assert.ok(src.includes('Masuk untuk membaca'), 'sheet menyebut kitab yang dipilih');
-    assert.ok(src.includes('Masuk untuk melihat riwayat langganan'));
-
-    // Sheet menerima pesan kontekstual, penutup, dan callback sukses.
-    assert.ok(src.includes('message={authMessage}'), 'pesan kontekstual diteruskan ke sheet');
-    assert.ok(src.includes('onClose={handleCloseAuth}'), 'X / Nanti membatalkan aksi');
+    // Kotak pesan kontekstual dihapus total: sheet polos, X tetap jadi jalan
+    // batal, dan aksi tertunda tetap dijalankan ulang setelah login.
+    assert.ok(!src.includes('Masuk untuk membaca'), 'tidak ada pesan kitab');
+    assert.ok(!src.includes('Masuk untuk melihat riwayat langganan'));
+    assert.ok(!src.includes('Masuk ke akun Anda'));
+    assert.ok(!src.includes('authMessage'), 'state pesan kontekstual dihapus');
+    assert.ok(!src.includes('message={'), 'sheet tidak menerima prop pesan');
+    assert.ok(
+      src.includes('const openAuth = (action = null)'),
+      'openAuth kini hanya menerima aksi tertunda',
+    );
+    assert.ok(src.includes('onClose={handleCloseAuth}'), 'X membatalkan aksi');
     assert.ok(src.includes('onAuthSuccess={handleAuthSuccess}'), 'login sukses melanjutkan aksi');
     assert.ok(
       src.includes('pendingActionRef.current = null'),
@@ -269,7 +275,7 @@ describe('Auth Gate & Logout Behavior Verification', () => {
     );
   });
 
-  it('7. AuthModal.js: ikon X, Nanti, pesan kontekstual, dan callback login sukses', () => {
+  it('7. AuthModal.js: ikon X tanpa Nanti/kotak pesan, dan callback login sukses', () => {
     const src = fs.readFileSync(
       path.resolve(rootDir, 'mobile-app/src/screens/AuthModal.js'),
       'utf-8',
@@ -277,9 +283,10 @@ describe('Auth Gate & Logout Behavior Verification', () => {
 
     assert.ok(src.includes('accessibilityLabel="Tutup"'), 'ikon close diberi label aksesibilitas');
     assert.ok(src.includes('<Feather name="x"'), 'ikon X tersedia untuk menutup sheet');
-    assert.ok(src.includes('onPress={onClose}'), 'X dan Nanti memanggil onClose');
-    assert.ok(src.includes('>Nanti</Text>'), 'tombol Nanti tersedia selain ikon X');
-    assert.ok(/message\s*=\s*''/.test(src), 'sheet menerima pesan kontekstual opsional');
+    assert.ok(src.includes('onPress={onClose}'), 'X memanggil onClose');
+    assert.ok(!src.includes('>Nanti</Text>'), 'tombol Nanti dihapus');
+    assert.ok(!src.includes('messageRow'), 'kotak pesan hijau dihapus');
+    assert.ok(!src.includes('messageText'), 'teks pesan kontekstual dihapus');
     assert.ok(src.includes('onAuthSuccess'), 'sheet meneruskan callback login sukses');
     assert.ok(src.includes('handleAuthSuccess'), 'login sukses tidak sekadar menutup sheet');
   });
@@ -316,7 +323,7 @@ describe('Auth Gate & Logout Behavior Verification', () => {
       !src.includes('Masuk untuk berlangganan Pro'),
       'pesan kontekstual Pro dihapus, sheet dibuka tanpa kotak pesan',
     );
-    assert.ok(src.includes("onOpenAuth?.(''"), 'sheet dibuka dengan pesan kosong');
+    assert.ok(src.includes('onOpenAuth?.('), 'sheet login tamu tetap dipanggil');
     assert.ok(src.includes('chargeRef.current'), 'aksi dilanjutkan setelah login');
   });
 

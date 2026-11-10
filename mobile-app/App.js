@@ -39,7 +39,6 @@ function MainNavigator() {
   const [activeBook, setActiveBook] = useState(null);
   const [showRiwayat, setShowRiwayat] = useState(false);
   const [authModalVisible, setAuthModalVisible] = useState(false);
-  const [authMessage, setAuthMessage] = useState('');
   const [exitToastVisible, setExitToastVisible] = useState(false);
   const lastBackPressRef = React.useRef(0);
   const exitToastTimerRef = React.useRef(null);
@@ -101,24 +100,22 @@ function MainNavigator() {
   /* MODE TAMU — pola Shopee/Tokopedia: katalog, agenda, dan halaman Pro boleh
    * dibuka tanpa akun; hanya aksi yang butuh identitas yang melewati gerbang.
    * Satu gerbang terpusat supaya tidak ada `if (!user)` tersebar di tiap layar. */
-  const openAuth = (message = '', action = null) => {
-    setAuthMessage(message);
+  const openAuth = (action = null) => {
     pendingActionRef.current = action;
     setAuthModalVisible(true);
   };
 
-  const requireAuth = (message, action) => {
+  const requireAuth = (action) => {
     if (user) {
       action?.();
       return;
     }
-    openAuth(message, action);
+    openAuth(action);
   };
 
-  /* Ikon X / tombol Nanti membatalkan aksi yang tertunda. */
+  /* Ikon X membatalkan aksi yang tertunda. */
   const handleCloseAuth = () => {
     setAuthModalVisible(false);
-    setAuthMessage('');
     pendingActionRef.current = null;
   };
 
@@ -127,7 +124,6 @@ function MainNavigator() {
    * sampai `user` benar-benar terisi oleh AuthContext sebelum menjalankannya. */
   const handleAuthSuccess = () => {
     setAuthModalVisible(false);
-    setAuthMessage('');
   };
 
   React.useEffect(() => {
@@ -255,7 +251,7 @@ function MainNavigator() {
         {activeTab === 'home' && (
           <HomeScreen
             onOpenBook={(book) =>
-              requireAuth(`Masuk untuk membaca "${book.title}"`, () => {
+              requireAuth(() => {
                 /* Setelah login, akun gratis yang memilih kitab Pro diarahkan
                  * ke penawaran Pro, bukan ke Reader yang akan ditolak server. */
                 if (book.is_locked && !isProRef.current) setActiveTab('pro');
@@ -269,11 +265,9 @@ function MainNavigator() {
         {activeTab === 'pro' && <ProScreen onOpenAuth={openAuth} />}
         {activeTab === 'profile' && (
           <ProfileScreen
-            onOpenRiwayat={() =>
-              requireAuth('Masuk untuk melihat riwayat langganan', () => setShowRiwayat(true))
-            }
+            onOpenRiwayat={() => requireAuth(() => setShowRiwayat(true))}
             onOpenPro={() => setActiveTab('pro')}
-            onOpenAuth={() => openAuth('Masuk ke akun Anda')}
+            onOpenAuth={() => openAuth()}
           />
         )}
       </View>
@@ -304,11 +298,10 @@ function MainNavigator() {
         </View>
       )}
 
-      {/* Sheet Masuk / Daftar: X atau "Nanti" menutup dan membatalkan aksi,
-          login berhasil menutup lalu melanjutkan aksi yang tertunda. */}
+      {/* Sheet Masuk / Daftar: X menutup dan membatalkan aksi, login berhasil
+          menutup lalu melanjutkan aksi yang tertunda. Tanpa kotak pesan hijau. */}
       <AuthModal
         visible={authModalVisible}
-        message={authMessage}
         initialTab="login"
         onClose={handleCloseAuth}
         onAuthSuccess={handleAuthSuccess}

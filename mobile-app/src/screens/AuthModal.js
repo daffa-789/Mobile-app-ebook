@@ -1,23 +1,17 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Modal, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { AuthScreen } from './AuthScreen';
 
 /**
  * Bottom sheet Masuk / Daftar untuk mode tamu.
- * - `message` menyebut aksi yang memicu sheet ("Masuk untuk membaca ...").
- * - Ikon X dan tombol "Nanti" menutup sheet lewat `onClose` (membatalkan aksi).
+ * - Sengaja tanpa kotak pesan kontekstual dan tanpa tombol "Nanti":
+ *   ikon X adalah satu-satunya cara membatalkan (juga lewat BACK Android).
  * - `onAuthSuccess` dipanggil setelah login/daftar sukses agar pemanggil bisa
  *   melanjutkan aksi yang tertunda. Tanpa prop ini, perilaku lama dipertahankan
  *   (cukup menutup sheet).
  */
-export const AuthModal = ({
-  visible,
-  onClose,
-  onAuthSuccess,
-  message = '',
-  initialTab = 'login',
-}) => {
+export const AuthModal = ({ visible, onClose, onAuthSuccess, initialTab = 'login' }) => {
   const handleAuthSuccess = (...args) => {
     if (typeof onAuthSuccess === 'function') onAuthSuccess(...args);
     else onClose?.();
@@ -39,15 +33,6 @@ export const AuthModal = ({
               <Feather name="x" size={20} color="#5A544C" />
             </TouchableOpacity>
           </View>
-
-          {message ? (
-            <View style={styles.messageRow}>
-              <Text style={styles.messageText}>{message}</Text>
-              <TouchableOpacity onPress={onClose} activeOpacity={0.7} accessibilityRole="button">
-                <Text style={styles.laterText}>Nanti</Text>
-              </TouchableOpacity>
-            </View>
-          ) : null}
 
           <View style={styles.contentWrap}>
             <AuthScreen initialTab={initialTab} onAuthSuccess={handleAuthSuccess} />
@@ -90,31 +75,6 @@ const styles = StyleSheet.create({
     right: 20,
     top: 8,
     padding: 6,
-  },
-  messageRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginHorizontal: 20,
-    marginBottom: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    backgroundColor: '#EAF4EE',
-    borderWidth: 1,
-    borderColor: '#C9DED2',
-  },
-  messageText: {
-    flex: 1,
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#14523A',
-    lineHeight: 17,
-  },
-  laterText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#5A544C',
   },
   contentWrap: {
     flex: 1,

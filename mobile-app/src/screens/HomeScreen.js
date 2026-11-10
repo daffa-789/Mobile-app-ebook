@@ -43,7 +43,7 @@ export const HomeScreen = ({ onOpenBook, onOpenPro }) => {
               style={[styles.bookCard, { width: cardWidth }]}
               activeOpacity={0.88}
               onPress={() => {
-                /* Tamu: semua kitab mengarah ke sheet "Masuk untuk membaca".
+                /* Tamu: semua kitab mengarah ke sheet login (soft gate).
                  * Pengguna login & bukan Pro: kitab terkunci → tawaran Pro. */
                 if (!user) {
                   onOpenBook?.(book);

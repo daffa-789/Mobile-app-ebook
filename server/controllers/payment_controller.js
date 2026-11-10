@@ -28,6 +28,12 @@ import {
 import { handleMidtransNotification } from '../services/payment/notification_service.js';
 import { TRANSACTION_PENDING_STATUS } from '../auth.js';
 
+/* Galat konfigurasi bukan kegagalan gateway: pesannya sudah memuat langkah
+ * perbaikan, jadi jangan ditimpa oleh pesan generik "Gagal membuat transaksi
+ * di Midtrans." yang dulu membuat pengguna (dan admin) tidak tahu apa yang
+ * salah. */
+const MIDTRANS_CONFIG_ERROR_CODES = new Set(['MIDTRANS_NOT_CONFIGURED', 'MIDTRANS_ENV_MISMATCH']);
+
 const ownTransactionOr404 = async (req, res) => {
   const { transaction, forbidden } = await loadTransactionForViewer({
     orderId: req.params.orderId,
@@ -59,7 +65,9 @@ export async function createQrisCharge(req, res) {
     });
 
     if (result.outcome === 'gateway-unavailable') {
-      return res.status(503).json({ success: false, message: result.message });
+      return res
+        .status(503)
+        .json({ success: false, message: result.message, code: result.code || null });
     }
 
     if (result.outcome === 'already-pro') return replyAlreadyPro(res, result);
@@ -70,21 +78,33 @@ export async function createQrisCharge(req, res) {
     }
     return res.status(201).json(body);
   } catch (error) {
-    if (error?.code === 'MIDTRANS_NOT_CONFIGURED') {
-      return res.status(503).json({ success: false, message: error.message });
+    if (MIDTRANS_CONFIG_ERROR_CODES.has(error?.code)) {
+      logger.warn('MIDTRANS', 'Konfigurasi pembayaran belum siap', { kode: error.code });
+      return res.status(503).json({ success: false, message: error.message, code: error.code });
     }
-    logger.error('MIDTRANS', 'Gagal membuat charge QRIS', { pesan: error.message });
-    return res
-      .status(
-        error?.statusCode && error.statusCode >= 400 && error.statusCode < 600
-          ? error.statusCode
-          : 502,
-      )
-      .json({
-        success: false,
-        message: error?.statusCode ? error.message : 'Gagal membuat transaksi di Midtrans.',
-        error: internalErrorDetail(error),
-      });
+
+    /* SDK midtrans-client melempar MidtransError dengan `httpStatusCode` dan
+     * `ApiError`, bukan `statusCode`. Keduanya dicatat agar 401/400 dari
+     * Midtrans terbaca di log, tanpa membocorkan isi respons gateway ke klien. */
+    logger.error('MIDTRANS', 'Gagal membuat charge QRIS', {
+      pesan: error.message,
+      kode: error?.code || null,
+      statusGateway: error?.httpStatusCode || error?.ApiError?.httpStatusCode || null,
+      statusMidtrans: error?.ApiError?.ApiResponse?.status_code || null,
+    });
+
+    const status =
+      error?.statusCode && error.statusCode >= 400 && error.statusCode < 600
+        ? error.statusCode
+        : 502;
+
+    return res.status(status).json({
+      success: false,
+      message: error?.statusCode
+        ? error.message
+        : 'Gagal menghubungi Midtrans. Silakan coba lagi beberapa saat; bila berulang, hubungi admin.',
+      error: internalErrorDetail(error),
+    });
   }
 }
 

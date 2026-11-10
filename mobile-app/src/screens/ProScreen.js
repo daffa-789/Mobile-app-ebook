@@ -188,6 +188,13 @@ export const ProScreen = ({ onOpenAuth }) => {
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
+  /* Galat konfigurasi (kunci kosong / kunci produksi + flag sandbox) tidak
+   * akan sembuh dengan mencoba ulang berkali-kali. Beri petunjuk yang tepat
+   * supaya pengguna tidak mengira ini gangguan jaringan. */
+  const isConfigError = /konfigurasi|belum dikonfigurasi|MIDTRANS_|kunci sandbox/i.test(
+    errorMessage,
+  );
+
   return (
     <ScrollView
       style={styles.container}
@@ -228,8 +235,26 @@ export const ProScreen = ({ onOpenAuth }) => {
           {/* Error Message */}
           {errorMessage ? (
             <View style={styles.errorBox}>
-              <Feather name="alert-circle" size={16} color="#DC2626" />
-              <Text style={styles.errorBoxText}>{errorMessage}</Text>
+              <Feather name="alert-circle" size={16} color="#DC2626" style={styles.errorBoxIcon} />
+              <View style={styles.errorBoxContent}>
+                <Text style={styles.errorBoxText}>{errorMessage}</Text>
+                <Text style={styles.errorBoxHint}>
+                  {isConfigError
+                    ? 'Pembayaran belum bisa diproses sampai konfigurasi Midtrans diperbaiki. Hubungi admin/aplikasi perlu diperbarui.'
+                    : 'Periksa koneksi internet, lalu coba lagi.'}
+                </Text>
+                {!isConfigError ? (
+                  <TouchableOpacity
+                    style={styles.retryButton}
+                    onPress={handleSubscribePress}
+                    disabled={isGenerating}
+                    activeOpacity={0.7}
+                  >
+                    <Feather name="refresh-cw" size={12} color="#B91C1C" />
+                    <Text style={styles.retryButtonText}>Coba Lagi</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             </View>
           ) : null}
 
@@ -415,7 +440,7 @@ const styles = StyleSheet.create({
   },
   errorBox: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 8,
     backgroundColor: '#FEE2E2',
     borderColor: '#FCA5A5',
@@ -424,11 +449,42 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
+  errorBoxIcon: {
+    marginTop: 1,
+  },
+  errorBoxContent: {
+    flex: 1,
+  },
   errorBoxText: {
     fontSize: 12,
     color: '#B91C1C',
-    fontWeight: '500',
-    flex: 1,
+    fontWeight: '600',
+    lineHeight: 17,
+  },
+  errorBoxHint: {
+    fontSize: 11,
+    color: '#B91C1C',
+    opacity: 0.8,
+    marginTop: 6,
+    lineHeight: 15,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+    marginTop: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    backgroundColor: '#FFF1F1',
+  },
+  retryButtonText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#B91C1C',
   },
   subscribeButton: {
     flexDirection: 'row',

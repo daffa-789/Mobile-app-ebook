@@ -17,6 +17,9 @@ public/
 supabase_database/
 package-lock.json
 
+# Berkas konfigurasi non-kode (tidak punya parser Prettier)
+.vercelignore
+
 # Artefak pengujian sementara
 tests/.temp*
 

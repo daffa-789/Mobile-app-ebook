@@ -15,20 +15,31 @@ export const isMidtransConfigured = Boolean(MIDTRANS_SERVER_KEY && MIDTRANS_CLIE
 
 let coreApi = null;
 
-function getCoreApi() {
+/**
+ * Validasi konfigurasi Midtrans yang bisa dipanggil SEBELUM ada baris
+ * transaksi dibuat. Galat konfigurasi bukan kegagalan pembayaran: jangan
+ * mencatat order pending yang lalu ditolak, dan jangan menyamarkan pesannya
+ * menjadi "Gagal membuat transaksi di Midtrans." — pengguna harus tahu apa
+ * yang perlu diperbaiki (isi kunci sandbox atau samakan flag lingkungan).
+ *
+ * `statusCode: 503` membuat controller lama pun meneruskan pesan ini alih-alih
+ * memakai pesan generik, walaupun galatnya muncul dari jalur lain (status,
+ * cancel, expire).
+ */
+export function assertMidtransReady() {
   if (!isMidtransConfigured) {
     const error = new Error(
       'Midtrans belum dikonfigurasi. Isi MIDTRANS_SERVER_KEY dan MIDTRANS_CLIENT_KEY di .env ' +
         '(kunci sandbox: SB-Mid-server-… / SB-Mid-client-… dari dashboard.sandbox.midtrans.com).',
     );
     error.code = 'MIDTRANS_NOT_CONFIGURED';
+    error.statusCode = 503;
     throw error;
   }
 
-  /* Flag yang bertentangan dengan prefix kunci membuat permintaan charge ke
-   * endpoint yang salah dan Midtrans menjawab 401 tanpa keterangan — galatnya
-   * baru muncul setelah pengguna menekan Bayar. Diperiksa di sini supaya
-   * penyebabnya terbaca, bukan disimpulkan dari log transaksi.
+  /* Hanya ketidakcocokan yang PASTI salah yang diblokir (kunci SB-Mid- dengan
+   * flag produksi). Kunci tanpa prefiks bisa berasal dari sandbox lama —
+   * terbukti 10 Nov 2026 — jadi jangan ditolak hanya karena prefiksnya.
    */
   const mismatch = environmentMismatch({
     isProduction: MIDTRANS_IS_PRODUCTION,
@@ -39,8 +50,13 @@ function getCoreApi() {
       `Konfigurasi Midtrans tidak konsisten: ${mismatch}. Perbaikan: ${mismatchRemediation(MIDTRANS_IS_PRODUCTION)}.`,
     );
     error.code = 'MIDTRANS_ENV_MISMATCH';
+    error.statusCode = 503;
     throw error;
   }
+}
+
+function getCoreApi() {
+  assertMidtransReady();
 
   if (!coreApi) {
     coreApi = new midtransClient.CoreApi({

@@ -2,9 +2,40 @@ import { Router } from 'express';
 import { supabaseServer, isDatabaseHealthy } from '../db.js';
 import { requireAdmin, requireAuth } from '../auth.js';
 import { fail } from '../lib/http.js';
-import { LISTEN_PORT } from '../config.js';
+import { LISTEN_PORT, MIDTRANS_IS_PRODUCTION, MIDTRANS_SERVER_KEY } from '../config.js';
+import { isMidtransConfigured } from '../lib/midtrans.js';
+import { environmentMismatch, keyEnvironment, mismatchRemediation } from '../lib/midtransKeys.js';
 
 export const healthRouter = Router();
+
+/**
+ * Status konfigurasi gateway TANPA pernah mengirim nilai kunci. Dipakai untuk
+ * memastikan env Vercel sudah sama dengan `.env` lokal setelah deploy — selama
+ * ini ketidakcocokan kunci/flag baru ketahuan saat pengguna menekan Bayar.
+ */
+const midtransHealth = () => {
+  const mismatch = environmentMismatch({
+    isProduction: MIDTRANS_IS_PRODUCTION,
+    serverKey: MIDTRANS_SERVER_KEY,
+  });
+
+  let message = null;
+  if (!isMidtransConfigured) {
+    message = 'MIDTRANS_SERVER_KEY dan MIDTRANS_CLIENT_KEY belum diisi.';
+  } else if (mismatch) {
+    message = `${mismatch}. Perbaikan: ${mismatchRemediation(MIDTRANS_IS_PRODUCTION)}.`;
+  }
+
+  return {
+    configured: isMidtransConfigured,
+    /* Endpoint yang benar-benar dipakai mengikuti flag; prefiks kunci hanya
+     * petunjuk dan tidak selalu bisa menentukan lingkungan (lihat midtransKeys). */
+    mode: MIDTRANS_IS_PRODUCTION ? 'production' : 'sandbox',
+    keyPrefix: keyEnvironment(MIDTRANS_SERVER_KEY),
+    consistent: isMidtransConfigured && !mismatch,
+    message,
+  };
+};
 
 healthRouter.get('/health', async (req, res) => {
   const dbHealth = await isDatabaseHealthy();
@@ -14,6 +45,7 @@ healthRouter.get('/health', async (req, res) => {
     databaseMessage: dbHealth.message || 'Database Supabase Cloud terhubung aktif',
     databaseDetail: dbHealth.detail || null,
     server: 'running',
+    midtrans: midtransHealth(),
 
     port: LISTEN_PORT,
     timestamp: new Date().toISOString(),
@@ -23,11 +55,11 @@ healthRouter.get('/health', async (req, res) => {
 // Unduhan langsung dari domain sendiri (same-origin). Jangan arahkan ke
 // github.com: atribut HTML `download` diabaikan browser untuk URL cross-origin
 // sehingga pengguna malah melihat halaman GitHub. Arsip rilis kanonik tetap di
-// GitHub Release v0.1.3. Build JSC v0.1.2 sudah dihapus (force close 32-bit).
+// GitHub Release v0.1.4. Build JSC v0.1.2 sudah dihapus (force close 32-bit).
 // Pemasangan di perangkat dengan build lama wajib uninstall karena tiap build
 // EAS memakai sertifikat penandatanganan yang berbeda.
 healthRouter.get('/download/apk', (req, res) => {
-  res.redirect(302, '/unduh/wahidiyah-v0.1.3-hermes-32bit.apk');
+  res.redirect(302, '/unduh/wahidiyah-v0.1.4-hermes-32bit.apk');
 });
 
 healthRouter.get('/stats', requireAuth, requireAdmin, async (req, res) => {

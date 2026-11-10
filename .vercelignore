@@ -1,0 +1,11 @@
+# Artefak lokal yang tidak boleh ikut upload ke Vercel.
+# `.expo/builds` menyimpan APK 30-50 MB per rilis dan `dist/` selalu
+# dibangun ulang oleh Vercel; mengirimnya membuat upload ~257 MB dan
+# berakhir "fetch failed".
+node_modules
+.expo
+dist
+.agents
+.workbuddy-ai
+tests
+Design APP.figcraft

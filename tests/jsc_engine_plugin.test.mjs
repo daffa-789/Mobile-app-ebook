@@ -74,7 +74,7 @@ test('versionCode naik di atas build JSC v0.1.2 yang cacat (4)', () => {
 });
 
 test('unduh terjadi langsung dari domain sendiri (same-origin), bukan ke GitHub', () => {
-  const apkPath = '/unduh/wahidiyah-v0.1.3-hermes-32bit.apk';
+  const apkPath = '/unduh/wahidiyah-v0.1.4-hermes-32bit.apk';
   const sameOriginBase = 'https://mobile-app-ebook.vercel.app';
   const jscArtifact = 'xA4OBPWr4r68oBF-zo0p9olad0QSUX0bR4vsbf7pX-s.apk';
   const sources = {
@@ -124,8 +124,8 @@ test('unduh terjadi langsung dari domain sendiri (same-origin), bukan ke GitHub'
   assert.equal(headerMap['Content-Type'], 'application/vnd.android.package-archive');
 });
 
-test('rilis 0.1.3 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => {
-  assert.equal(appJson.expo.version, '0.1.3', 'versi rilisan harus 0.1.3');
+test('rilis 0.1.4 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => {
+  assert.equal(appJson.expo.version, '0.1.4', 'versi rilisan harus 0.1.4');
   assert.ok(appJson.expo.android.versionCode > 4);
 
   const buildProperties = appJson.expo.plugins.find(
@@ -137,7 +137,7 @@ test('rilis 0.1.3 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => 
 
   const plugins = appJson.expo.plugins.map((entry) => (Array.isArray(entry) ? entry[0] : entry));
   for (const plugin of ['expo-build-properties', 'expo-font']) {
-    assert.ok(plugins.includes(plugin), `${plugin} tidak boleh hilang dari build 0.1.3`);
+    assert.ok(plugins.includes(plugin), `${plugin} tidak boleh hilang dari build 0.1.4`);
   }
   assert.equal(appJson.expo.jsEngine, undefined, 'jsEngine jsc tidak didukung SDK 58');
   assert.equal(appJson.expo.runtimeVersion?.policy, 'appVersion');

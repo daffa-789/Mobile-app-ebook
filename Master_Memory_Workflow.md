@@ -52,7 +52,7 @@
 ]
 ```
 
-`app.json` saat ini: `version 0.1.3`, `versionCode 5`, **tanpa** `jsEngine`, **tanpa** plugin JSC.
+`app.json` saat ini: `version 0.1.4`, `versionCode 6`, **tanpa** `jsEngine`, **tanpa** plugin JSC.
 
 **Cek biner wajib sebelum APK dipublikasikan** (jangan hanya percaya pada config):
 
@@ -62,9 +62,11 @@
 - Magic `assets/index.android.bundle` → `c61fbc03` (HBC), bukan `76617220`.
 - `minSdkVersion` 24; `versionCode` selalu naik, tidak pernah turun.
 
-**Artefak cacat sudah dihapus pada 10 November 2026:** `.expo/builds/mobile-app-ebook-0.1.2-jsc.apk` dan **GitHub Release `v0.1.2`** (aset `mobile-app-ebook-0.1.2-jsc.apk`, URL unduhnya kini 404). Tag git `v0.1.2` sengaja dipertahankan hanya sebagai jejak histori, tanpa aset unduhan. Rilis yang sah: **v0.1.3** (`wahidiyah-v0.1.3-hermes-32bit.apk`).
+**Artefak cacat sudah dihapus pada 10 November 2026:** `.expo/builds/mobile-app-ebook-0.1.2-jsc.apk` dan **GitHub Release `v0.1.2`** (aset `mobile-app-ebook-0.1.2-jsc.apk`, URL unduhnya kini 404). Tag git `v0.1.2` sengaja dipertahankan hanya sebagai jejak histori, tanpa aset unduhan. Rilis yang sah: **v0.1.4** (`wahidiyah-v0.1.4-hermes-32bit.apk`).
 
-**Unduhan wajib same-origin (ditetapkan 10 November 2026):** menyalurkan tombol unduh langsung ke URL `github.com` membuat browser **mengabaikan atribut HTML `download`** (cross-origin), sehingga pengguna malah dinavigasi ke halaman GitHub "Mendownload..." dan bukan menerima berkas. Karena itu APK disalin ke `public/unduh/wahidiyah-v0.1.3-hermes-32bit.apk` dan disajikan dari domain sendiri dengan header `Content-Disposition: attachment` + `Content-Type: application/vnd.android.package-archive` (diatur di `vercel.json`). `APK_DOWNLOAD_URL` = `/unduh/wahidiyah-v0.1.3-hermes-32bit.apk`; `/download` dan `/download/apk` hanya alias redirect internal. **GitHub Release v0.1.3 tetap arsip rilis kanonik, tetapi bukan tujuan unduh pengguna.** Saat rilis baru, perbarui ketiganya: berkas di `public/unduh/`, nilai `DIRECT_APK_URL`, serta target redirect/header di `vercel.json`. Regresi dikunci otomatis oleh `tests/jsc_engine_plugin.test.mjs` — **jangan dilonggarkan atau dihapus**.
+**Unduhan wajib same-origin (ditetapkan 10 November 2026):** menyalurkan tombol unduh langsung ke URL `github.com` membuat browser **mengabaikan atribut HTML `download`** (cross-origin), sehingga pengguna malah dinavigasi ke halaman GitHub "Mendownload..." dan bukan menerima berkas. Karena itu APK disalin ke `public/unduh/wahidiyah-v0.1.4-hermes-32bit.apk` dan disajikan dari domain sendiri dengan header `Content-Disposition: attachment` + `Content-Type: application/vnd.android.package-archive` (diatur di `vercel.json`). `APK_DOWNLOAD_URL` = `/unduh/wahidiyah-v0.1.4-hermes-32bit.apk`; `/download` dan `/download/apk` hanya alias redirect internal. **GitHub Release v0.1.4 tetap arsip rilis kanonik, tetapi bukan tujuan unduh pengguna.** Saat rilis baru, perbarui ketiganya: berkas di `public/unduh/`, nilai `DIRECT_APK_URL`, serta target redirect/header di `vercel.json`. Regresi dikunci otomatis oleh `tests/jsc_engine_plugin.test.mjs` — **jangan dilonggarkan atau dihapus**.
+
+**Prefiks kunci Midtrans bukan penentu lingkungan (dikoreksi 10 November 2026):** `SB-Mid-…` pasti sandbox, tetapi kunci **tanpa** prefiks (`Mid-server-…`) bisa berasal dari akun sandbox lama. Bukti terukur: `Mid-server-Ela…` membuat QRIS **201** di `api.sandbox.midtrans.com` dan ditolak **401** di `api.midtrans.com`. Guard karena itu hanya memblokir `SB-Mid-…` + `MIDTRANS_IS_PRODUCTION=true`; selain itu lingkungan mengikuti flag. Jangan mengembalikan aturan lama yang menganggap semua kunci non-`SB-` sebagai produksi — aturan itulah yang memblokir charge sah dan memunculkan pesan "Gagal membuat transaksi di Midtrans." pada 10 November 2026. "Signature Secret Key" di halaman Access Keys juga bukan server key untuk Basic auth Core API (401); uji `/v2/charge` sebelum memakai kunci baru.
 
 > ⚠️ **Peringatan untuk agent/sesi berikutnya:** catatan lama di `.agents/teamwork/**/handoff.md`, `DISPATCH.md`, dan `PROJECT.md` masih memuji plugin JSC sebagai "PASS / benar / kompatibel 32-bit". Itu **dokumen usang dan SALAH** — abaikan. Berkas ini adalah satu-satunya sumber kebenaran.
 

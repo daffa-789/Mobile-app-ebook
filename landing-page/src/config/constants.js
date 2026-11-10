@@ -10,10 +10,10 @@ const procEnv = typeof process !== 'undefined' && process.env ? process.env : {}
  * browser mengabaikan atribut HTML `download` (cross-origin) dan malah
  * menavigasi ke halaman github.com ("Mendownload...") alih-alih mengunduh.
  * APK kini disajikan langsung dari `public/unduh/` dengan header
- * Content-Disposition: attachment. GitHub Release v0.1.3 tetap menjadi arsip
- * rilis kanonik, bukan tujuan unduh pengguna. Rilis v0.1.3 memakai Hermes V1
+ * Content-Disposition: attachment. GitHub Release v0.1.4 tetap menjadi arsip
+ * rilis kanonik, bukan tujuan unduh pengguna. Rilis v0.1.4 memakai Hermes V1
  * + armeabi-v7a/arm64-v8a; build JSC v0.1.2 sudah dihapus (force close). */
-const DIRECT_APK_URL = '/unduh/wahidiyah-v0.1.3-hermes-32bit.apk';
+const DIRECT_APK_URL = '/unduh/wahidiyah-v0.1.4-hermes-32bit.apk';
 
 export const APK_DOWNLOAD_URL =
   metaEnv.VITE_APK_DOWNLOAD_URL || procEnv.VITE_APK_DOWNLOAD_URL || DIRECT_APK_URL;

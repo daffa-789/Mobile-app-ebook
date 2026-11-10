@@ -1,9 +1,16 @@
-/* Kunci Midtrans membawa lingkungannya sendiri di prefix: `SB-Mid-…` berarti
- * sandbox, `Mid-…` berarti produksi. Pasangan flag + kunci yang keliru tidak
- * pernah menghasilkan galat yang jelas di sisi kita — Midtrans menjawab 401 di
- * tengah alur bayar, setelah pengguna sudah menekan Bayar. Karena itu
- * kecocokannya diperiksa di satu tempat dan dipakai ulang oleh server,
- * health-check, dan klien pembayaran.
+/* Lingkungan kunci Midtrans TIDAK bisa disimpulkan hanya dari prefiks.
+ *
+ * `SB-Mid-…` memang pasti sandbox. Tetapi kunci tanpa prefiks itu **tidak
+ * selalu produksi**: dashboard sandbox lama (dan akun yang dibuat sebelum
+ * penomoran baru) menampilkan server key sebagai `Mid-server-…` biasa.
+ * Bukti terukur 10 Nov 2026: `Mid-server-Ela…` berhasil membuat QRIS di
+ * `api.sandbox.midtrans.com` (HTTP 201, `qr_string` ada) dan ditolak 401 di
+ * `api.midtrans.com`. Guard lama menganggapnya produksi lalu memblokir charge
+ * yang sebenarnya sah — persis galat "Gagal membuat transaksi di Midtrans."
+ *
+ * Karena itu hanya satu arah yang boleh memblokir: kunci berprefiks `SB-Mid-`
+ * dipakai dengan `MIDTRANS_IS_PRODUCTION=true`. Selain itu lingkungan mengikuti
+ * flag, dan Midtrans sendiri yang menjadi hakim terakhir (401 bila salah).
  *
  * Berkas ini sengaja murni (tidak membaca process.env) supaya bisa diimpor
  * skrip yang menjalankan dotenv-nya sendiri tanpa perlombaan urutan impor.
@@ -18,47 +25,45 @@ export const isProductionFlag = (value) =>
     .trim()
     .toLowerCase() === 'true';
 
-/** 'sandbox' | 'production' | null bila kunci kosong. */
+/**
+ * 'sandbox' bila prefiks `SB-Mid-` pasti; 'unknown' bila tanpa prefiks
+ * (bisa sandbox lama maupun produksi); null bila kunci kosong.
+ */
 export const keyEnvironment = (key) => {
   const value = (key || '').trim();
   if (!value) return null;
-  return value.startsWith(SANDBOX_KEY_PREFIX) ? 'sandbox' : 'production';
+  return value.startsWith(SANDBOX_KEY_PREFIX) ? 'sandbox' : 'unknown';
 };
 
 /**
- * Masalah yang MEMBLOKIR pembayaran: kunci server menentukan apakah panggilan
- * API diterima atau ditolak 401, jadi hanya prefixnyalah yang boleh membuat
- * konfigurasi dinyatakan salah. Kunci client tidak ikut menyandera alur ini —
- * lihat `clientKeyNotice`.
+ * Hanya ketidakcocokan yang PASTI salah yang dilaporkan: kunci `SB-Mid-…`
+ * (sandbox) dipasang bersama `MIDTRANS_IS_PRODUCTION=true`. Kunci tanpa
+ * prefiks sengaja dibiarkan — lihat penjelasan di atas.
  */
 export const environmentMismatch = ({ isProduction, serverKey }) => {
-  const serverEnv = keyEnvironment(serverKey);
-  if (!serverEnv) return null;
+  if (!isProduction) return null;
+  if (keyEnvironment(serverKey) !== 'sandbox') return null;
 
-  const wanted = isProduction ? 'production' : 'sandbox';
-  if (serverEnv !== wanted) {
-    return `MIDTRANS_IS_PRODUCTION=${isProduction ? 'true' : 'false'} padahal MIDTRANS_SERVER_KEY berasal dari lingkungan ${serverEnv}`;
-  }
-
-  return null;
+  return 'MIDTRANS_IS_PRODUCTION=true padahal MIDTRANS_SERVER_KEY berprefiks SB-Mid- (kunci sandbox)';
 };
 
 /**
- * Catatan (bukan galat) bila kunci client berasal dari lingkungan yang berbeda
- * dari kunci server. Aplikasi ini memakai Core API QRIS, yang tidak memakai
- * client key untuk men-charge, jadi pasangan yang berbeda tidak menggagalkan
- * pembayaran — tetapi tetap perlu terlihat, karena dashboard kadang
- * menampilkan client key tanpa prefiks aslinya.
+ * Catatan (bukan galat) bila kedua kunci punya prefiks yang pasti dan berbeda.
+ * Kunci tanpa prefiks tidak menghasilkan catatan: dashboard sandbox memang
+ * sering menampilkan client key tanpa `SB-`, dan QRIS Core API tidak memakai
+ * client key untuk men-charge.
  */
 export const clientKeyNotice = ({ serverKey, clientKey }) => {
   const serverEnv = keyEnvironment(serverKey);
   const clientEnv = keyEnvironment(clientKey);
-  if (!serverEnv || !clientEnv || serverEnv === clientEnv) return null;
+  if (!serverEnv || !clientEnv) return null;
+  if (serverEnv === 'unknown' || clientEnv === 'unknown') return null;
+  if (serverEnv === clientEnv) return null;
   return `MIDTRANS_CLIENT_KEY terlihat sebagai ${clientEnv} sementara MIDTRANS_SERVER_KEY ${serverEnv} — tidak memblokir QRIS, tetapi periksa ulang nilai yang disalin`;
 };
 
 /** Perbaikan yang dimaksud, tanpa pernah menyadur nilai kunci apa pun. */
 export const mismatchRemediation = (isProduction) =>
   isProduction
-    ? 'isi MIDTRANS_SERVER_KEY dan MIDTRANS_CLIENT_KEY dengan kunci produksi (Mid-server-… / Mid-client-…) dari akun yang sudah terverifikasi, atau kembalikan MIDTRANS_IS_PRODUCTION ke false untuk memakai sandbox'
-    : 'ambil kunci sandbox (SB-Mid-server-… / SB-Mid-client-…) dari dashboard.sandbox.midtrans.com, atau set MIDTRANS_IS_PRODUCTION=true bila memang bermaksud memakai akun produksi';
+    ? 'set MIDTRANS_IS_PRODUCTION=false untuk memakai kunci sandbox tersebut, atau ganti dengan kunci produksi (Mid-server-…) dari akun yang sudah terverifikasi'
+    : 'pastikan MIDTRANS_SERVER_KEY diambil dari dashboard sandbox; bila kunci tidak berprefiks SB-Mid- dan charge ditolak 401, ganti dengan kunci sandbox yang benar atau set MIDTRANS_IS_PRODUCTION=true bila memang memakai akun produksi';

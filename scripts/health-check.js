@@ -67,8 +67,8 @@ report(
   midtransMismatch
     ? `${midtransMismatch}. Perbaikan: ${mismatchRemediation(midtransProduction)}`
     : midtransServer
-      ? `Mode: ${keyEnvironment(midtransServer) === 'production' ? 'Production' : 'Sandbox'} (dari prefix kunci server)${midtransNotice ? ` — catatan: ${midtransNotice}` : ''}`
-      : 'Key belum diisi',
+      ? `Mode: ${midtransProduction ? 'Production' : 'Sandbox'} (dari MIDTRANS_IS_PRODUCTION; prefiks kunci: ${keyEnvironment(midtransServer) || 'kosong'})${midtransNotice ? ` — catatan: ${midtransNotice}` : ''}`
+      : 'Kunci sandbox belum diisi: ambil SB-Mid-server-… / SB-Mid-client-… di dashboard.sandbox.midtrans.com, lalu samakan di Environment Variables Vercel',
 );
 
 const waProvider = process.env.WHATSAPP_PROVIDER || 'fonnte';

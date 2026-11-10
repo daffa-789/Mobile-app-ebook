@@ -21,10 +21,10 @@ import {
   MIDTRANS_QRIS_EXPIRY_MINUTES,
 } from '../../config.js';
 import {
+  assertMidtransReady,
   createQrisCharge,
   extractQrAction,
   extractQrString,
-  isMidtransConfigured,
 } from '../../lib/midtrans.js';
 import { logger } from '../../logger.js';
 import { TRANSACTION_COLUMNS } from './constants.js';
@@ -63,11 +63,17 @@ export async function loadTransactionForViewer({ orderId, viewerId, viewerRole }
  *  - `reused` / `created`  : order siap dipakai beserta payload QR-nya.
  */
 export async function createQrisOrder({ planId, userId, fallbackUser, phone }) {
-  if (!isMidtransConfigured) {
+  /* Cek konfigurasi lebih dulu, sebelum `insertTransaction`. Kalau kunci
+   * produksi dipasang bersama flag sandbox (atau kunci belum diisi), charge
+   * PASTI gagal — menulis order pending lalu menandainya rejected hanya
+   * meninggalkan deretan transaksi sampah di riwayat pengguna. */
+  try {
+    assertMidtransReady();
+  } catch (error) {
     return {
       outcome: 'gateway-unavailable',
-      message:
-        'Payment gateway Midtrans belum dikonfigurasi. Isi MIDTRANS_SERVER_KEY dan MIDTRANS_CLIENT_KEY di .env.',
+      code: error.code,
+      message: error.message,
     };
   }
 

@@ -32,19 +32,25 @@ const scriptHash = crypto
   .update(MOBILE_HANDOFF_SCRIPT, 'utf8')
   .digest('base64');
 
+/** Satu policy dipakai untuk enforced dan report-only. Helmet memasang
+ * `script-src 'self'` secara global; bila report-only dibiarkan, skrip inline
+ * yang SAH menurut policy enforced tetap memicu warning CSP di konsol. */
+const HANDOFF_CSP = [
+  "default-src 'none'",
+  "base-uri 'none'",
+  "form-action 'none'",
+  "frame-ancestors 'none'",
+  `script-src 'sha256-${scriptHash}'`,
+  "style-src 'unsafe-inline'",
+].join('; ');
+
 /** Header ketat: kode sekali pakai tidak boleh tersimpan di cache/history/Referer. */
 export const MOBILE_HANDOFF_HEADERS = {
   'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
   Pragma: 'no-cache',
   'Referrer-Policy': 'no-referrer',
-  'Content-Security-Policy': [
-    "default-src 'none'",
-    "base-uri 'none'",
-    "form-action 'none'",
-    "frame-ancestors 'none'",
-    `script-src 'sha256-${scriptHash}'`,
-    "style-src 'unsafe-inline'",
-  ].join('; '),
+  'Content-Security-Policy': HANDOFF_CSP,
+  'Content-Security-Policy-Report-Only': HANDOFF_CSP,
   'X-Content-Type-Options': 'nosniff',
 };
 

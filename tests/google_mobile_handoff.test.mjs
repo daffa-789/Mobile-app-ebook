@@ -117,6 +117,13 @@ test('Handoff OAuth mobile: URL intent, HTML aman, dan callback tanpa 302 buta',
     assert.match(MOBILE_HANDOFF_HEADERS['Cache-Control'], /no-store/);
     assert.equal(MOBILE_HANDOFF_HEADERS['Referrer-Policy'], 'no-referrer');
     assert.match(MOBILE_HANDOFF_HEADERS['Content-Security-Policy'], /script-src 'sha256-/);
+    /* Helmet memasang report-only `script-src 'self'` secara global. Tanpa
+     * override, skrip inline yang sah tetap menimbulkan warning CSP palsu. */
+    assert.equal(
+      MOBILE_HANDOFF_HEADERS['Content-Security-Policy-Report-Only'],
+      MOBILE_HANDOFF_HEADERS['Content-Security-Policy'],
+      'policy report-only harus identik dengan policy enforced',
+    );
   });
 
   await t.test('mobile-start tidak memaksa pilih akun berulang & menandai state', () => {

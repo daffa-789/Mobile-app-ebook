@@ -9,11 +9,13 @@ import {
   Platform,
   useWindowDimensions,
   ActivityIndicator,
+  AppState,
   Linking,
   BackHandler,
   Alert,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import * as Updates from 'expo-updates';
 import { theme } from './src/theme';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { BookProvider } from './src/context/BookContext';
@@ -46,6 +48,65 @@ function MainNavigator() {
   /* Aksi yang tertunda saat tamu diminta masuk. Disimpan di ref (bukan state)
    * karena state React akan memperlakukan fungsi sebagai updater. */
   const pendingActionRef = React.useRef(null);
+  const [otaReady, setOtaReady] = useState(false);
+  const [otaBusy, setOtaBusy] = useState(false);
+  const otaDismissedRef = React.useRef(false);
+  const otaLastCheckRef = React.useRef(0);
+
+  /* expo-updates sudah memeriksa OTA otomatis saat peluncuran
+   * (`checkOnLaunch = ALWAYS` di APK), tapi satu-satunya petunjuk ada di
+   * halaman Profil. Pantau ketersediaan di sini supaya pembaruan kecil
+   * berikutnya cukup satu ketukan dari layar mana pun. Pemeriksaan dibatasi
+   * 60 detik agar AppState tidak memicu permintaan berulang. */
+  React.useEffect(() => {
+    if (__DEV__ || !Updates.isEnabled) return undefined;
+    let cancelled = false;
+    let checking = false;
+
+    const checkOta = async () => {
+      const now = Date.now();
+      if (checking || cancelled || now - otaLastCheckRef.current < 60000) return;
+      checking = true;
+      otaLastCheckRef.current = now;
+      try {
+        const result = await Updates.checkForUpdateAsync();
+        if (!cancelled && !otaDismissedRef.current) {
+          setOtaReady(Boolean(result?.isAvailable));
+        }
+      } catch (_) {
+        /* Offline / server sibuk: jangan ganggu pengguna. Pemeriksaan native
+         * akan mengulang pada peluncuran berikutnya. */
+      } finally {
+        checking = false;
+      }
+    };
+
+    checkOta();
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') checkOta();
+    });
+    return () => {
+      cancelled = true;
+      subscription?.remove?.();
+    };
+  }, []);
+
+  const handleApplyOta = async () => {
+    if (otaBusy) return;
+    setOtaBusy(true);
+    try {
+      await Updates.fetchUpdateAsync();
+      await Updates.reloadAsync();
+    } catch (_) {
+      setOtaBusy(false);
+      Alert.alert('Gagal Memuat Pembaruan', 'Periksa koneksi internet Anda lalu coba lagi.');
+    }
+  };
+
+  const handleDismissOta = () => {
+    otaDismissedRef.current = true;
+    setOtaReady(false);
+  };
 
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === 'web' && windowWidth > 500;
@@ -316,6 +377,38 @@ function MainNavigator() {
         </View>
       )}
 
+      {/* Pembaruan kecil siap: satu ketukan dari layar mana pun, tanpa harus
+          membuka halaman Profil. Sembunyi saat sheet auth / reader aktif. */}
+      {otaReady && !authModalVisible && !activeBook && !showRiwayat ? (
+        <View style={styles.otaBanner}>
+          <Feather name="download" size={16} color="#14523A" />
+          <Text style={styles.otaBannerText}>Pembaruan kecil siap dipasang.</Text>
+          <TouchableOpacity
+            style={styles.otaBannerButton}
+            onPress={handleApplyOta}
+            disabled={otaBusy}
+            activeOpacity={0.8}
+            accessibilityLabel="Muat ulang pembaruan"
+            accessibilityRole="button"
+          >
+            {otaBusy ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.otaBannerButtonText}>Muat Ulang</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleDismissOta}
+            style={styles.otaBannerClose}
+            activeOpacity={0.7}
+            accessibilityLabel="Tutup pemberitahuan pembaruan"
+            accessibilityRole="button"
+          >
+            <Feather name="x" size={16} color="#5A544C" />
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
       {/* Sheet Masuk / Daftar: X menutup dan membatalkan aksi, login berhasil
           menutup lalu melanjutkan aksi yang tertunda. Tanpa kotak pesan hijau. */}
       <AuthModal
@@ -466,5 +559,49 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
     textAlign: 'center',
+  },
+  otaBanner: {
+    position: 'absolute',
+    bottom: 72,
+    alignSelf: 'center',
+    width: '92%',
+    maxWidth: 420,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FFFDF9',
+    borderWidth: 1,
+    borderColor: '#B9DBC9',
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    shadowColor: '#14523A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  otaBannerText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#14523A',
+  },
+  otaBannerButton: {
+    backgroundColor: '#14523A',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    minWidth: 92,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  otaBannerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  otaBannerClose: {
+    padding: 4,
   },
 });

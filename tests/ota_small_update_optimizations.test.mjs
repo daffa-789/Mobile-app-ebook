@@ -125,8 +125,9 @@ test('Optimasi update kecil 0.1.5', async (t) => {
   });
 
   await t.test('Regresi login Google sebelumnya tidak ikut terhapus', () => {
-    assert.ok(authSrc.includes('googleWaiting'));
-    assert.ok(authSrc.includes('AppState'));
+    assert.ok(!authSrc.includes('googleWaiting'), 'status tunggu Google dihapus');
+    assert.ok(!authSrc.includes('AppState'), 'listener foreground status tunggu dihapus');
+    assert.ok(authSrc.includes('googleSessionRef'), 'penjaga sesi ganda tetap ada');
     assert.ok(authSrc.includes('res.timedOut'));
     assert.ok(appSrc.includes('setAuthModalVisible(false)'));
   });

@@ -120,9 +120,12 @@ test('Handoff OAuth mobile: URL intent, HTML aman, dan callback tanpa 302 buta',
     assert.match(appSrc, /setAuthModalVisible\(false\)/, 'sheet login langsung ditutup');
     assert.match(ctxSrc, /setUser\(res\.user\)/, 'sesi Google mengisi user secara otomatis');
     assert.ok(
-      !/selamat|login berhasil/i.test(authSrc),
-      'tidak ada teks "selamat telah login" di sheet auth',
+      !/selamat|login berhasil|Browser Google sedang terbuka|Menunggu konfirmasi Google/i.test(
+        authSrc,
+      ),
+      'sheet auth bebas teks ucapan maupun teks status tunggu browser',
     );
+    assert.ok(!authSrc.includes('googleWaiting'), 'status tunggu Google benar-benar dihapus');
   });
 
   await t.test('Hash CSP cocok persis dengan skrip yang dikirim', () => {

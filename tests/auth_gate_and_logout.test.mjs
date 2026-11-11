@@ -249,13 +249,14 @@ describe('Auth Gate & Logout Behavior Verification', () => {
       src.includes('res.cancelled'),
       'pembatalan browser tidak memunculkan galat yang menyesatkan',
     );
-    /* Regresi UX: sheet tidak boleh membeku tanpa penjelasan selama Custom Tab
-     * Google terbuka, dan ketukan berulang tidak boleh membuka sesi kedua. */
-    assert.ok(src.includes('googleWaiting'), 'status tunggu Google tersedia');
-    assert.ok(src.includes('Menunggu konfirmasi Google'), 'tombol memberi umpan balik');
-    assert.ok(src.includes('Browser Google sedang terbuka'), 'ada penjelasan di sheet');
+    /* Pemilik minta sheet BEBAS teks status selama browser Google terbuka.
+     * Yang tersisa cuma penjaga sesi ganda + penanganan timeout tanpa galat. */
+    assert.ok(!src.includes('googleWaiting'), 'status tunggu Google dihapus');
+    assert.ok(!src.includes('Browser Google sedang terbuka'), 'banner penjelasan dihapus');
+    assert.ok(!src.includes('Menunggu konfirmasi Google'), 'label tombol tidak lagi berubah');
+    assert.ok(!src.includes('AppState'), 'listener foreground ikut dihapus');
+    assert.ok(!src.includes('googleWaitingText'), 'style banner status dihapus');
     assert.ok(src.includes('googleSessionRef'), 'ketukan ganda dicegah');
-    assert.ok(src.includes('AppState'), 'kembali ke foreground membersihkan status tunggu');
     assert.ok(src.includes('res.timedOut'), 'timeout browser tidak menampilkan galat menyesatkan');
   });
 

@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
-const OFFICIAL_APK_URL = '/unduh/wahidiyah-v0.1.5-hermes-32bit.apk';
+const OFFICIAL_APK_URL = '/unduh/wahidiyah-v0.1.6-hermes-32bit.apk';
 const LIVE_ORIGIN = 'https://mobile-app-ebook.vercel.app';
 
 // Helper: recursively find files

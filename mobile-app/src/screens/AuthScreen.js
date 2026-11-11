@@ -19,7 +19,7 @@ import { OAUTH_CONFIG } from '../config/constants';
 import { VerificationScreen } from './VerificationScreen';
 
 export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
-  const { login, register, requestPasswordReset, startGoogleMobile } = useAuth();
+  const { login, register, requestPasswordReset, startGoogleLogin } = useAuth();
   const [activeTab, setActiveTab] = useState(initialTab); // 'login' | 'register'
   const [viewMode, setViewMode] = useState('auth'); // 'auth' | 'verification' | 'request-reset'
   const [resetIdentifier, setResetIdentifier] = useState('');
@@ -163,7 +163,7 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
     googleSessionRef.current = true;
     try {
       if (Platform.OS !== 'web') {
-        const res = await startGoogleMobile();
+        const res = await startGoogleLogin();
         if (res.success) {
           /* Sama seperti login password: tutup sheet dan lanjutkan aksi
            * tertunda. Tanpa ini sesi sudah aktif tapi UI nyangkut di Masuk. */

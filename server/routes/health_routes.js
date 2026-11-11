@@ -61,7 +61,7 @@ healthRouter.get('/health', async (req, res) => {
 // SHA-256 713c4b84…), jadi upgrade in-place dari 0.1.4 ke 0.1.5 (versionCode 7)
 // diperbolehkan. Uninstall hanya disarankan bila ada sisa cache OTA runtime lama.
 healthRouter.get('/download/apk', (req, res) => {
-  res.redirect(302, '/unduh/wahidiyah-v0.1.5-hermes-32bit.apk');
+  res.redirect(302, '/unduh/wahidiyah-v0.1.6-hermes-32bit.apk');
 });
 
 healthRouter.get('/stats', requireAuth, requireAdmin, async (req, res) => {

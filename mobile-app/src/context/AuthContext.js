@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest, setUnauthorizedHandler } from '../api/client';
+import { configureGoogleNative, signInWithGoogleNative } from '../lib/googleNative';
 
 const AuthContext = createContext(null);
 
@@ -13,6 +14,12 @@ export const AuthProvider = ({ children }) => {
    * openAuthSessionAsync dan dari deep link App.js. Set ini memastikan
    * penukaran hanya dilakukan sekali untuk kode yang sama. */
   const handledGoogleCodesRef = useRef(new Set());
+
+  /* SDK native hanya dikonfigurasi di Android; di web/platform lain helper
+   * langsung mengembalikan null sehingga tidak ada kode native yang dievaluasi. */
+  useEffect(() => {
+    configureGoogleNative();
+  }, []);
 
   // Simpan sesi ke penyimpanan lokal & SecureStore
   const persistSession = useCallback(async (token, profile) => {
@@ -366,6 +373,34 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  /**
+   * Jalur utama: picker akun native tanpa browser. Bila perangkat tidak punya
+   * SDK/Play Services (atau ini build web), jatuh ke OAuth browser yang lama.
+   * idToken diverifikasi server, lalu sesi JWT disimpan dengan bentuk yang
+   * sama persis seperti login password / OAuth browser.
+   */
+  const startGoogleLogin = async () => {
+    const native = await signInWithGoogleNative();
+    if (native.fallback) return startGoogleMobile();
+    if (!native.success) return native;
+
+    try {
+      const res = await apiRequest('/api/auth/google/native', {
+        method: 'POST',
+        body: JSON.stringify({ idToken: native.idToken }),
+      });
+      if (res?.token && res?.user) {
+        await persistSession(res.token, res.user);
+        setSessionToken(res.token);
+        setUser(res.user);
+        return { success: true, user: res.user };
+      }
+      return { success: false, error: 'Sesi Google tidak valid. Coba lagi.' };
+    } catch (err) {
+      return { success: false, error: err.message || 'Gagal masuk dengan Google.' };
+    }
+  };
+
   /* useCallback sengaja dipakai: effect deep-link di App.js bergantung pada
    * fungsi ini. Tanpa identitas stabil, listener didaftarkan ulang tiap render
    * dan kode sekali-pakai berisiko ditukar dua kali. */
@@ -442,6 +477,7 @@ export const AuthProvider = ({ children }) => {
         resendVerification,
         requestPasswordReset,
         resetPassword,
+        startGoogleLogin,
         startGoogleMobile,
         exchangeGoogleCode,
         refreshSession,

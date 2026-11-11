@@ -91,6 +91,37 @@ export async function verifyGoogleOAuthCode({ code, clientId, clientSecret, redi
 }
 
 /**
+ * Verifikasi idToken yang dihasilkan SDK Google Sign-In native di perangkat.
+ * Berbeda dengan `verifyGoogleOAuthCode`: token sudah jadi, jadi tidak ada
+ * penukaran authorization code. Audience wajib client ID Web milik kita
+ * supaya token dari aplikasi lain tidak bisa dipakai masuk ke sini.
+ */
+export async function verifyGoogleIdToken({ idToken, clientId }) {
+  if (!idToken || !clientId) {
+    return { ok: false, message: 'Token Google atau konfigurasi klien belum lengkap.' };
+  }
+
+  const oauthClient = new OAuth2Client(clientId);
+  let payload;
+  try {
+    const ticket = await oauthClient.verifyIdToken({ idToken, audience: clientId });
+    payload = ticket.getPayload();
+  } catch (verifyError) {
+    logger.error('GOOGLE_OAUTH', 'Verifikasi id_token native gagal', {
+      pesan: verifyError.message,
+    });
+    return { ok: false, message: 'idToken Google tidak valid atau tidak cocok dengan client ID.' };
+  }
+  if (!payload?.email_verified) {
+    return { ok: false, message: 'Email Google belum diverifikasi oleh Google.' };
+  }
+
+  const email = normalizeEmail(payload.email);
+  if (!email) return { ok: false, message: 'Email Google kosong.' };
+  return { ok: true, email, name: payload.name };
+}
+
+/**
  * Cari pengguna berdasarkan email Google, atau buat baru. Balapan INSERT
  * (23505) diselesaikan dengan membaca ulang barisnya — pemenang balapan
  * menganggap pendaftarannya berhasil.

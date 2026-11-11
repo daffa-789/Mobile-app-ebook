@@ -1,10 +1,11 @@
 /**
- * Regresi optimasi "update kecil tetap di 0.1.5":
+ * Regresi optimasi update kecil + rilis 0.1.6:
  * 1. Header CSP enforced & report-only halaman handoff selaras.
  * 2. Saat aplikasi dibuka dan ada OTA, pengguna mendapat DUA pilihan jelas
  *    (perbarui / nanti), lewat modul terpisah — bukan logik bertumpuk di App.js.
  * 3. Kode mati dari iterasi sebelumnya benar-benar hilang.
- * 4. Tidak ada kenaikan versi / modul native baru.
+ * 4. Perubahan JS murni TIDAK boleh menaikkan versi; versi 0.1.6 naik HANYA
+ *    karena SDK Google Sign-In native ditambahkan (wajib APK + runtime baru).
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -22,7 +23,7 @@ const hookSrc = read('mobile-app/src/hooks/useOtaUpdate.js');
 const promptSrc = read('mobile-app/src/components/OtaUpdatePrompt.js');
 const appConfig = JSON.parse(read('app.json'));
 
-test('Optimasi update kecil 0.1.5', async (t) => {
+test('Optimasi update kecil & rilis native 0.1.6', async (t) => {
   await t.test('CSP enforced dan report-only identik', () => {
     assert.equal(
       MOBILE_HANDOFF_HEADERS['Content-Security-Policy-Report-Only'],
@@ -31,10 +32,19 @@ test('Optimasi update kecil 0.1.5', async (t) => {
     assert.match(MOBILE_HANDOFF_HEADERS['Content-Security-Policy'], /script-src 'sha256-/);
   });
 
-  await t.test('Versi tidak naik dan tidak ada modul native baru', () => {
-    assert.equal(appConfig.expo.version, '0.1.5');
-    assert.equal(appConfig.expo.android.versionCode, 7);
+  await t.test('Versi 0.1.6 naik karena modul native, bukan karena update JS', () => {
+    assert.equal(appConfig.expo.version, '0.1.6');
+    assert.equal(appConfig.expo.android.versionCode, 8);
     assert.deepEqual(appConfig.expo.runtimeVersion, { policy: 'appVersion' });
+    const pkg = JSON.parse(read('package.json'));
+    assert.ok(
+      pkg.dependencies['@react-native-google-signin/google-signin'],
+      'SDK native terdaftar; inilah satu-satunya alasan versi naik',
+    );
+    const plugins = appConfig.expo.plugins.map((entry) =>
+      Array.isArray(entry) ? entry[0] : entry,
+    );
+    assert.ok(plugins.includes('@react-native-google-signin/google-signin'));
     for (const src of [appSrc, otaLibSrc, hookSrc, promptSrc]) {
       assert.ok(!src.includes('expo-clipboard') && !src.includes('expo-media-library'));
     }

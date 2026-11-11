@@ -17,6 +17,7 @@ export const SESSION_FREE_ENDPOINTS = [
   '/api/auth/resend-verification',
   '/api/auth/exchange',
   '/api/auth/google/mobile-start',
+  '/api/auth/google/native',
   '/api/auth/google-supabase',
 ];
 

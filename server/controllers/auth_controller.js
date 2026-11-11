@@ -36,6 +36,7 @@ import { resendVerificationOtp } from '../services/auth/otp_resend_service.js';
 import {
   loginWithGoogleSupabase,
   verifyGoogleOAuthCode,
+  verifyGoogleIdToken,
   findOrCreateGoogleUser,
 } from '../services/auth/google_oauth_service.js';
 
@@ -212,6 +213,46 @@ export async function googleSupabase(req, res) {
     if (!result.ok) return rejectOutcome(res, result);
 
     return replySession(res, result, 'Login Google berhasil.');
+  } catch (error) {
+    return replyAuthFailure(res, error);
+  }
+}
+
+/**
+ * POST /api/auth/google/native — login lewat SDK Google Sign-In native.
+ * Klien mengirim idToken hasil `GoogleSignin.signIn()`; server memverifikasi
+ * tanda tangan + audience, lalu menerbitkan sesi JWT yang sama persis dengan
+ * jalur OAuth browser. Tidak ada browser, tidak ada authorization code.
+ */
+export async function googleNative(req, res) {
+  const idToken = typeof req.body?.idToken === 'string' ? req.body.idToken.trim() : '';
+  if (!idToken) {
+    return res.status(400).json({ success: false, message: 'Token Google wajib diisi.' });
+  }
+  const clientId = process.env.GOOGLE_CLIENT_ID || '';
+  if (!clientId) {
+    return res
+      .status(500)
+      .json({ success: false, message: 'Google OAuth belum dikonfigurasi di server.' });
+  }
+
+  try {
+    const verified = await verifyGoogleIdToken({ idToken, clientId });
+    if (!verified.ok) {
+      return res.status(401).json({ success: false, message: verified.message });
+    }
+    const account = await findOrCreateGoogleUser({
+      email: verified.email,
+      name: verified.name,
+      source: 'native Google Sign-In',
+    });
+    if (!account.ok) throw new Error('Gagal membuat atau mengambil akun Google.');
+
+    return replySession(
+      res,
+      { token: createSessionToken(account.user), user: toPublicUser(account.user) },
+      'Login berhasil',
+    );
   } catch (error) {
     return replyAuthFailure(res, error);
   }

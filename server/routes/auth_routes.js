@@ -15,6 +15,7 @@ import {
   exchange,
   googleCallback,
   googleMobileStart,
+  googleNative,
   googleSupabase,
   login,
   me,
@@ -42,6 +43,8 @@ authRouter.post('/resend-verification', wrap(resendVerification));
 authRouter.post('/google-supabase', wrap(googleSupabase));
 
 authRouter.post('/google/mobile-start', wrap(googleMobileStart));
+
+authRouter.post('/google/native', wrap(googleNative));
 
 authRouter.get('/google/callback', wrap(googleCallback));
 

@@ -15,7 +15,7 @@ const procEnv = typeof process !== 'undefined' && process.env ? process.env : {}
  * + armeabi-v7a/arm64-v8a dan MENYEMATKAN bundel JS final (mode tamu, tautan
  * simulator QRIS, unduh QR) sehingga instal segar tidak bergantung OTA.
  * Build JSC v0.1.2 sudah dihapus (force close). */
-const DIRECT_APK_URL = '/unduh/wahidiyah-v0.1.5-hermes-32bit.apk';
+const DIRECT_APK_URL = '/unduh/wahidiyah-v0.1.6-hermes-32bit.apk';
 
 export const APK_DOWNLOAD_URL =
   metaEnv.VITE_APK_DOWNLOAD_URL || procEnv.VITE_APK_DOWNLOAD_URL || DIRECT_APK_URL;

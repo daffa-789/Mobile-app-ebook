@@ -8,9 +8,6 @@ import {
   Alert,
   Image,
   ActivityIndicator,
-  Share,
-  Linking,
-  Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -20,11 +17,11 @@ import {
   createPaymentCharge,
   checkPaymentStatus,
   cancelPayment,
-  reconcilePayment,
   getQrImageUrl,
 } from '../api/payments.js';
-import { generateQrPng, bytesToBase64 } from '../lib/qr.js';
+import { generateQrPng } from '../lib/qr.js';
 import { formatRupiah } from '../lib/catalog.js';
+import { copyTextWithToast } from '../lib/clipboard.js';
 
 export const ProScreen = ({ onOpenAuth }) => {
   const { user, isPro, refreshSession } = useAuth();
@@ -33,11 +30,8 @@ export const ProScreen = ({ onOpenAuth }) => {
   const [activeOrder, setActiveOrder] = useState(null);
   const [localQrUri, setLocalQrUri] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
-  const [isDownloadingQr, setIsDownloadingQr] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
-  const [paidSuccess, setPaidSuccess] = useState(false);
 
   const pollIntervalRef = useRef(null);
 
@@ -68,7 +62,6 @@ export const ProScreen = ({ onOpenAuth }) => {
         const res = await checkPaymentStatus(orderId);
         if (res?.isPaid || res?.status === 'success' || res?.status === 'settlement') {
           if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-          setPaidSuccess(true);
           setActiveOrder(null);
           setLocalQrUri(null);
           await refreshSession();
@@ -147,57 +140,15 @@ export const ProScreen = ({ onOpenAuth }) => {
     return chargeRef.current?.();
   };
 
-  const handleManualCheck = async () => {
-    if (!activeOrder?.orderId || isChecking) return;
-    setIsChecking(true);
-    setErrorMessage('');
-    try {
-      // Rekonsiliasi order pending
-      await reconcilePayment().catch(() => null);
-
-      const res = await checkPaymentStatus(activeOrder.orderId);
-      if (res?.isPaid || res?.status === 'success' || res?.status === 'settlement') {
-        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-        setPaidSuccess(true);
-        setActiveOrder(null);
-        setLocalQrUri(null);
-        await refreshSession();
-        await refreshSubscriptions();
-        Alert.alert(
-          'Pembayaran Berhasil!',
-          'Selamat! Keanggotaan Pro Anda telah aktif. Selamat membaca.',
-        );
-      } else {
-        Alert.alert(
-          'Menunggu Pembayaran',
-          'Pembayaran belum terdeteksi di sistem Midtrans. Jika sudah mentransfer via e-wallet/m-banking, mohon tunggu beberapa detik lalu periksa kembali.',
-        );
-      }
-    } catch (err) {
-      setErrorMessage(err.message || 'Gagal memeriksa status pembayaran.');
-    } finally {
-      setIsChecking(false);
-    }
-  };
-
+  /* Tombol X = satu ketukan langsung membatalkan tagihan, tanpa dialog
+   * konfirmasi. Tampilan sengaja dibuat paling minimal. */
   const handleCancelOrder = async () => {
     if (!activeOrder?.orderId) return;
-    Alert.alert('Batalkan Tagihan', 'Apakah Anda ingin membatalkan kode QRIS ini?', [
-      { text: 'Tidak', style: 'cancel' },
-      {
-        text: 'Ya, Batalkan',
-        style: 'destructive',
-        onPress: async () => {
-          if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-          try {
-            await cancelPayment(activeOrder.orderId);
-          } catch (_) {}
-          setActiveOrder(null);
-          setLocalQrUri(null);
-          setSecondsLeft(0);
-        },
-      },
-    ]);
+    if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    cancelPayment(activeOrder.orderId).catch(() => null);
+    setActiveOrder(null);
+    setLocalQrUri(null);
+    setSecondsLeft(0);
   };
 
   const formatCountdown = (totalSec) => {
@@ -213,109 +164,20 @@ export const ProScreen = ({ onOpenAuth }) => {
     errorMessage,
   );
 
-  /* Kolom simulator Midtrans bernama "QR Code Image Url": yang ditempel HARUS
-   * URL gambar PNG, bukan payload EMVCo `qrString`. Server mengirim
-   * `qrMidtransUrl` (URL publik Midtrans) khusus mode sandbox; URL proxy
-   * `/qris/:id/qr.png` hanya cadangan karena simulator tidak punya token JWT. */
+  /* Tautan yang disalin HARUS URL gambar PNG, bukan payload EMVCo `qrString`.
+   * Server mengirim `qrMidtransUrl` (URL publik Midtrans) khusus sandbox;
+   * URL proxy `/qris/:id/qr.png` hanya cadangan. */
   const simulatorQrLink =
     activeOrder?.qrMidtransUrl ||
     (activeOrder?.qrImageUrl && activeOrder?.orderId ? getQrImageUrl(activeOrder.orderId) : null) ||
     '';
-  const isDirectMidtransUrl = Boolean(activeOrder?.qrMidtransUrl);
-
-  /* Tidak memakai expo-clipboard: modul native itu tidak ada di APK 0.1.3–0.1.5,
-   * sehingga tidak bisa dikirim lewat OTA. `Share` dan `Text selectable` murni
-   * JS dan sudah tersedia di React Native — tahan lama teks untuk menyalin. */
-  const handleShareQrLink = async () => {
-    if (!simulatorQrLink) {
-      Alert.alert(
-        'Tautan belum tersedia',
-        'Kode QRIS belum selesai dibuat. Coba lagi beberapa saat.',
-      );
-      return;
-    }
-    try {
-      await Share.share({
-        message: simulatorQrLink,
-        title: 'Tautan QRIS untuk Simulator Midtrans',
-      });
-    } catch {
-      Alert.alert(
-        'Gagal membagikan',
-        'Tahan teks tautan di bawah, lalu pilih Salin secara manual.',
-      );
-    }
-  };
-
-  /* Sumber gambar untuk diunduh: utamakan PNG yang dihasilkan murni JS dari
-   * payload EMVCo (tidak bergantung jaringan, berlaku juga di produksi).
-   * Bila tagihan cuma punya URL gambar Midtrans, unduh byte-nya lewat fetch. */
-  const buildQrPngBase64 = async () => {
-    if (activeOrder?.qrString) {
-      const { dataUri } = generateQrPng(activeOrder.qrString, { cellSize: 8, margin: 4 });
-      return dataUri.slice(dataUri.indexOf(',') + 1);
-    }
-    if (activeOrder?.qrMidtransUrl) {
-      const response = await fetch(activeOrder.qrMidtransUrl);
-      if (!response.ok) throw new Error(`Gambar QR tidak dapat diunduh (HTTP ${response.status}).`);
-      return bytesToBase64(new Uint8Array(await response.arrayBuffer()));
-    }
-    throw new Error('Tagihan ini tidak memiliki gambar QR yang bisa diunduh.');
-  };
-
-  /* "Unduh QR" tanpa modul native baru: `expo-file-system` sudah ikut ter-
-   * autolink di APK 0.1.4/0.1.5 karena merupakan dependensi langsung paket `expo`.
-   * StorageAccessFramework meminta pengguna memilih folder (Download/DCIM),
-   * lalu menulis PNG di sana — tidak butuh izin penyimpanan maupun rebuild APK.
-   * Bila SAF gagal, fallback ke browser: tahan lama gambar → Simpan gambar. */
-  const handleDownloadQr = async () => {
-    if (isDownloadingQr) return;
-    setIsDownloadingQr(true);
-    try {
-      const base64 = await buildQrPngBase64();
-
-      if (Platform.OS !== 'android') {
-        if (!activeOrder?.qrMidtransUrl) throw new Error('Tautan gambar QR tidak tersedia.');
-        await Linking.openURL(activeOrder.qrMidtransUrl);
-        return;
-      }
-
-      const FileSystem = await import('expo-file-system/legacy');
-      const SAF = FileSystem.StorageAccessFramework;
-      const permissions = await SAF.requestDirectoryPermissionsAsync();
-      if (!permissions.granted) {
-        Alert.alert(
-          'Unduh dibatalkan',
-          'Pilih folder (misalnya Download atau DCIM) untuk menyimpan gambar QRIS.',
-        );
-        return;
-      }
-
-      const fileName = `QRIS-Wahidiyah-${Date.now()}`;
-      const fileUri = await SAF.createFileAsync(permissions.directoryUri, fileName, 'image/png');
-      await SAF.writeAsStringAsync(fileUri, base64, { encoding: 'base64' });
-
-      Alert.alert(
-        'QRIS tersimpan',
-        `${fileName}.png ada di folder yang Anda pilih. Buka galeri/File Manager, lalu pindai dengan DANA, GoPay, BCA, OVO, atau ShopeePay.`,
-      );
-    } catch (error) {
-      const fallbackUrl = activeOrder?.qrMidtransUrl;
-      if (fallbackUrl) {
-        Alert.alert(
-          'Penyimpanan langsung gagal',
-          'Gambar QR dibuka di browser. Tahan lama gambarnya, lalu pilih "Simpan gambar".',
-        );
-        try {
-          await Linking.openURL(fallbackUrl);
-        } catch {
-          Alert.alert('Gagal membuka gambar', 'Salin tautan QR di atas, lalu buka di browser.');
-        }
-      } else {
-        Alert.alert('Gagal mengunduh QR', error?.message || 'Coba lagi beberapa saat.');
-      }
-    } finally {
-      setIsDownloadingQr(false);
+  /* Satu-satunya aksi di kartu QRIS: salin tautan gambar, lalu popup
+   * "berhasil di salin". Detailnya ada di lib/clipboard.js supaya layar
+   * ini tetap fokus pada tampilan. */
+  const handleCopyQrLink = async () => {
+    const result = await copyTextWithToast(simulatorQrLink);
+    if (!result.success) {
+      Alert.alert('Gagal Menyalin', result.error || 'Coba lagi beberapa saat.');
     }
   };
 
@@ -386,10 +248,21 @@ export const ProScreen = ({ onOpenAuth }) => {
           {activeOrder ? (
             <View style={styles.qrisSection}>
               <View style={styles.qrisHeader}>
-                <Text style={styles.qrisTitle}>Pindai QRIS untuk Membayar</Text>
-                <Text style={styles.qrisSubtitle}>
-                  Buka GoPay, OVO, Dana, BCA, atau aplikasi m-banking pilihan Anda.
-                </Text>
+                <View style={styles.qrisHeaderText}>
+                  <Text style={styles.qrisTitle}>Pindai QRIS untuk Membayar</Text>
+                  <Text style={styles.qrisSubtitle}>
+                    Buka GoPay, OVO, Dana, BCA, atau aplikasi m-banking pilihan Anda.
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.qrisCloseBtn}
+                  onPress={handleCancelOrder}
+                  activeOpacity={0.7}
+                  accessibilityLabel="Batalkan tagihan"
+                  accessibilityRole="button"
+                >
+                  <Feather name="x" size={18} color="#5A544C" />
+                </TouchableOpacity>
               </View>
 
               {/* Box Gambar QR */}
@@ -425,96 +298,20 @@ export const ProScreen = ({ onOpenAuth }) => {
                 </Text>
               </View>
 
-              {/* Tautan untuk ditempel ke simulator QRIS Midtrans (sandbox) */}
-              <View style={styles.simulatorBox}>
-                <View style={styles.simulatorHeader}>
-                  <Feather name="link" size={13} color="#14523A" />
-                  <Text style={styles.simulatorTitle}>Simulator QRIS Midtrans</Text>
-                </View>
-                <Text style={styles.simulatorHint}>
-                  Tempel tautan ini ke kolom "QR Code Image Url" simulator, lalu klik Scan QR.
-                </Text>
-
-                {simulatorQrLink ? (
-                  <>
-                    <Text selectable style={styles.simulatorLink}>
-                      {simulatorQrLink}
-                    </Text>
-                    <Text style={styles.simulatorCopyHint}>
-                      Tahan lama tautan di atas, lalu pilih Salin.
-                    </Text>
-                    <TouchableOpacity
-                      style={styles.simulatorShareBtn}
-                      onPress={handleShareQrLink}
-                      activeOpacity={0.75}
-                    >
-                      <Feather name="share-2" size={13} color="#14523A" />
-                      <Text style={styles.simulatorShareBtnText}>Bagikan / Salin Tautan</Text>
-                    </TouchableOpacity>
-                    {!isDirectMidtransUrl ? (
-                      <Text style={styles.simulatorWarning}>
-                        Ini tautan cadangan lewat server kami (butuh login). Bila simulator menolak,
-                        batalkan lalu buat kode QR baru.
-                      </Text>
-                    ) : null}
-                  </>
-                ) : (
-                  <Text style={styles.simulatorWarning}>
-                    Tautan gambar QR belum tersedia untuk tagihan ini. Batalkan lalu buat kode QR
-                    baru, atau pindai QR di atas dengan dompet sungguhan.
-                  </Text>
-                )}
-
-                <Text selectable style={styles.simulatorAddress}>
-                  simulator.sandbox.midtrans.com/v2/qris/index
-                </Text>
-              </View>
-
-              {/* Simpan PNG QRIS ke folder pilihan (bisa dipindai dari galeri) */}
-              <TouchableOpacity
-                style={styles.downloadQrBtn}
-                onPress={handleDownloadQr}
-                disabled={isDownloadingQr}
-                activeOpacity={0.85}
-              >
-                {isDownloadingQr ? (
-                  <ActivityIndicator size="small" color="#FBF8F3" />
-                ) : (
-                  <>
-                    <Feather name="download" size={15} color="#FBF8F3" />
-                    <Text style={styles.downloadQrBtnText}>Unduh QR (Simpan ke Galeri)</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-              <Text style={styles.downloadQrHint}>
-                Pilih folder penyimpanan saat diminta, lalu pindai berkas PNG dari galeri.
-              </Text>
-
-              {/* Tombol Periksa Status Manual */}
-              <TouchableOpacity
-                style={styles.checkStatusBtn}
-                onPress={handleManualCheck}
-                disabled={isChecking}
-                activeOpacity={0.85}
-              >
-                {isChecking ? (
-                  <ActivityIndicator size="small" color="#14523A" />
-                ) : (
-                  <>
-                    <Feather name="refresh-cw" size={14} color="#14523A" />
-                    <Text style={styles.checkStatusBtnText}>Saya Sudah Bayar</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-
-              {/* Tombol Batalkan / Buat Ulang */}
-              <TouchableOpacity
-                style={styles.cancelBtn}
-                onPress={handleCancelOrder}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.cancelBtnText}>Batalkan / Buat Kode Baru</Text>
-              </TouchableOpacity>
+              {/* Satu-satunya aksi: salin tautan gambar QR. Tidak ada judul
+                  simulator, petunjuk tempel, alamat, maupun tombol lain. */}
+              {simulatorQrLink ? (
+                <TouchableOpacity
+                  style={styles.copyLinkBtn}
+                  onPress={handleCopyQrLink}
+                  activeOpacity={0.85}
+                  accessibilityLabel="Salin tautan"
+                  accessibilityRole="button"
+                >
+                  <Feather name="copy" size={14} color="#FBF8F3" />
+                  <Text style={styles.copyLinkBtnText}>Salin Tautan</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           ) : isPro ? (
             <TouchableOpacity
@@ -722,13 +519,25 @@ const styles = StyleSheet.create({
     borderColor: '#E4D9C6',
   },
   qrisHeader: {
-    alignItems: 'center',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    width: '100%',
     marginBottom: 14,
+  },
+  qrisHeaderText: {
+    flex: 1,
+    alignItems: 'center',
+    paddingRight: 8,
+  },
+  qrisCloseBtn: {
+    padding: 4,
+    marginTop: -2,
   },
   qrisTitle: {
     fontSize: 15,
     fontWeight: '800',
     color: '#1D1B17',
+    textAlign: 'center',
     marginBottom: 4,
   },
   qrisSubtitle: {
@@ -784,81 +593,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#14523A',
   },
-  simulatorBox: {
-    width: '100%',
-    backgroundColor: '#FFFDF9',
-    borderWidth: 1,
-    borderColor: '#E4D9C6',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 14,
-  },
-  simulatorHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
-  },
-  simulatorTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#14523A',
-  },
-  simulatorHint: {
-    fontSize: 11,
-    color: '#5A544C',
-    lineHeight: 16,
-    marginBottom: 8,
-  },
-  simulatorLink: {
-    width: '100%',
-    fontSize: 10,
-    lineHeight: 15,
-    fontFamily: 'monospace',
-    color: '#1D1B17',
-    backgroundColor: '#F4EEE3',
-    borderWidth: 1,
-    borderColor: '#E4D9C6',
-    borderRadius: 8,
-    padding: 8,
-  },
-  simulatorCopyHint: {
-    fontSize: 10,
-    color: '#7C756C',
-    marginTop: 6,
-  },
-  simulatorShareBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    width: '100%',
-    height: 36,
-    marginTop: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#C9DED2',
-    backgroundColor: '#EAF4EE',
-  },
-  simulatorShareBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#14523A',
-  },
-  simulatorWarning: {
-    fontSize: 10,
-    color: '#92400E',
-    lineHeight: 15,
-    marginTop: 6,
-  },
-  simulatorAddress: {
-    fontSize: 9,
-    color: '#7C756C',
-    fontFamily: 'monospace',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  downloadQrBtn: {
+  copyLinkBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -867,43 +602,10 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 12,
     backgroundColor: '#14523A',
-    marginBottom: 6,
   },
-  downloadQrBtnText: {
+  copyLinkBtnText: {
     fontSize: 13,
     fontWeight: '700',
     color: '#FBF8F3',
-  },
-  downloadQrHint: {
-    fontSize: 10,
-    color: '#7C756C',
-    textAlign: 'center',
-    lineHeight: 14,
-    marginBottom: 14,
-  },
-  checkStatusBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#DCEDE4',
-    borderRadius: 12,
-    width: '100%',
-    height: 42,
-    marginBottom: 8,
-  },
-  checkStatusBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#14523A',
-  },
-  cancelBtn: {
-    paddingVertical: 6,
-  },
-  cancelBtnText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#A8A199',
-    textDecorationLine: 'underline',
   },
 });

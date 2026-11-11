@@ -8,9 +8,10 @@
  *
  * Solusinya: callback mobile menjawab dengan halaman HTTPS milik sendiri yang
  * (1) langsung menavigasi ke `intent://` Android — Chrome meneruskan deep link
- * ke aplikasi dan menariknya ke latar depan, (2) menampilkan status "berhasil"
- * sehingga tab tidak lagi menyerupai halaman login Google, dan (3) menyediakan
- * tombol manual bila Chrome memblokir navigasi otomatis.
+ * ke aplikasi dan menariknya ke latar depan, dan (2) menyediakan tautan manual
+ * bila Chrome memblokir navigasi otomatis. Halaman sukses SENGAJA tanpa teks
+ * "selamat / login berhasil": sesi di aplikasi diperbarui otomatis oleh
+ * `AuthContext` + effect `[user]` di `App.js`, jadi tidak perlu layar ucapan.
  *
  * Skrip inline sengaja TIDAK memuat data dinamis: URL dibaca dari atribut
  * tautan, sehingga hash CSP-nya konstan dan bisa dipasang sebagai header.
@@ -41,7 +42,6 @@ const HANDOFF_CSP = [
   "form-action 'none'",
   "frame-ancestors 'none'",
   `script-src 'sha256-${scriptHash}'`,
-  "style-src 'unsafe-inline'",
 ].join('; ');
 
 /** Header ketat: kode sekali pakai tidak boleh tersimpan di cache/history/Referer. */
@@ -90,8 +90,9 @@ export const buildMobileAuthUrls = ({ scheme, androidPackage, path, params = {} 
 };
 
 /**
- * HTML mandiri untuk halaman serah-terima. Tidak memuat gambar atau sumber
- * daya eksternal — hanya gaya inline, satu skrip ber-hash, dan dua tautan.
+ * HTML minimal untuk serah-terima. Tanpa aset eksternal, tanpa CSS, dan tanpa
+ * teks ucapan: satu skrip ber-hash langsung membuka aplikasi, dua tautan jadi
+ * cadangan. Pesan singkat hanya muncul pada jalur gagal (perlu diketahui user).
  *
  * @param {object} options
  * @param {'success'|'failure'} options.status
@@ -102,14 +103,12 @@ export const buildMobileAuthUrls = ({ scheme, androidPackage, path, params = {} 
  */
 export const buildMobileHandoffHtml = ({ status, message = '', intentUrl, deepLinkUrl }) => {
   const isSuccess = status === 'success';
-  const title = isSuccess ? 'Login berhasil' : 'Login Google gagal';
-  const description = isSuccess
-    ? 'Akun Google Anda sudah terhubung. Aplikasi akan terbuka otomatis dalam sekejap.'
-    : message || 'Otorisasi Google tidak selesai. Kembali ke aplikasi untuk mencoba lagi.';
   const safeIntent = escapeHtml(intentUrl);
   const safeDeepLink = escapeHtml(deepLinkUrl);
-  const badge = isSuccess ? '✓' : '!';
-  const accent = isSuccess ? '#14523A' : '#C00511';
+  const title = isSuccess ? 'Mobile-app-ebook' : 'Login Google gagal';
+  const notice = isSuccess
+    ? ''
+    : `<p>${escapeHtml(message || 'Otorisasi Google tidak selesai. Kembali ke aplikasi untuk mencoba lagi.')}</p>`;
 
   return `<!doctype html>
 <html lang="id">
@@ -117,47 +116,12 @@ export const buildMobileHandoffHtml = ({ status, message = '', intentUrl, deepLi
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
-<title>${escapeHtml(title)} — Mobile-app-ebook</title>
+<title>${escapeHtml(title)}</title>
 <noscript><meta http-equiv="refresh" content="0;url=${safeDeepLink}"></noscript>
-<style>
-  :root { color-scheme: light; }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; min-height: 100vh; display: flex; align-items: center;
-    justify-content: center; padding: 24px; background: #FBF8F3;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    color: #1D1B17; -webkit-text-size-adjust: 100%;
-  }
-  main {
-    width: 100%; max-width: 380px; background: #FFFDF9; border: 1px solid #E4D9C6;
-    border-radius: 24px; padding: 28px 24px; text-align: center;
-    box-shadow: 0 8px 28px rgba(20, 82, 58, 0.08);
-  }
-  .badge {
-    width: 52px; height: 52px; margin: 0 auto 16px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    background: ${isSuccess ? '#DCEDE4' : '#FDE8E8'}; color: ${accent};
-    font-size: 26px; font-weight: 700;
-  }
-  h1 { margin: 0 0 8px; font-size: 20px; line-height: 1.3; }
-  p { margin: 0 0 22px; font-size: 14px; line-height: 1.55; color: #5A544C; }
-  .btn {
-    display: block; padding: 14px 18px; border-radius: 14px; background: ${accent};
-    color: #FFFFFF; font-size: 14px; font-weight: 700; text-decoration: none;
-  }
-  .fallback { display: block; margin-top: 16px; font-size: 13px; color: ${accent}; }
-  small { display: block; margin-top: 20px; font-size: 11px; color: #7C756C; }
-</style>
 </head>
 <body>
-<main>
-  <div class="badge">${badge}</div>
-  <h1>${escapeHtml(title)}</h1>
-  <p>${escapeHtml(description)}</p>
-  <a id="buka-aplikasi" class="btn" href="${safeIntent}">Buka Aplikasi</a>
-  <a class="fallback" href="${safeDeepLink}">Tautan langsung ke aplikasi</a>
-  <small>Halaman ini aman untuk ditutup setelah aplikasi terbuka.</small>
-</main>
+${notice}<a id="buka-aplikasi" href="${safeIntent}">Buka Aplikasi</a>
+<a href="${safeDeepLink}">Tautan langsung ke aplikasi</a>
 <script>${MOBILE_HANDOFF_SCRIPT}</script>
 </body>
 </html>

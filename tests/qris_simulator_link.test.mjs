@@ -8,58 +8,81 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 
 /**
- * Regresi 10 November 2026 — "qrisnya dikasih link untuk dipaste di simulator".
+ * Regresi 11 November 2026 — kartu QRIS dibuat minimal atas permintaan pemilik:
+ * hanya tombol "Salin Tautan" + popup "berhasil di salin" + tombol X pembatalan.
+ * Semua petunjuk simulator, alamat simulator, unduh QR, "Saya Sudah Bayar",
+ * dan "Batalkan / Buat Kode Baru" dihapus.
  *
- * Kolom simulator Midtrans (https://simulator.sandbox.midtrans.com/v2/qris/index)
- * bernama "QR Code Image Url": isinya WAJIB URL gambar PNG dari respons charge,
- * bukan payload EMVCo `qr_string`. Sebelumnya ProScreen.js sudah menghitung
- * `simulatorQrLink` dan `handleShareQrLink`, tetapi tidak pernah merendernya —
- * pengguna hanya melihat gambar QR tanpa tautan yang bisa disalin.
- *
- * Tes ini mengunci: tautan tampil di dalam kartu QRIS aktif, bisa
- * dipilih/dibagikan tanpa modul native baru (aman dikirim lewat OTA), server
- * hanya membocorkan URL internal Midtrans pada mode sandbox, dan tombol
- * "Unduh QR" menyimpan PNG lewat StorageAccessFramework yang SUDAH ada di APK.
+ * Catatan penting: `Clipboard` dan `ToastAndroid` adalah modul bawaan React
+ * Native yang SUDAH ada di APK 0.1.5, jadi penyalinan sungguhan tetap bisa
+ * dikirim lewat OTA tanpa `expo-clipboard` / build APK baru.
  */
 
-test('kartu QRIS mobile merender tautan simulator yang bisa disalin', () => {
+test('kartu QRIS minimal: hanya Salin Tautan dan tombol X', () => {
   const src = read('mobile-app/src/screens/ProScreen.js');
 
-  assert.match(
-    src,
-    /styles\.simulatorBox/,
-    'kotak simulator harus dirender, bukan cuma didefinisikan',
-  );
-  assert.match(
-    src,
-    /<Text selectable style=\{styles\.simulatorLink\}>/,
-    'tautan wajib selectable (tahan lama → salin)',
-  );
-  assert.match(src, /\{simulatorQrLink\}/, 'teks yang ditampilkan harus tautan, bukan qrString');
-  assert.match(src, /onPress=\{handleShareQrLink\}/, 'tombol Bagikan harus terhubung ke handler');
-  assert.match(src, /Bagikan \/ Salin Tautan/, 'label tombol harus jelas');
-  assert.match(
-    src,
-    /simulator\.sandbox\.midtrans\.com\/v2\/qris\/index/,
-    'alamat simulator harus ditampilkan',
-  );
-  assert.match(src, /QR Code Image Url/, 'petunjuk harus menyebut nama kolom simulator yang benar');
+  assert.match(src, /Salin Tautan/, 'satu-satunya tombol aksi adalah Salin Tautan');
+  assert.match(src, /onPress=\{handleCopyQrLink\}/, 'tombol terhubung ke handler salin');
+  assert.match(src, /copyTextWithToast\(simulatorQrLink\)/, 'memakai helper clipboard bersama');
+  assert.match(src, /accessibilityLabel="Salin tautan"/, 'tombol diberi label aksesibilitas');
+  assert.match(src, /onPress=\{handleCancelOrder\}/, 'tombol X membatalkan tagihan');
+  assert.match(src, /accessibilityLabel="Batalkan tagihan"/, 'X diberi label aksesibilitas');
+  assert.match(src, /<Feather name="x"/, 'ikon X benar-benar dirender');
+  assert.match(src, /handleCancelOrder = async/, 'pembatalan tetap membersihkan order di server');
+  assert.match(src, /cancelPayment\(activeOrder\.orderId\)/, 'tagihan dibatalkan juga di server');
+  assert.ok(!src.includes('Batalkan Tagihan'), 'X langsung membatalkan tanpa dialog konfirmasi');
 
-  const boxAt = src.indexOf('styles.simulatorBox');
-  const sectionAt = src.indexOf('{activeOrder ? (');
-  const checkAt = src.indexOf('styles.checkStatusBtn');
-  assert.ok(
-    sectionAt >= 0 && boxAt > sectionAt,
-    'kotak tautan harus berada di dalam kartu QRIS aktif',
-  );
-  assert.ok(checkAt > boxAt, 'kotak tautan harus tampil sebelum tombol cek status');
+  const dihapus = [
+    'Simulator QRIS Midtrans',
+    'Tempel tautan ini',
+    'Tahan lama tautan',
+    'simulator.sandbox.midtrans.com',
+    'Pilih folder penyimpanan',
+    'Saya Sudah Bayar',
+    'Batalkan / Buat Kode Baru',
+    'Bagikan / Salin Tautan',
+    'Unduh QR (Simpan ke Galeri)',
+    'QR Code Image Url',
+    'Text selectable',
+  ];
+  for (const teks of dihapus) {
+    assert.ok(!src.includes(teks), `teks "${teks}" tidak boleh muncul lagi`);
+  }
+  assert.ok(!src.includes('styles.simulatorBox'), 'kotak simulator lama dihapus');
+  assert.ok(!src.includes('styles.downloadQrBtn'), 'tombol unduh QR dihapus');
+  assert.ok(!src.includes('styles.checkStatusBtn'), 'tombol cek status manual dihapus');
+  assert.ok(!src.includes('styles.cancelBtn'), 'tombol batalkan lama dihapus');
 });
 
-test('tautan simulator memakai URL gambar, bukan payload EMVCo, dan aman untuk OTA', () => {
+test('popup "berhasil di salin" memakai clipboard bawaan, bukan modul native baru', () => {
+  const lib = read('mobile-app/src/lib/clipboard.js');
+  const src = read('mobile-app/src/screens/ProScreen.js');
+
+  assert.match(lib, /COPIED_MESSAGE = 'berhasil di salin'/, 'teks popup persis sesuai permintaan');
+  assert.match(lib, /Clipboard\.setString\(value\)/, 'benar-benar menyalin ke papan klip');
+  assert.match(lib, /ToastAndroid\.show\(COPIED_MESSAGE/, 'popup kecil native Android');
+  assert.match(lib, /Alert\.alert\(COPIED_MESSAGE\)/, 'fallback popup di platform lain');
+  assert.match(lib, /navigator\.clipboard\?\.writeText/, 'fallback aman untuk build web');
+  assert.doesNotMatch(
+    lib,
+    /(?:from|require\()\s*['"]expo-clipboard['"]/,
+    'tidak mengimpor modul native yang tidak ada di APK (komentar boleh menyebutnya)',
+  );
+
+  for (const modul of ['Share', 'Linking', 'Platform', 'bytesToBase64', 'reconcilePayment']) {
+    assert.ok(!src.includes(modul), `${modul} sudah jadi kode mati dan harus hilang`);
+  }
+  assert.ok(!src.includes('expo-file-system'), 'unduh QR dihapus, modul SAF tidak dipakai lagi');
+  assert.ok(!src.includes('isDownloadingQr'), 'state unduh QR dihapus');
+  assert.ok(!src.includes('isChecking'), 'state cek status manual dihapus');
+  assert.ok(!src.includes('paidSuccess'), 'state yang tidak pernah dibaca dihapus');
+});
+
+test('tautan simulator tetap URL gambar PNG, bukan payload EMVCo', () => {
   const src = read('mobile-app/src/screens/ProScreen.js');
   const linkBlock = src.slice(
     src.indexOf('const simulatorQrLink'),
-    src.indexOf('const handleShareQrLink'),
+    src.indexOf('const handleCopyQrLink'),
   );
 
   assert.match(
@@ -76,12 +99,6 @@ test('tautan simulator memakai URL gambar, bukan payload EMVCo, dan aman untuk O
     linkBlock,
     /qrString/,
     'payload EMVCo tidak boleh disajikan sebagai "QR Code Image Url"',
-  );
-  assert.match(src, /Share,/, 'Share dari core React Native dipakai untuk menyalin/membagikan');
-  assert.doesNotMatch(
-    src,
-    /(?:from|require\()\s*['"]expo-clipboard['"]/,
-    'modul native baru tidak boleh diimpor (tidak bisa lewat OTA)',
   );
 });
 
@@ -118,49 +135,17 @@ test('server menyusun URL gambar QR bila Midtrans hanya mengirim qr_string', () 
   );
 });
 
-test('tombol Unduh QR menyimpan PNG lewat SAF yang sudah ada di APK', () => {
-  const src = read('mobile-app/src/screens/ProScreen.js');
-
-  assert.match(src, /onPress=\{handleDownloadQr\}/, 'tombol unduh harus terhubung ke handler');
-  assert.match(src, /Unduh QR \(Simpan ke Galeri\)/, 'label tombol harus jelas');
-  assert.match(
-    src,
-    /import\('expo-file-system\/legacy'\)/,
-    'pakai modul yang sudah ter-autolink, bukan modul native baru',
-  );
-  assert.match(src, /SAF\.requestDirectoryPermissionsAsync\(\)/, 'minta pengguna memilih folder');
-  assert.match(src, /SAF\.createFileAsync\(/, 'buat berkas PNG di folder pilihan');
-  assert.match(
-    src,
-    /SAF\.writeAsStringAsync\(fileUri, base64, \{ encoding: 'base64' \}\)/,
-    'tulis byte PNG, bukan teks',
-  );
-  assert.match(src, /Linking\.openURL\(fallbackUrl\)/, 'fallback browser bila SAF gagal');
-  assert.match(
-    src,
-    /generateQrPng\(activeOrder\.qrString/,
-    'PNG dihasilkan murni JS dari payload EMVCo',
-  );
-  assert.match(src, /bytesToBase64\(new Uint8Array/, 'cadangan ambil byte PNG dari URL Midtrans');
-});
-
-test('unduh QR tidak menambah dependensi native yang tidak bisa lewat OTA', () => {
-  const src = read('mobile-app/src/screens/ProScreen.js');
+test('tidak ada dependensi native baru yang tidak bisa lewat OTA', () => {
   const pkg = JSON.parse(read('package.json'));
   const deps = { ...pkg.dependencies, ...pkg.devDependencies };
 
-  assert.ok(deps.expo, 'paket expo wajib ada: expo-file-system ikut ter-autolink dari sini');
   for (const modul of ['expo-media-library', 'expo-sharing', 'expo-clipboard']) {
     assert.ok(!deps[modul], `${modul} tidak boleh ditambahkan tanpa build APK baru`);
-    assert.doesNotMatch(src, new RegExp(`from\\s+['"]${modul}['"]`));
   }
-  assert.ok(
-    !deps['expo-file-system'],
-    'expo-file-system jangan didaftarkan manual; ia sudah dependensi dari expo',
-  );
+  assert.ok(deps['react-native'], 'clipboard bawaan berasal dari react-native');
 });
 
-test('PNG yang diunduh valid dan base64-nya sama dengan byte aslinya', async () => {
+test('PNG QR di layar valid dan base64-nya sama dengan byte aslinya', async () => {
   const { generateQrPng, bytesToBase64 } = await import('../mobile-app/src/lib/qr.js');
   const contoh =
     '00020101021226600016ID.CO.SHOPEE.WWW011893600523000000000102152026110800000015204581253033605802ID5914Wahidiyah Book6006Kediri61056411562070703A016304ABCD';
@@ -171,7 +156,7 @@ test('PNG yang diunduh valid dan base64-nya sama dengan byte aslinya', async () 
   assert.equal(
     Buffer.from(base64, 'base64').subarray(0, 8).toString('hex'),
     '89504e470d0a1a0a',
-    'byte yang ditulis ke folder harus berupa PNG',
+    'gambar QR yang ditampilkan berupa PNG',
   );
-  assert.ok(png.length > 1000, 'PNG unduh harus berisi gambar, bukan berkas kosong');
+  assert.ok(png.length > 1000, 'PNG berisi gambar, bukan berkas kosong');
 });

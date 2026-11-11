@@ -55,7 +55,7 @@ test('Handoff OAuth mobile: URL intent, HTML aman, dan callback tanpa 302 buta',
     assert.ok(intentUrl.endsWith(';end'));
   });
 
-  await t.test('Halaman sukses memuat status, tombol, dan skrip ber-hash CSP', () => {
+  await t.test('Halaman sukses langsung membuka aplikasi tanpa teks ucapan login', () => {
     const { intentUrl, deepLinkUrl } = buildMobileAuthUrls({
       scheme: 'mobileappebook',
       androidPackage: 'id.wahidiyah.book',
@@ -64,7 +64,13 @@ test('Handoff OAuth mobile: URL intent, HTML aman, dan callback tanpa 302 buta',
     });
     const html = buildMobileHandoffHtml({ status: 'success', intentUrl, deepLinkUrl });
 
-    assert.match(html, /Login berhasil/);
+    /* Pemilik minta tanpa "selamat telah login": sesi diperbarui otomatis di
+     * aplikasi, jadi halaman handoff tidak boleh memajang ucapan apa pun. */
+    assert.ok(
+      !/Login berhasil|selamat|Akun Google Anda|terhubung/i.test(html),
+      'tidak ada teks ucapan/Status "login berhasil"',
+    );
+    assert.ok(!html.includes('<h1') && !html.includes('<style'), 'tanpa kartu status/CSS');
     assert.match(html, /id="buka-aplikasi"/);
     assert.match(html, /Buka Aplikasi/);
     assert.match(html, /intent:\/\/auth\/success\?code=kode-rahasia/);
@@ -97,6 +103,26 @@ test('Handoff OAuth mobile: URL intent, HTML aman, dan callback tanpa 302 buta',
     assert.ok(!html.includes('<script>alert(1)</script>'), 'pesan wajib di-escape');
     assert.match(html, /&lt;script&gt;/);
     assert.match(html, /intent:\/\/auth\/failure/);
+  });
+
+  await t.test('Sesi Google langsung memperbarui aplikasi, tanpa layar ucapan', () => {
+    const appSrc = fs.readFileSync(path.join(ROOT_DIR, 'mobile-app', 'App.js'), 'utf8');
+    const authSrc = fs.readFileSync(
+      path.join(ROOT_DIR, 'mobile-app', 'src', 'screens', 'AuthScreen.js'),
+      'utf8',
+    );
+    const ctxSrc = fs.readFileSync(
+      path.join(ROOT_DIR, 'mobile-app', 'src', 'context', 'AuthContext.js'),
+      'utf8',
+    );
+
+    assert.match(appSrc, /\}, \[user\]\);/, 'effect [user] menyegarkan UI setelah login');
+    assert.match(appSrc, /setAuthModalVisible\(false\)/, 'sheet login langsung ditutup');
+    assert.match(ctxSrc, /setUser\(res\.user\)/, 'sesi Google mengisi user secara otomatis');
+    assert.ok(
+      !/selamat|login berhasil/i.test(authSrc),
+      'tidak ada teks "selamat telah login" di sheet auth',
+    );
   });
 
   await t.test('Hash CSP cocok persis dengan skrip yang dikirim', () => {

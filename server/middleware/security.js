@@ -51,6 +51,20 @@ export const qrisStatusRateLimiter = rateLimit({
   keyGenerator: (req) => req.user?.id || ipKeyGenerator(req.ip || 'unknown'),
 });
 
+/* Endpoint penerbit sesi dari idToken Google tidak punya nonce, jadi batasi
+ * percobaan per IP. Login sah hanya beberapa kali per jam, sehingga 30
+ * permintaan / 5 menit masih jauh di atas pemakaian wajar. */
+export const googleAuthRateLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Terlalu banyak percobaan masuk dengan Google. Coba lagi dalam 5 menit.',
+  },
+});
+
 export const paymentRateLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 20,

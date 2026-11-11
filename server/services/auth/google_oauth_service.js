@@ -90,6 +90,13 @@ export async function verifyGoogleOAuthCode({ code, clientId, clientSecret, redi
   return { ok: true, email, name: payload.name };
 }
 
+/* SDK native v17 tidak meneruskan `nonce` lewat `GoogleSignin.signIn()`,
+ * sehingga idToken yang sah masih bisa dipakai ulang sampai `exp` (~1 jam).
+ * Tanpa penyimpanan bersama (Vercel serverless), jendela pakai ulang
+ * dipangkas secara stateless lewat klaim `iat`. */
+const MAX_ID_TOKEN_AGE_SECONDS = 10 * 60;
+const CLOCK_SKEW_SECONDS = 60;
+
 /**
  * Verifikasi idToken yang dihasilkan SDK Google Sign-In native di perangkat.
  * Berbeda dengan `verifyGoogleOAuthCode`: token sudah jadi, jadi tidak ada
@@ -114,6 +121,18 @@ export async function verifyGoogleIdToken({ idToken, clientId }) {
   }
   if (!payload?.email_verified) {
     return { ok: false, message: 'Email Google belum diverifikasi oleh Google.' };
+  }
+
+  const issuedAt = Number(payload.iat);
+  const nowSeconds = Date.now() / 1000;
+  if (!Number.isFinite(issuedAt)) {
+    return { ok: false, message: 'idToken Google tidak memiliki waktu penerbitan.' };
+  }
+  if (issuedAt > nowSeconds + CLOCK_SKEW_SECONDS) {
+    return { ok: false, message: 'Waktu penerbitan idToken Google tidak valid.' };
+  }
+  if (nowSeconds - issuedAt > MAX_ID_TOKEN_AGE_SECONDS) {
+    return { ok: false, message: 'Sesi Google sudah kedaluwarsa. Silakan masuk lagi.' };
   }
 
   const email = normalizeEmail(payload.email);

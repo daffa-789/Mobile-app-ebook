@@ -2,10 +2,10 @@
  * Salin teks ke papan klip + umpan balik pop up "berhasil di salin".
  *
  * Memakai `Clipboard` bawaan React Native yang SUDAH ter-autolink di APK
- * 0.1.5 (`com.facebook.react.modules.clipboard.ClipboardModule`, diverifikasi
- * dari classes.dex), BUKAN `expo-clipboard` yang tidak ada di biner sehingga
- * tidak bisa dikirim lewat OTA. `ToastAndroid` juga bawaan RN, jadi umpan
- * baliknya berupa popup kecil tanpa elemen UI tambahan di layar.
+ * 0.1.5/0.1.6 (`com.facebook.react.modules.clipboard.ClipboardModule`,
+ * diverifikasi dari classes.dex), BUKAN `expo-clipboard` yang tidak ada di
+ * biner sehingga tidak bisa dikirim lewat OTA. `ToastAndroid` juga bawaan
+ * RN, jadi umpan baliknya berupa popup kecil tanpa elemen UI di layar.
  */
 import { Alert, Clipboard, Platform, ToastAndroid } from 'react-native';
 

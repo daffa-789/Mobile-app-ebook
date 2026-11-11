@@ -15,6 +15,7 @@
 import express from 'express';
 import {
   corsPolicy,
+  googleAuthRateLimiter,
   jsonBody,
   responseCompression,
   securityHeaders,
@@ -35,6 +36,11 @@ export function createApiApp() {
   app.use(jsonBody);
 
   trustProxy(app);
+
+  /* Limiter dipasang di sini (bukan di auth_routes.js) supaya satu kebijakan
+   * berlaku untuk kedua titik masuk dan rute tetap tipis. Dua endpoint ini
+   * menerbitkan state/token tanpa sesi, jadi perlu pembatas tersendiri. */
+  app.use(['/api/auth/google/native', '/api/auth/google/mobile-start'], googleAuthRateLimiter);
 
   // Semua router /api (health, auth, books, users, payments, subscriptions,
   // events, carousel, admin) didaftarkan dari satu tabel ROUTERS.

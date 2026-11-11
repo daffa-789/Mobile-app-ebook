@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { useBooks } from '../context/BookContext';
 import {
@@ -34,6 +33,9 @@ export const ProScreen = ({ onOpenAuth }) => {
   const [errorMessage, setErrorMessage] = useState('');
 
   const pollIntervalRef = useRef(null);
+  /* Satu permintaan status dalam satu waktu: kalau jaringan lambat, tick
+   * 5 detik berikutnya tidak boleh menumpuk request yang sama. */
+  const pollBusyRef = useRef(false);
 
   // Bersihkan polling saat unmount
   useEffect(() => {
@@ -57,7 +59,10 @@ export const ProScreen = ({ onOpenAuth }) => {
   const startPollingStatus = (orderId) => {
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
 
+    pollBusyRef.current = false;
     pollIntervalRef.current = setInterval(async () => {
+      if (pollBusyRef.current) return;
+      pollBusyRef.current = true;
       try {
         const res = await checkPaymentStatus(orderId);
         if (res?.isPaid || res?.status === 'success' || res?.status === 'settlement') {
@@ -73,6 +78,8 @@ export const ProScreen = ({ onOpenAuth }) => {
         }
       } catch (err) {
         console.warn('[ProScreen] Gagal memeriksa status berkala:', err.message);
+      } finally {
+        pollBusyRef.current = false;
       }
     }, 5000);
   };
@@ -145,10 +152,19 @@ export const ProScreen = ({ onOpenAuth }) => {
   const handleCancelOrder = async () => {
     if (!activeOrder?.orderId) return;
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    cancelPayment(activeOrder.orderId).catch(() => null);
-    setActiveOrder(null);
-    setLocalQrUri(null);
-    setSecondsLeft(0);
+    pollBusyRef.current = false;
+    try {
+      /* Tunggu konfirmasi server dulu. Dulu UI dihapus lebih dulu sehingga
+       * tagihan bisa tetap aktif di Midtrans padahal layar sudah bersih. */
+      await cancelPayment(activeOrder.orderId);
+      setActiveOrder(null);
+      setLocalQrUri(null);
+      setSecondsLeft(0);
+      setErrorMessage('');
+    } catch (err) {
+      setErrorMessage(err?.message || 'Gagal membatalkan tagihan. Coba lagi.');
+      startPollingStatus(activeOrder.orderId);
+    }
   };
 
   const formatCountdown = (totalSec) => {

@@ -16,6 +16,7 @@ import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { OAUTH_CONFIG } from '../config/constants';
+import { createSecureOauthState } from '../lib/authUrl';
 import { VerificationScreen } from './VerificationScreen';
 
 export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
@@ -191,8 +192,11 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
         }
       }
 
-      const state = 'oauth_' + Math.random().toString(36).substring(2);
-      document.cookie = `google_oauth_state=${encodeURIComponent(state)}; Path=/; Max-Age=600; SameSite=Lax`;
+      const state = createSecureOauthState();
+      /* `Secure` hanya pada HTTPS: localhost dev tetap bisa menerima cookie. */
+      const secureFlag =
+        typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `google_oauth_state=${encodeURIComponent(state)}; Path=/; Max-Age=600; SameSite=Lax${secureFlag}`;
 
       // URL OAuth Google dengan prompt=select_account agar pengguna dapat memilih akun Google
       const authUrl =

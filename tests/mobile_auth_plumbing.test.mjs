@@ -166,6 +166,17 @@ test('Mobile Auth Plumbing & Invariants Suite', async (t) => {
             return scenario.browserResult;
           },
         },
+        /* Ref & helper yang dipakai `startGoogleMobile` setelah hardening.
+         * Konteks VM sengaja tetap eksplisit supaya tes mengunci dependensi
+         * fungsi ini terhadap modul lain. */
+        browserSessionRef: { current: null },
+        safeDecodeUriComponent: (value, fallback = '') => {
+          try {
+            return decodeURIComponent(String(value));
+          } catch {
+            return String(value) || fallback;
+          }
+        },
         exchangeGoogleCode: async (code) => {
           exchangedCodes.push(code);
           return scenario.exchange;

@@ -5,8 +5,16 @@
 
 import { Platform } from 'react-native';
 
-const DEFAULT_API_URL =
-  typeof Platform !== 'undefined' && Platform.select
+/* Build rilis (`__DEV__ === false`) tidak boleh diam-diam memakai HTTP
+ * localhost ketika EXPO_PUBLIC_API_URL lupa terpasang: token sesi akan lewat
+ * cleartext. Di dev / Node tes `__DEV__` tidak terdefinisi, sehingga fallback
+ * emulator lama tetap dipakai dan konfigurasi lokal tidak berubah. */
+const IS_RELEASE_BUILD = typeof __DEV__ !== 'undefined' && __DEV__ === false;
+const PRODUCTION_API_URL = 'https://mobile-app-ebook.vercel.app/api';
+
+const DEFAULT_API_URL = IS_RELEASE_BUILD
+  ? PRODUCTION_API_URL
+  : typeof Platform !== 'undefined' && Platform.select
     ? Platform.select({
         android: 'http://10.0.2.2:5000/api',
         default: 'http://localhost:5000/api',
@@ -27,7 +35,7 @@ export const OAUTH_CONFIG = {
   callbackPath: GOOGLE_CALLBACK_PATH,
   redirectUri:
     process.env.EXPO_PUBLIC_GOOGLE_REDIRECT_URI ||
-    `https://mobile-app-expo-sooty.vercel.app${GOOGLE_CALLBACK_PATH}`,
+    `https://mobile-app-ebook.vercel.app${GOOGLE_CALLBACK_PATH}`,
   localWebRedirectUri:
     process.env.EXPO_PUBLIC_GOOGLE_LOCAL_REDIRECT_URI ||
     `http://localhost:3000${GOOGLE_CALLBACK_PATH}`,

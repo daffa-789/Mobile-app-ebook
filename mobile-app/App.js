@@ -14,7 +14,7 @@ import {
   Alert,
 } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import { theme } from './src/theme';
+import { safeDecodeUriComponent } from './src/lib/authUrl';
 import { OtaUpdatePrompt } from './src/components/OtaUpdatePrompt';
 import { useOtaUpdate } from './src/hooks/useOtaUpdate';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
@@ -66,7 +66,7 @@ function MainNavigator() {
           Alert.alert(
             'Login Google Gagal',
             message
-              ? decodeURIComponent(message[1])
+              ? safeDecodeUriComponent(message[1], 'Otorisasi Google tidak selesai.')
               : 'Otorisasi Google tidak selesai. Silakan coba lagi.',
           );
           return;
@@ -75,7 +75,7 @@ function MainNavigator() {
         const code = match ? match[1] : null;
         if (code && !handledCodes.has(code)) {
           handledCodes.add(code);
-          await exchangeGoogleCode(decodeURIComponent(code));
+          await exchangeGoogleCode(safeDecodeUriComponent(code));
         }
       } catch (err) {
         console.warn('[DeepLink] Gagal memproses callback auth:', err);

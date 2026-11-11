@@ -11,9 +11,9 @@ const procEnv = typeof process !== 'undefined' && process.env ? process.env : {}
  * menavigasi ke halaman github.com ("Mendownload...") alih-alih mengunduh.
  * APK kini disajikan langsung dari `public/unduh/` dengan header
  * Content-Disposition: attachment. GitHub Release v0.1.5 tetap menjadi arsip
- * rilis kanonik, bukan tujuan unduh pengguna. Rilis v0.1.5 memakai Hermes V1
- * + armeabi-v7a/arm64-v8a dan MENYEMATKAN bundel JS final (mode tamu, tautan
- * simulator QRIS, unduh QR) sehingga instal segar tidak bergantung OTA.
+ * rilis kanonik, bukan tujuan unduh pengguna. Rilis v0.1.6 memakai Hermes V1
+ * + armeabi-v7a/arm64-v8a, menyematkan SDK Google Sign-In native, dan
+ * MENYEMATKAN bundel JS final sehingga instal segar tidak bergantung OTA.
  * Build JSC v0.1.2 sudah dihapus (force close). */
 const DIRECT_APK_URL = '/unduh/wahidiyah-v0.1.6-hermes-32bit.apk';
 

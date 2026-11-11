@@ -99,6 +99,7 @@
     "vite": "^6.1.0"
   },
   "overrides": {
-    "uuid": "^11.1.1"
+    "uuid": "^11.1.1",
+    "follow-redirects": "1.16.3"
   }
 }

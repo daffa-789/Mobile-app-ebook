@@ -98,7 +98,10 @@ export const TRUST_PROXY = (() => {
   const raw = String(process.env.TRUST_PROXY ?? '')
     .trim()
     .toLowerCase();
-  if (!raw) return USE_VITE_MIDDLEWARE ? 1 : false;
+  /* Vercel selalu menaruh proxy di depan fungsi serverless. Tanpa ini `req.ip`
+   * adalah IP edge yang sama untuk semua pengguna, sehingga rate limiter
+   * (pembayaran & login Google) bisa mengunci seluruh aplikasi sekaligus. */
+  if (!raw) return process.env.VERCEL ? 1 : USE_VITE_MIDDLEWARE ? 1 : false;
   if (raw === 'true') return true;
   if (raw === 'false') return false;
   const hops = Number(raw);

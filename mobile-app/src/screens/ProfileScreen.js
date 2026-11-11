@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { APP_CONFIG, APP_VERSION } from '../config/constants';
 import {

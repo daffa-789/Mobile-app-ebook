@@ -56,10 +56,10 @@ healthRouter.get('/health', async (req, res) => {
 // github.com: atribut HTML `download` diabaikan browser untuk URL cross-origin
 // sehingga pengguna malah melihat halaman GitHub. Arsip rilis kanonik tetap di
 // GitHub Release v0.1.5. Build JSC v0.1.2 sudah dihapus (force close 32-bit).
-// APK v0.1.5 menyematkan bundel JS final, jadi instal segar tidak butuh OTA.
-// Sertifikat penandatanganan v2 IDENTIK di semua build EAS (0.1.1 s.d. 0.1.5,
-// SHA-256 713c4b84…), jadi upgrade in-place dari 0.1.4 ke 0.1.5 (versionCode 7)
-// diperbolehkan. Uninstall hanya disarankan bila ada sisa cache OTA runtime lama.
+// APK v0.1.6 menyematkan bundel JS rilisnya, jadi instal segar tidak butuh OTA.
+// Sertifikat penandatanganan v2 IDENTIK di semua build EAS (0.1.1 s.d. 0.1.6),
+// jadi upgrade in-place ke 0.1.6 (versionCode 8) diperbolehkan. Uninstall hanya
+// disarankan bila ada sisa cache OTA runtime lama.
 healthRouter.get('/download/apk', (req, res) => {
   res.redirect(302, '/unduh/wahidiyah-v0.1.6-hermes-32bit.apk');
 });

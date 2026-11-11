@@ -3,6 +3,7 @@ import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest, setUnauthorizedHandler } from '../api/client';
 import { configureGoogleNative, signInWithGoogleNative } from '../lib/googleNative';
+import { safeDecodeUriComponent } from '../lib/authUrl';
 
 const AuthContext = createContext(null);
 
@@ -14,11 +15,19 @@ export const AuthProvider = ({ children }) => {
    * openAuthSessionAsync dan dari deep link App.js. Set ini memastikan
    * penukaran hanya dilakukan sekali untuk kode yang sama. */
   const handledGoogleCodesRef = useRef(new Set());
+  /* Chrome Custom Tab tidak bisa ditutup dari JS di Android. Setelah timeout
+   * 120 dtk UI boleh pulang, tetapi sesi lama masih bisa hidup; ref ini
+   * mencegah tab kedua dibuka sebelum sesi pertama benar-benar selesai. */
+  const browserSessionRef = useRef(null);
 
   /* SDK native hanya dikonfigurasi di Android; di web/platform lain helper
-   * langsung mengembalikan null sehingga tidak ada kode native yang dievaluasi. */
+   * langsung mengembalikan null sehingga tidak ada kode native yang dievaluasi.
+   * `configure()` bisa menolak (client ID kosong / Play Services belum siap) —
+   * jangan biarkan itu menjadi unhandled rejection yang mematikan aplikasi. */
   useEffect(() => {
-    configureGoogleNative();
+    configureGoogleNative().catch((error) => {
+      console.warn('[AuthContext] Konfigurasi Google native gagal:', error?.message || error);
+    });
   }, []);
 
   // Simpan sesi ke penyimpanan lokal & SecureStore
@@ -309,6 +318,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const startGoogleMobile = async () => {
+    /* Jangan buka Custom Tab kedua bila sesi sebelumnya belum selesai.
+     * Deep link dari sesi pertama tetap dapat mengisi sesi, jadi ketukan
+     * berulang cukup dikembalikan sebagai "batal" tanpa pesan galat. */
+    if (browserSessionRef.current) {
+      return { success: false, cancelled: true, timedOut: true };
+    }
     try {
       const res = await apiRequest('/api/auth/google/mobile-start', {
         method: 'POST',
@@ -323,16 +338,23 @@ export const AuthProvider = ({ children }) => {
        * mengirim halaman handoff yang menavigasi ke `intent://`; deep link
        * App.js menukar kode lebih dulu, dan timeout di bawah memastikan UI tidak
        * pernah menggantung bila browser dibuka di luar Custom Tab. */
+      const sessionPromise = WebBrowser.openAuthSessionAsync(res.url, redirectUrl);
+      browserSessionRef.current = sessionPromise;
+      /* Lepaskan kunci hanya saat sesi browser benar-benar selesai, bukan saat
+       * timeout UI berakhir. Dua callback (bukan .finally) mencegah penolakan
+       * yang tidak tertangani bila browser dibatalkan setelah timeout. */
+      const releaseSession = () => {
+        if (browserSessionRef.current === sessionPromise) browserSessionRef.current = null;
+      };
+      sessionPromise.then(releaseSession, releaseSession);
+
       let timeoutId;
       const timeoutPromise = new Promise((resolve) => {
         timeoutId = setTimeout(() => resolve({ type: 'timeout' }), 120000);
       });
       let result;
       try {
-        result = await Promise.race([
-          WebBrowser.openAuthSessionAsync(res.url, redirectUrl),
-          timeoutPromise,
-        ]);
+        result = await Promise.race([sessionPromise, timeoutPromise]);
       } finally {
         clearTimeout(timeoutId);
       }
@@ -352,7 +374,7 @@ export const AuthProvider = ({ children }) => {
         if (code) {
           /* Tukar kode di sini juga, bukan hanya lewat deep link: browser bisa
            * ditutup pengguna sebelum event Linking sempat diproses. */
-          const exchanged = await exchangeGoogleCode(decodeURIComponent(code[1]));
+          const exchanged = await exchangeGoogleCode(safeDecodeUriComponent(code[1]));
           if (exchanged.success) return exchanged;
           return { success: false, error: exchanged.error };
         }
@@ -360,7 +382,7 @@ export const AuthProvider = ({ children }) => {
         return {
           success: false,
           error: failMessage
-            ? decodeURIComponent(failMessage[1])
+            ? safeDecodeUriComponent(failMessage[1], 'Login Google gagal.')
             : 'Login Google gagal. Silakan coba lagi.',
         };
       }

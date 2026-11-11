@@ -10,11 +10,16 @@ import {
   Modal,
   ActivityIndicator,
 } from 'react-native';
-import * as Updates from 'expo-updates';
 import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { APP_CONFIG, APP_VERSION } from '../config/constants';
+import {
+  isOtaSupported,
+  checkForOtaUpdate,
+  downloadOtaUpdate,
+  reloadWithOtaUpdate,
+} from '../lib/ota';
 
 export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
   const { user, isPro, updateUser, logout } = useAuth();
@@ -29,15 +34,14 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
     if (isCheckingUpdate) return;
     setIsCheckingUpdate(true);
     try {
-      if (__DEV__) {
+      if (!isOtaSupported()) {
         Alert.alert(
           'Mode Development',
           'Pemeriksaan pembaruan OTA (EAS Update) hanya aktif pada aplikasi yang terinstal (.apk), bukan di Expo Go / Development server.',
         );
         return;
       }
-      const update = await Updates.checkForUpdateAsync();
-      if (update.isAvailable) {
+      if (await checkForOtaUpdate()) {
         Alert.alert(
           'Pembaruan Tersedia',
           'Versi terbaru aplikasi telah dirilis dengan perbaikan dan peningkatan fitur. Unduh dan pasang pembaruan sekarang?',
@@ -48,7 +52,7 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
               onPress: async () => {
                 try {
                   setIsCheckingUpdate(true);
-                  await Updates.fetchUpdateAsync();
+                  await downloadOtaUpdate();
                   Alert.alert(
                     'Pembaruan Siap!',
                     'Pembaruan telah berhasil diunduh. Muat ulang aplikasi sekarang untuk menerapkan perubahan?',
@@ -56,7 +60,7 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
                       {
                         text: 'Muat Ulang Sekarang',
                         onPress: async () => {
-                          await Updates.reloadAsync();
+                          await reloadWithOtaUpdate();
                         },
                       },
                     ],

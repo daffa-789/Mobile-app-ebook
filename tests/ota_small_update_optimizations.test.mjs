@@ -1,8 +1,10 @@
 /**
  * Regresi optimasi "update kecil tetap di 0.1.5":
- * 1. Header CSP enforced & report-only halaman handoff selaras (tanpa warning palsu).
- * 2. Indikator pembaruan OTA tersedia di luar halaman Profil, tanpa mengubah
- *    versi aplikasi atau menambah modul native.
+ * 1. Header CSP enforced & report-only halaman handoff selaras.
+ * 2. Saat aplikasi dibuka dan ada OTA, pengguna mendapat DUA pilihan jelas
+ *    (perbarui / nanti), lewat modul terpisah — bukan logik bertumpuk di App.js.
+ * 3. Kode mati dari iterasi sebelumnya benar-benar hilang.
+ * 4. Tidak ada kenaikan versi / modul native baru.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,8 +13,14 @@ import path from 'node:path';
 import { MOBILE_HANDOFF_HEADERS } from '../server/lib/googleHandoff.js';
 
 const ROOT_DIR = process.cwd();
-const appSrc = fs.readFileSync(path.join(ROOT_DIR, 'mobile-app', 'App.js'), 'utf8');
-const appConfig = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'app.json'), 'utf8'));
+const read = (relative) => fs.readFileSync(path.join(ROOT_DIR, relative), 'utf8');
+const appSrc = read('mobile-app/App.js');
+const authSrc = read('mobile-app/src/screens/AuthScreen.js');
+const profileSrc = read('mobile-app/src/screens/ProfileScreen.js');
+const otaLibSrc = read('mobile-app/src/lib/ota.js');
+const hookSrc = read('mobile-app/src/hooks/useOtaUpdate.js');
+const promptSrc = read('mobile-app/src/components/OtaUpdatePrompt.js');
+const appConfig = JSON.parse(read('app.json'));
 
 test('Optimasi update kecil 0.1.5', async (t) => {
   await t.test('CSP enforced dan report-only identik', () => {
@@ -27,34 +35,99 @@ test('Optimasi update kecil 0.1.5', async (t) => {
     assert.equal(appConfig.expo.version, '0.1.5');
     assert.equal(appConfig.expo.android.versionCode, 7);
     assert.deepEqual(appConfig.expo.runtimeVersion, { policy: 'appVersion' });
-    assert.ok(!appSrc.includes('expo-clipboard'), 'tidak ada modul native baru');
-    assert.ok(!appSrc.includes('expo-media-library'), 'tidak ada modul native baru');
+    for (const src of [appSrc, otaLibSrc, hookSrc, promptSrc]) {
+      assert.ok(!src.includes('expo-clipboard') && !src.includes('expo-media-library'));
+    }
   });
 
-  await t.test('App.js memantau OTA dan menyediakan Muat Ulang global', () => {
-    assert.ok(appSrc.includes("import * as Updates from 'expo-updates'"));
-    assert.ok(appSrc.includes('AppState.addEventListener'), 'pantau saat kembali ke foreground');
-    assert.ok(appSrc.includes('Updates.checkForUpdateAsync()'));
-    assert.ok(appSrc.includes('Updates.fetchUpdateAsync()'));
-    assert.ok(appSrc.includes('Updates.reloadAsync()'));
-    assert.ok(appSrc.includes('__DEV__'), 'aman di mode development / Expo Go');
-    assert.ok(appSrc.includes('Updates.isEnabled'), 'hanya jalan saat updates aktif');
-    assert.ok(appSrc.includes('60000'), 'pemeriksaan di-throttle');
-    assert.ok(appSrc.includes('otaDismissedRef'), 'penolakan banner tidak muncul berulang');
-    assert.ok(appSrc.includes('Pembaruan kecil siap dipasang.'));
-    assert.ok(appSrc.includes('Muat Ulang'));
+  await t.test('Lapisan OTA modular: lib murni, hook status, komponen UI', () => {
+    assert.ok(
+      otaLibSrc.includes('import * as Updates') && !otaLibSrc.includes('react-native'),
+      'lib/ota.js tidak boleh bergantung pada React/UI',
+    );
+    for (const fn of [
+      'isOtaSupported',
+      'checkForOtaUpdate',
+      'downloadOtaUpdate',
+      'reloadWithOtaUpdate',
+      'applyOtaUpdate',
+      'OTA_CHECK_THROTTLE_MS',
+    ]) {
+      assert.ok(otaLibSrc.includes(fn), `lib/ota.js mengekspor ${fn}`);
+    }
+    assert.ok(hookSrc.includes("from '../lib/ota'"), 'hook memakai lapisan lib bersama');
+    assert.ok(hookSrc.includes('AppState.addEventListener'));
+    assert.ok(hookSrc.includes('dismissedRef'), '"nanti" hanya berlaku per sesi');
+    assert.ok(hookSrc.includes('checkingRef'), 'pemeriksaan tidak tumpang tindih');
+    assert.ok(
+      !/from ['"]expo-updates['"]/.test(promptSrc),
+      'komponen UI tidak boleh mengimpor expo-updates',
+    );
+  });
+
+  await t.test('Dialog memberi dua pilihan eksplisit: perbarui atau tidak', () => {
+    assert.ok(promptSrc.includes('<Modal'), 'dialog tampil saat aplikasi dibuka');
+    assert.ok(promptSrc.includes('Pembaruan tersedia'));
+    assert.ok(promptSrc.includes('Perbarui Sekarang'));
+    assert.ok(promptSrc.includes('Nanti Saja'));
+    assert.ok(promptSrc.includes('onRequestClose={onDismiss}'), 'tombol BACK = pilihan nanti');
+    assert.ok(promptSrc.includes('Gagal Memuat Pembaruan'), 'kegagalan ada umpan balik');
+    assert.ok(appSrc.includes('<OtaUpdatePrompt'), 'dialog dipasang di root aplikasi');
+    assert.ok(appSrc.includes('useOtaUpdate()'));
     assert.ok(
       appSrc.includes('!authModalVisible && !activeBook && !showRiwayat'),
-      'banner tidak mengganggu sheet login / reader',
+      'dialog tidak menimpa sheet login / reader',
     );
   });
 
-  await t.test('Pemeriksaan manual di Profil tetap dipertahankan', () => {
-    const profileSrc = fs.readFileSync(
-      path.join(ROOT_DIR, 'mobile-app', 'src', 'screens', 'ProfileScreen.js'),
-      'utf8',
-    );
-    assert.ok(profileSrc.includes('Updates.checkForUpdateAsync()'));
-    assert.ok(profileSrc.includes('Updates.reloadAsync()'));
+  await t.test('App.js bebas logika OTA dan kode mati banner lama', () => {
+    assert.ok(!appSrc.includes('otaBanner'), 'style banner lama dihapus');
+    assert.ok(!appSrc.includes('otaReady'), 'state banner lama dihapus');
+    assert.ok(!appSrc.includes('Updates.checkForUpdateAsync'), 'pemeriksaan pindah ke hook');
+    assert.ok(!appSrc.includes('AppState'), 'AppState pindah ke hook');
+    assert.ok(!appSrc.includes('import * as Updates'), 'App.js tidak mengimpor expo-updates');
+  });
+
+  await t.test('Pemeriksaan manual di Profil memakai helper yang sama', () => {
+    assert.ok(profileSrc.includes('isOtaSupported'));
+    assert.ok(profileSrc.includes('checkForOtaUpdate'));
+    assert.ok(profileSrc.includes('downloadOtaUpdate'));
+    assert.ok(profileSrc.includes('reloadWithOtaUpdate'));
+    assert.ok(!profileSrc.includes('Updates.'), 'tidak ada duplikasi panggilan langsung');
+  });
+
+  await t.test('Kode mati AuthScreen dibuang', () => {
+    assert.ok(!authSrc.includes('APP_CONFIG'), 'import APP_CONFIG tidak terpakai');
+    assert.ok(!authSrc.includes('Ionicons'), 'import Ionicons tidak terpakai');
+    assert.ok(!authSrc.includes('Linking.openURL('), 'fallback Linking tidak pernah tercapai');
+    assert.ok(!/^\s+Linking,$/m.test(authSrc), 'import Linking tidak terpakai');
+    assert.ok(!authSrc.includes('const isWeb'), 'konstanta isWeb selalu true');
+    assert.ok(!authSrc.includes('statusBanner:'), 'style banner status sudah mati');
+    assert.ok(!authSrc.includes('statusDot:'), 'style titik status sudah mati');
+    assert.ok(!authSrc.includes('statusBannerText:'), 'style teks status sudah mati');
+    assert.ok(authSrc.includes('window.location.href = authUrl'), 'redirect web tetap utuh');
+  });
+
+  await t.test('Tidak ada import ikon mati di layar lain', () => {
+    for (const screen of [
+      'ProScreen.js',
+      'ReaderScreen.js',
+      'SubscriptionHistoryScreen.js',
+      'VerificationScreen.js',
+    ]) {
+      const src = read(`mobile-app/src/screens/${screen}`);
+      assert.ok(!src.includes('Ionicons'), `${screen} masih mengimpor Ionicons yang tidak dipakai`);
+    }
+    const verification = read('mobile-app/src/screens/VerificationScreen.js');
+    assert.ok(!verification.includes('useRef'), 'useRef tidak terpakai di VerificationScreen');
+    /* App.js memang memakai Ionicons untuk ikon "sparkles" di bottom nav. */
+    assert.ok(appSrc.includes('Ionicons'));
+  });
+
+  await t.test('Regresi login Google sebelumnya tidak ikut terhapus', () => {
+    assert.ok(authSrc.includes('googleWaiting'));
+    assert.ok(authSrc.includes('AppState'));
+    assert.ok(authSrc.includes('res.timedOut'));
+    assert.ok(appSrc.includes('setAuthModalVisible(false)'));
   });
 });

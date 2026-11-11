@@ -12,12 +12,11 @@ import {
   ActivityIndicator,
   AppState,
   Image,
-  Linking,
 } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
-import { OAUTH_CONFIG, APP_CONFIG } from '../config/constants';
+import { OAUTH_CONFIG } from '../config/constants';
 import { VerificationScreen } from './VerificationScreen';
 
 export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
@@ -192,11 +191,13 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
         return;
       }
 
+      /* Cabang mobile native sudah `return` di atas, jadi di sini pasti web.
+       * Pengecekan `Platform.OS === 'web'` dan fallback `Linking.openURL`
+       * dulu tidak pernah tercapai — keduanya dibuang. */
       const clientId = OAUTH_CONFIG.googleClientId;
 
-      const isWeb = Platform.OS === 'web';
       let redirectUri = OAUTH_CONFIG.redirectUri;
-      if (isWeb && typeof window !== 'undefined') {
+      if (typeof window !== 'undefined') {
         const origin = window.location.origin;
         if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
           redirectUri = OAUTH_CONFIG.localWebRedirectUri;
@@ -206,9 +207,7 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
       }
 
       const state = 'oauth_' + Math.random().toString(36).substring(2);
-      if (isWeb && typeof document !== 'undefined') {
-        document.cookie = `google_oauth_state=${encodeURIComponent(state)}; Path=/; Max-Age=600; SameSite=Lax`;
-      }
+      document.cookie = `google_oauth_state=${encodeURIComponent(state)}; Path=/; Max-Age=600; SameSite=Lax`;
 
       // URL OAuth Google dengan prompt=select_account agar pengguna dapat memilih akun Google
       const authUrl =
@@ -221,11 +220,7 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
         `&access_type=online` +
         `&prompt=select_account`;
 
-      if (isWeb && typeof window !== 'undefined') {
-        window.location.href = authUrl;
-      } else {
-        await Linking.openURL(authUrl);
-      }
+      window.location.href = authUrl;
     } catch (err) {
       setErrorMessage('Gagal membuka login Google: ' + err.message);
     } finally {
@@ -731,30 +726,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
     lineHeight: 17,
     maxWidth: 290,
-  },
-  statusBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#DCEDE4',
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#B9DBC9',
-    marginBottom: 16,
-  },
-  statusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: '#216B4C',
-  },
-  statusBannerText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#14523A',
   },
   tabSwitcher: {
     flexDirection: 'row',

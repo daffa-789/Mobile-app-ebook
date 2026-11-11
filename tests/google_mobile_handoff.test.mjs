@@ -155,14 +155,17 @@ test('Handoff OAuth mobile: URL intent, HTML aman, dan callback tanpa 302 buta',
     );
   });
 
-  await t.test('mobile-start tidak memaksa pilih akun berulang & menandai state', () => {
+  await t.test('mobile-start selalu menampilkan pemilih akun & menandai state', () => {
     const startSrc = controllerSrc.slice(
       controllerSrc.indexOf('export async function googleMobileStart'),
       controllerSrc.indexOf('const parseCookies'),
     );
     const urlLine = startSrc.split('\n').find((line) => line.includes('const url =')) || '';
     assert.ok(urlLine, 'baris URL OAuth ditemukan');
-    assert.ok(!urlLine.includes('prompt='), 'pemilih akun paksa dihapus dari URL');
+    assert.ok(
+      urlLine.includes('prompt=select_account'),
+      'setelah logout Google tidak boleh memaksa akun terakhir ("Anda login kembali ke …")',
+    );
     assert.ok(startSrc.includes('MOBILE_STATE_PREFIX + state'), 'state ditandai sebagai mobile');
   });
 

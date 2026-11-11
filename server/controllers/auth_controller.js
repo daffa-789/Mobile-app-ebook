@@ -259,9 +259,12 @@ export async function googleMobileStart(req, res) {
     /* Prefiks `mob.` membuat callback tahu ini alur mobile bahkan ketika state
      * sudah kedaluwarsa/gagal ditebus, sehingga kegagalan juga mendapat halaman
      * handoff, bukan halaman /login web yang terlihat seperti "nyangkut".
-     * `prompt=select_account` sengaja dihapus: pemilih akun yang muncul berulang
-     * membuat pengguna merasa diarahkan ke Google lagi setelah login berhasil. */
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${encodeURIComponent(MOBILE_STATE_PREFIX + state)}`;
+     * `prompt=select_account` WAJIB: tanpa ini Google langsung memaksa akun
+     * terakhir ("Anda login kembali ke …") dan pengguna tidak bisa ganti akun
+     * setelah logout. Dulu parameter ini sempat dihapus karena pemilih akun
+     * muncul berulang — itu akibat 302 ke skema custom yang gagal dirender
+     * Chrome; halaman handoff `intent://` sekarang sudah memperbaikinya. */
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${encodeURIComponent(MOBILE_STATE_PREFIX + state)}&prompt=select_account`;
 
     return res.json({ success: true, url, state: MOBILE_STATE_PREFIX + state });
   } catch (error) {

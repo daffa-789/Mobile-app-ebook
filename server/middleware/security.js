@@ -11,8 +11,9 @@ import {
   TRUST_PROXY,
 } from '../config.js';
 
-/* Report-only sampai CSP_ENFORCE=1: aplikasi tetap jalan sementara pelanggaran
- * dilaporkan di konsol peramban (VULN-09).
+/* CSP ditegakkan di produksi dan report-only di development; lihat
+ * CSP_REPORT_ONLY di config.js untuk override lewat CSP_ENFORCE (VULN-09).
+ * Halaman handoff Google menimpa header ini dengan policy hash-nya sendiri.
  */
 export const securityHeaders = helmet({
   contentSecurityPolicy: {

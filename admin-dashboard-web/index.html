@@ -11,23 +11,10 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>Mobile-app-ebook — Admin Dashboard</title>
-    <script>
-      // Bersihkan Service Worker dan CacheStorage dari kunjungan landing page sebelumnya pada origin ini
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function (registrations) {
-          for (var reg of registrations) {
-            reg.unregister();
-          }
-        });
-      }
-      if ('caches' in window) {
-        caches.keys().then(function (names) {
-          for (var name of names) {
-            caches.delete(name);
-          }
-        });
-      }
-    </script>
+    <!-- Pembersih Service Worker/CacheStorage ada di berkas eksternal.
+         CSP yang ditegakkan memakai `script-src 'self'`, jadi skrip inline
+         di sini akan diblokir peramban. -->
+    <script src="/sw-cleanup.js"></script>
   </head>
   <body class="bg-cream-50 text-ink-800 antialiased min-h-screen">
     <div id="root"></div>

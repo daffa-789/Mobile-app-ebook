@@ -190,9 +190,13 @@ if (process.env.NODE_ENV !== 'test') {
         'BOOT',
         'CSP berjalan mode report-only — pelanggaran hanya tercatat di konsol peramban',
         {
-          menegakkan: 'set CSP_ENFORCE=1 setelah konsol peramban bersih',
+          menegakkan: 'hapus CSP_ENFORCE=0, atau set CSP_ENFORCE=1',
         },
       );
+    } else {
+      logger.ok('BOOT', 'CSP DITEGAKKAN pada respons /api/* (halaman statis lewat vercel.json)', {
+        jalurMundur: 'set CSP_ENFORCE=0 di Vercel bila ada halaman yang melanggar',
+      });
     }
 
     if (mailerOn) {

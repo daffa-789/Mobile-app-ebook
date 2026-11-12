@@ -9,6 +9,7 @@
  * Bentuk respons dipertahankan kompatibel dengan klien yang ada.
  */
 
+import crypto from 'node:crypto';
 import { DB_DOWN_MESSAGE, authFailureMessage, internalErrorDetail, isDbDown } from '../lib/http.js';
 import { createOneTimeCode, redeemOneTimeCode } from '../lib/oneTimeCode.js';
 import { logger } from '../logger.js';
@@ -292,8 +293,12 @@ export async function googleMobileStart(req, res) {
     const redirectUri =
       process.env.GOOGLE_OAUTH_REDIRECT_URI || `${frontendOrigin}/api/auth/google/callback`;
 
+    /* Nonce OIDC 128-bit ikut terkunci di state sekali pakai yang sama, jadi
+     * callback bisa membandingkan klaim `nonce` pada id_token tanpa sesi
+     * server. Ini menutup penyisipan/replay token pada alur browser mobile. */
+    const nonce = crypto.randomBytes(16).toString('base64url');
     const state = await createOneTimeCode(
-      { kind: 'oauth_state', platform: 'mobile' },
+      { kind: 'oauth_state', platform: 'mobile', nonce },
       { ttlMs: 5 * 60 * 1000 },
     );
     const scope = encodeURIComponent('openid email profile');
@@ -305,7 +310,7 @@ export async function googleMobileStart(req, res) {
      * setelah logout. Dulu parameter ini sempat dihapus karena pemilih akun
      * muncul berulang — itu akibat 302 ke skema custom yang gagal dirender
      * Chrome; halaman handoff `intent://` sekarang sudah memperbaikinya. */
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${encodeURIComponent(MOBILE_STATE_PREFIX + state)}&prompt=select_account`;
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${encodeURIComponent(MOBILE_STATE_PREFIX + state)}&nonce=${encodeURIComponent(nonce)}&prompt=select_account`;
 
     return res.json({ success: true, url, state: MOBILE_STATE_PREFIX + state });
   } catch (error) {
@@ -351,6 +356,9 @@ export async function googleCallback(req, res) {
   }
 
   let isMobile = false;
+  /* Nonce hanya ada pada state yang diterbitkan `googleMobileStart`. Alur web
+   * lama memakai cookie state dan tidak punya nonce → tetap kompatibel. */
+  let expectedNonce = null;
   const failRedirect = (message, code = 'google_oauth') => {
     logger.warn('GOOGLE_OAUTH', message);
     if (isMobile) {
@@ -393,6 +401,7 @@ export async function googleCallback(req, res) {
       if (redeemed && redeemed.kind === 'oauth_state' && redeemed.platform === 'mobile') {
         validState = true;
         isMobile = true;
+        expectedNonce = typeof redeemed.nonce === 'string' ? redeemed.nonce : null;
       }
     }
 
@@ -400,6 +409,14 @@ export async function googleCallback(req, res) {
       return failRedirect(
         'State OAuth tidak cocok (kemungkinan CSRF). Coba lagi dari halaman masuk.',
       );
+    }
+    /* State mobile yang sah SELALU membawa nonce (diterbitkan bersama URL oleh
+     * googleMobileStart). Bila nonce hilang — state lama dari sebelum deploy,
+     * payload rusak, atau upaya memaksa jalur yang melewati pengecekan — jangan
+     * lanjut: kalau tidak, `expectedNonce` kosong membuat verifikasi nonce
+     * dilewati diam-diam. Alur web memang tidak punya nonce dan tidak terkena. */
+    if (isMobile && !expectedNonce) {
+      return failRedirect('Sesi masuk Google kedaluwarsa. Silakan ulangi dari aplikasi.');
     }
 
     const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
@@ -415,6 +432,7 @@ export async function googleCallback(req, res) {
       clientId: CLIENT_ID,
       clientSecret: CLIENT_SECRET,
       redirectUri: REDIRECT_URI,
+      expectedNonce,
     });
     if (!identity.ok) return failRedirect(identity.message);
 

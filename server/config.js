@@ -76,20 +76,35 @@ export const CSP_DIRECTIVES = {
    */
   'style-src': ["'self'", "'unsafe-inline'"],
   'font-src': ["'self'"],
-  'img-src': ["'self'", 'data:', 'blob:'],
-  /* Supabase hanya dipakai jalur /auth/callback lama; Midtrans dipanggil
-   * server, jadi peramban tidak perlu akses ke sana.
+  /* `/api/books/:id/thumbnail` bisa menjawab 302 ke signed URL Supabase
+   * Storage; tanpa origin ini cover buku yang tidak berbentuk data URL akan
+   * diblokir. Gambar QRIS tetap same-origin (diproksi lewat /qris/:id/qr.png).
    */
+  'img-src': ["'self'", 'data:', 'blob:', 'https://*.supabase.co'],
+  /* Midtrans dipanggil server, jadi peramban tidak perlu akses ke sana. */
   'connect-src': ["'self'", 'https://*.supabase.co'],
   'worker-src': ["'self'", 'blob:'],
   'manifest-src': ["'self'"],
 };
 
-/* Report-only secara default: policy yang terlalu ketat bisa mematangkan
- * aplikasi, dan halaman yang rusak sulit dilacak setelah ditegakkan. Nyalakan
- * CSP_ENFORCE=1 hanya setelah konsol peramban bersih.
- */
-export const CSP_REPORT_ONLY = String(process.env.CSP_ENFORCE || '') !== '1';
+/* Default: DITEGAKKAN di produksi, report-only saat development supaya
+ * perubahan UI tidak langsung mematikan halaman lokal. Override eksplisit:
+ *   CSP_ENFORCE=1 → paksa enforced   CSP_ENFORCE=0 → paksa report-only
+ * `CSP_ENFORCE=0` adalah jalur mundur cepat bila ada halaman produksi yang
+ * ternyata melanggar: cukup ubah env di Vercel, tanpa mengubah kode.
+ *
+ * Header Helmet ini HANYA melekat pada respons Express (/api/*). Halaman
+ * statis memakai header terpisah di vercel.json / vercel.admin.json, dan
+ * halaman handoff Google menimpa keduanya dengan CSP hash-nya sendiri. */
+export const CSP_REPORT_ONLY = (() => {
+  const raw = String(process.env.CSP_ENFORCE || '')
+    .trim()
+    .toLowerCase();
+  if (raw === '0' || raw === 'false') return true;
+  if (raw === '1' || raw === 'true') return false;
+  const isProduction = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
+  return !isProduction;
+})();
 
 /* Kosong = perilaku lama (1 hanya saat middleware Vite). Nilai produksi:
  * jumlah hop proxy di depan server, atau `true` bila proxy tunggal.

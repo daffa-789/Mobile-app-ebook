@@ -10,6 +10,7 @@
  * pada jalur callback OAuth.
  */
 
+import crypto from 'node:crypto';
 import { OAuth2Client } from 'google-auth-library';
 import { supabaseServer } from '../../db.js';
 import { createSessionToken, generateId, normalizeEmail, toPublicUser } from '../../auth.js';
@@ -46,13 +47,31 @@ export async function loginWithGoogleSupabase({ accessToken, googleName, googleE
   return { ok: true, token: createSessionToken(result.user), user: toPublicUser(result.user) };
 }
 
+/** Bandingkan nonce tanpa membocorkan posisi karakter yang beda lewat waktu. */
+const nonceMatches = (received, expected) => {
+  const left = Buffer.from(String(received || ''), 'utf8');
+  const right = Buffer.from(String(expected || ''), 'utf8');
+  return left.length === right.length && crypto.timingSafeEqual(left, right);
+};
+
 /**
  * Menukar authorization code OAuth Google menjadi identitas terverifikasi
  * (email + nama). Seluruh kegagalan langkah ini adalah kegagalan bisnis yang
  * dilaporkan sebagai pesan `message` — pemanggil (controller) yang memutuskan
  * bentuk respons (redirect HTML / JSON).
+ *
+ * `expectedNonce` OPSIONAL: bila diisi (alur yang URL-nya disusun server,
+ * yaitu `/api/auth/google/mobile-start`), id_token WAJIB memuat klaim `nonce`
+ * yang sama. Alur web lama memakai cookie state dan tidak mengirim nonce,
+ * jadi tetap diterima demi kompatibilitas.
  */
-export async function verifyGoogleOAuthCode({ code, clientId, clientSecret, redirectUri }) {
+export async function verifyGoogleOAuthCode({
+  code,
+  clientId,
+  clientSecret,
+  redirectUri,
+  expectedNonce = '',
+}) {
   const oauthClient = new OAuth2Client(clientId, clientSecret, redirectUri);
 
   let tokens;
@@ -82,6 +101,12 @@ export async function verifyGoogleOAuthCode({ code, clientId, clientSecret, redi
   }
   if (!payload?.email_verified) {
     return { ok: false, message: 'Email Google belum diverifikasi oleh Google.' };
+  }
+  if (expectedNonce && !nonceMatches(payload.nonce, expectedNonce)) {
+    return {
+      ok: false,
+      message: 'Nonce OAuth tidak cocok. Silakan ulangi masuk dari aplikasi.',
+    };
   }
 
   const email = normalizeEmail(payload.email);

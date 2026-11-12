@@ -161,6 +161,21 @@ booksRouter.get(
   }),
 );
 
+// GET /api/books/:id/content-url — URL baca singkat untuk PDF native/browser
+booksRouter.get(
+  '/books/:id/content-url',
+  requireAuth,
+  wrap(async (req, res) => {
+    const { target, mime } = await loadContentTarget({
+      id: req.params.id,
+      viewer: viewerOf(req),
+    });
+
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.json({ url: target, mime });
+  }),
+);
+
 // PUT /api/books/:id — Perbarui data buku dan/atau naskah/thumbnail (Admin)
 booksRouter.put(
   '/books/:id',

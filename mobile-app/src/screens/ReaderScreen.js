@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
+  Platform,
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   SafeAreaView,
-  ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../theme';
 import { useBooks } from '../context/BookContext';
@@ -18,6 +20,14 @@ import { htmlToPlainText, paginateText, buildReaderFallback } from '../lib/catal
 
 export const ReaderScreen = ({ book, onBack }) => {
   const { isDownloaded, downloadBook, deleteDownloadedBook } = useBooks();
+
+  const [pdfUrl, setPdfUrl] = useState(null);
+  const [pdfStatus, setPdfStatus] = useState('idle');
+  const [pdfError, setPdfError] = useState('');
+  const [isPdfOpening, setIsPdfOpening] = useState(false);
+  const [pdfReloadToken, setPdfReloadToken] = useState(0);
+  const pdfBrowserOpenRef = useRef(false);
+  const autoOpenedPdfRef = useRef(null);
 
   const [fontSize, setFontSize] = useState(16);
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,11 +43,84 @@ export const ReaderScreen = ({ book, onBack }) => {
       .endsWith('.pdf');
   const downloaded = isDownloaded(book.id);
 
+  const openPdf = useCallback(async () => {
+    if (!pdfUrl || pdfBrowserOpenRef.current) return;
+
+    pdfBrowserOpenRef.current = true;
+    setIsPdfOpening(true);
+    try {
+      await WebBrowser.openBrowserAsync(pdfUrl);
+    } catch (error) {
+      setPdfError(error?.message || 'PDF tidak dapat dibuka. Coba lagi.');
+    } finally {
+      pdfBrowserOpenRef.current = false;
+      setIsPdfOpening(false);
+    }
+  }, [pdfUrl]);
+
+  useEffect(() => {
+    if (!isPdf || !book?.id) {
+      setPdfUrl(null);
+      setPdfStatus('idle');
+      setPdfError('');
+      return undefined;
+    }
+
+    let isMounted = true;
+    setPdfUrl(null);
+    setPdfStatus('loading');
+    setPdfError('');
+
+    apiRequest(`/api/books/${encodeURIComponent(book.id)}/content-url`)
+      .then((result) => {
+        const target = typeof result?.url === 'string' ? result.url : '';
+        if (!target.startsWith('https://')) {
+          throw new Error('Tautan PDF tidak valid. Coba muat ulang buku.');
+        }
+        if (result?.mime && result.mime !== 'application/pdf') {
+          throw new Error('Berkas buku ini bukan PDF.');
+        }
+        if (isMounted) {
+          setPdfUrl(target);
+          setPdfStatus('ready');
+        }
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        setPdfError(error?.message || 'Gagal menyiapkan PDF. Periksa koneksi lalu coba lagi.');
+        setPdfStatus('error');
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [book?.id, isPdf, pdfReloadToken]);
+
+  useEffect(() => {
+    if (
+      Platform.OS === 'web' ||
+      !pdfUrl ||
+      autoOpenedPdfRef.current === pdfUrl
+    ) {
+      return;
+    }
+
+    autoOpenedPdfRef.current = pdfUrl;
+    openPdf();
+  }, [openPdf, pdfUrl]);
+
   // Ambil konten naskah dari cache lokal atau server /api/books/:id/html
   useEffect(() => {
     let isMounted = true;
 
     const loadBookContent = async () => {
+      if (isPdf) {
+        setFullContentText('');
+        setPages([]);
+        setIsLoadingContent(false);
+        return;
+      }
+
       setIsLoadingContent(true);
       setContentError(null);
 
@@ -52,17 +135,6 @@ export const ReaderScreen = ({ book, onBack }) => {
           return;
         }
       } catch (_) {}
-
-      // Jika buku format PDF, siapkan pratinjau teks pembaca
-      if (isPdf) {
-        if (isMounted) {
-          const fallback = book.sample_text || buildReaderFallback(book);
-          setFullContentText(fallback);
-          setPages(paginateText(fallback));
-          setIsLoadingContent(false);
-        }
-        return;
-      }
 
       // Ambil naskah dari server Express: /api/books/:id/html
       try {
@@ -131,6 +203,60 @@ export const ReaderScreen = ({ book, onBack }) => {
       }
     }
   };
+
+  if (isPdf) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.pdfTopBar}>
+          <TouchableOpacity onPress={onBack} style={styles.backButton} activeOpacity={0.7}>
+            <Feather name="arrow-left" size={18} color="#1D1B17" />
+            <Text style={styles.backButtonText}>Kembali</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.pdfScreen}>
+          {pdfStatus === 'loading' ? (
+            <View style={styles.loadingWrapper}>
+              <ActivityIndicator size="large" color="#14523A" />
+              <Text style={styles.loadingText}>Menyiapkan PDF...</Text>
+            </View>
+          ) : pdfStatus === 'error' ? (
+            <View style={styles.pdfMessage}>
+              <Feather name="alert-circle" size={28} color="#854D0E" />
+              <Text style={styles.pdfErrorText}>{pdfError}</Text>
+              <TouchableOpacity
+                style={styles.pdfOpenButton}
+                onPress={() => setPdfReloadToken((token) => token + 1)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.pdfOpenButtonText}>Coba Lagi</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.pdfMessage}>
+              <Feather name="file-text" size={30} color="#14523A" />
+              <Text style={styles.pdfHelpText}>
+                Gulir halaman untuk membaca dan cubit layar untuk memperbesar atau memperkecil.
+              </Text>
+              <TouchableOpacity
+                style={styles.pdfOpenButton}
+                onPress={openPdf}
+                disabled={isPdfOpening}
+                activeOpacity={0.8}
+              >
+                {isPdfOpening ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.pdfOpenButtonText}>Buka PDF</Text>
+                )}
+              </TouchableOpacity>
+              {pdfError ? <Text style={styles.pdfErrorText}>{pdfError}</Text> : null}
+            </View>
+          )}
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -278,6 +404,53 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FBF8F3',
+  },
+  pdfTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E4D9C6',
+    backgroundColor: '#FFFDF9',
+  },
+  pdfScreen: {
+    flex: 1,
+    paddingHorizontal: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pdfMessage: {
+    width: '100%',
+    maxWidth: 380,
+    alignItems: 'center',
+    gap: 16,
+  },
+  pdfHelpText: {
+    color: '#5A544C',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+  },
+  pdfErrorText: {
+    color: '#854D0E',
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+  },
+  pdfOpenButton: {
+    minWidth: 148,
+    minHeight: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    backgroundColor: '#14523A',
+  },
+  pdfOpenButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
   },
   topBar: {
     flexDirection: 'row',

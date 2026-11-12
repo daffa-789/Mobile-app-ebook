@@ -21,6 +21,7 @@ export default defineConfig(({ mode }) => {
         '@lib': fileURLToPath(new URL('./admin-dashboard-web/src/lib', import.meta.url)),
         '@data': fileURLToPath(new URL('./admin-dashboard-web/src/data', import.meta.url)),
         '@context': fileURLToPath(new URL('./admin-dashboard-web/src/context', import.meta.url)),
+        '@shared': fileURLToPath(new URL('./shared', import.meta.url)),
       },
     },
     build: {

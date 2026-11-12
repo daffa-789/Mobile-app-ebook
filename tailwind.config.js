@@ -17,7 +17,7 @@ const controlHeights = {
    modifier opasitas seperti `bg-cream-50/95` tetap bekerja.
 
    Nilainya disuntikkan oleh `src/theme/themeInjector.js` (bersumber dari
-   component.json) dan punya fallback statis di `src/index.css` agar render
+   component.json) dan punya fallback statis di `shared/styles/global.css` agar render
    pertama tidak berkedip. Satu tema terang, jadi hanya satu set nilai. */
 const v = (name) => `rgb(var(--${name}) / <alpha-value>)`;
 

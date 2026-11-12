@@ -1,19 +1,23 @@
 /**
  * @file scripts/seed-buku-siap-upload.mjs
- * @description Mengunggah file PDF dan sampul dari folder 'buku-siap-upload'
+ * @description Mengunggah file PDF dan sampul dari project-resources/books/ready-to-upload
  * ke Supabase Storage (bucket 'buku') dan menyimpan metadatanya ke tabel 'books'.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { fileURLToPath } from 'node:url';
 import '../server/env.js';
 import { supabaseServer } from '../server/db.js';
 import { toWebp, toDataUrl } from '../server/lib/images.js';
 import { countPdfPages } from '../server/lib/pdfPages.js';
 
 const BUCKET_NAME = 'buku';
-const BASE_DIR = path.resolve('buku-siap-upload');
+const BASE_DIR = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../project-resources/books/ready-to-upload',
+);
 
 const booksToUpload = [
   {

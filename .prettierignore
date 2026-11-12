@@ -9,8 +9,7 @@ dist-*/
 # Dokumen & materi skripsi
 *.md
 docs/
-document skripsi/
-buku-siap-upload/
+project-resources/
 
 # Aset statis & skema database
 public/

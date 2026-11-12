@@ -15,7 +15,7 @@ import './theme/themeInjector.js';
    Sistem sebelumnya: Google Fonts -> @fontsource self-host -> kini system stack.
    Alasan: pada Slow 4G font custom jadi biaya unduhan terbesar (~235-365 KB)
    dan menambah FOUT; font OS dijamin tersedia di semua perangkat tanpa jaringan. */
-import './index.css';
+import './styles/index.css';
 
 /* Sonner merender lewat portal di luar shell aplikasi, jadi warna toastnya tidak
    ikut gaya halaman. Default sonner "system" akan mengikuti pengaturan operasi,

@@ -35,6 +35,5 @@
 *.pfb binary
 *.bcmap binary
 
-# GitHub Linguist: abaikan berkas dokumen skripsi & database dari kalkulasi statistik bahasa
-"document skripsi/**" linguist-documentation
+# GitHub Linguist: abaikan berkas database dari kalkulasi statistik bahasa
 "supabase_database/**" linguist-documentation

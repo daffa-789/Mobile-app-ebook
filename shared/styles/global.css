@@ -1,0 +1,187 @@
+@import 'tailwindcss';
+@config "../../tailwind.config.js";
+
+:root {
+  /* Full font bawaan OS — 0 KB unduhan font. Stack mirroring
+     component.json (tokens.typography) yang menjadi sumber tunggal. */
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  color-scheme: light;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PALET WARNA — "Editorial Elegan" (Terang)
+   ══════════════════════════════════════════════════════════════════════════
+   Tiap warna punya DUA bentuk:
+     --cream-50        → tripel RGB ("251 248 243") dipakai Tailwind
+     --color-cream-50  → hex ("#FBF8F3") dipakai kelas kustom di berkas ini
+
+   Blok ini adalah FALLBACK statis agar render pertama tidak berkedip sebelum
+   themeInjector.js berjalan. Nilai runtime tetap bersumber dari component.json. */
+:root {
+  color-scheme: light;
+
+  --brand-50: 240 247 243;
+  --brand-100: 220 237 228;
+  --brand-200: 185 219 201;
+  --brand-300: 140 194 165;
+  --brand-400: 90 163 126;
+  --brand-500: 52 132 96;
+  --brand-600: 33 107 76;
+  --brand-700: 20 82 58;
+  --brand-800: 14 61 44;
+  --brand-900: 8 45 32;
+  --brand-950: 4 28 20;
+
+  --gold-300: 229 200 119;
+  --gold-400: 212 175 79;
+  --gold-500: 184 134 11;
+  --gold-600: 150 105 10;
+  --gold-700: 122 86 8;
+  --accent-gold: 184 134 11;
+
+  --cream-50: 251 248 243;
+  --cream-100: 247 242 233;
+  --cream-200: 240 232 218;
+  --cream-300: 228 217 198;
+  --cream-400: 210 194 168;
+
+  --ink-200: 207 202 194;
+  --ink-300: 168 161 153;
+  --ink-400: 124 117 108;
+  --ink-500: 90 84 76;
+  --ink-600: 63 59 53;
+  --ink-700: 43 40 35;
+  --ink-800: 29 27 23;
+  --ink-900: 20 18 16;
+
+  --ui-bg: 251 248 243;
+  --ui-surface: 247 242 233;
+  --ui-card: 255 253 250;
+  --ui-border: 228 217 198;
+  --ui-text: 29 27 23;
+  --ui-text-secondary: 90 84 76;
+  --ui-text-muted: 124 117 108;
+
+  --semantic-success: 33 107 76;
+  --semantic-success-light: 220 237 228;
+  --semantic-warning: 122 86 8;
+  --semantic-warning-light: 250 240 211;
+  --semantic-danger: 166 47 38;
+  --semantic-danger-light: 247 225 223;
+  --semantic-danger-on-dark: 240 169 162;
+  --semantic-muted-on-dark: 183 174 154;
+  --semantic-info: 30 91 140;
+  --semantic-info-light: 220 234 245;
+
+  --primary: 20 82 58;
+  --primary-hover: 14 61 44;
+  --primary-light: 220 237 228;
+
+  --color-brand-950: #041c14;
+  --color-brand-primary: #14523a;
+  --color-brand-primary-hover: #0e3d2c;
+  --color-brand-primary-light: #dcede4;
+  --color-ui-bg: #fbf8f3;
+  --color-ui-surface: #f7f2e9;
+  --color-ui-card: #fffdfa;
+  --color-ui-border: #e4d9c6;
+  --color-ui-text-primary: #1d1b17;
+  --color-ui-text-secondary: #5a544c;
+  --color-ui-text-muted: #7c756c;
+}
+
+html {
+  scroll-behavior: auto;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Pengguna yang menolak gerak (WCAG 2.3.3) tidak boleh terkena scroll halus,
+   transisi, atau animasi panjang. Pengecualian: spinner — tanpa gerak sama
+   sekali pengguna tidak punya sinyal bahwa aplikasi masih bekerja. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .animate-spin,
+  .animate-spin * {
+    animation-duration: 1s !important;
+  }
+}
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  /* Latar krem hangat — SENGAJA bukan putih murni. Putih dingin membuat
+     antarmuka terasa seperti dashboard SaaS generik. */
+  background-color: var(--color-ui-bg, #fbf8f3);
+  color: var(--color-ui-text-primary, #1d1b17);
+}
+
+/* Enable text selection, drag, and copy across the entire application */
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+#root {
+  min-height: 100vh;
+  background: var(--color-ui-bg, #fbf8f3);
+}
+
+/* Definisi SATU-SATUNYA warna seleksi teks di aplikasi.
+   Utility selection:* di index.html dulu menindih aturan ini dengan warna yang
+   sama — duplikasinya sudah dibuang dari index.html. */
+::selection {
+  background-color: #f2dfa6;
+  color: #0e3d2c;
+}
+
+/* Judul bergaya editorial — serif bawaan OS (Georgia dominan, tersedia di
+   semua OS; Cambria/Times sebagai fallback). 0 KB, tanpa FOUT. */
+.font-display {
+  font-family: Georgia, Cambria, 'Times New Roman', serif;
+  letter-spacing: -0.02em;
+}
+
+/* Small transitions for inline notices and dialogs. */
+.page-transition {
+  animation: fadeIn 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

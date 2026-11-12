@@ -12,13 +12,6 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const EXPECTED_APK_URL = '/unduh/wahidiyah-v0.1.6-hermes-32bit.apk';
 
 test('M2-1: Node.js 24 and Monorepo Environment Configuration', async (t) => {
-  await t.test('.nvmrc specifies Node 24', () => {
-    const nvmrcPath = path.join(ROOT_DIR, '.nvmrc');
-    assert.ok(fs.existsSync(nvmrcPath), '.nvmrc must exist at root');
-    const nvmrcContent = fs.readFileSync(nvmrcPath, 'utf8').trim();
-    assert.strictEqual(nvmrcContent, '24', '.nvmrc must be set to 24');
-  });
-
   await t.test('package.json specifies "engines": { "node": "24.x" }', () => {
     const pkgPath = path.join(ROOT_DIR, 'package.json');
     assert.ok(fs.existsSync(pkgPath), 'package.json must exist at root');

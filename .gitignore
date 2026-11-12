@@ -12,7 +12,7 @@ dist-ssr/
 dist-*/
 *.local
 
-# Environment & Secrets (Strictly single .env at root, never committed)
+# Local environment files and secrets (never committed)
 .env
 .env.local
 .env.*
@@ -22,6 +22,9 @@ dist-*/
 **/.env*
 server/.env
 client_secret_*.json
+
+# Materi non-aplikasi; simpan di Drive/Storage, bukan riwayat Git.
+/project-resources/
 
 # API keys, provider credentials, certificates, and local secret stores
 secrets/

@@ -7,6 +7,7 @@
  */
 
 import { API_CONFIG, DEV_HOSTNAMES, STORAGE_KEYS } from '@/config/constants';
+import { createApiTransport, readableError } from '@shared/apiTransport.js';
 
 export const API_FALLBACK_ORIGIN = API_CONFIG.fallbackOrigin;
 
@@ -18,11 +19,19 @@ const canUseApiFallback = (path) =>
   path.startsWith('/') &&
   !path.startsWith('//');
 
-const offlineError = () => {
-  const error = new Error('Server tidak dapat dihubungi.');
-  error.network = true;
-  return error;
-};
+const transport = createApiTransport({
+  fallbackOrigin: API_FALLBACK_ORIGIN,
+  timeoutMs: API_CONFIG.timeoutMs,
+  canUseFallback: (path) =>
+    import.meta.env?.DEV === true &&
+    typeof window !== 'undefined' &&
+    DEV_HOSTNAMES.includes(window.location.hostname) &&
+    typeof path === 'string' &&
+    path.startsWith('/') &&
+    !path.startsWith('//'),
+});
+
+export const { apiRequest, apiJson, apiJsonSend } = transport;
 
 const SESSION_STORAGE_KEY = STORAGE_KEYS.session;
 
@@ -115,82 +124,4 @@ export const clearIntendedLocation = () => {
 export const authHeaders = (token = getStoredSession()?.token) =>
   token ? { Authorization: `Bearer ${token}` } : {};
 
-const REQUEST_TIMEOUT_MS = API_CONFIG.timeoutMs;
-
-const timeoutError = () => {
-  const error = new Error('Server tidak membalas dalam batas waktu.');
-  error.network = true;
-  error.timeout = true;
-  return error;
-};
-
-const fetchWithTimeout = async (url, options = {}) => {
-  const { timeoutMs, ...rest } = options;
-  if (rest.signal) return fetch(url, rest);
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs || REQUEST_TIMEOUT_MS);
-  try {
-    return await fetch(url, { ...rest, signal: controller.signal });
-  } catch (error) {
-    if (error?.name === 'AbortError') throw timeoutError();
-    throw error;
-  } finally {
-    clearTimeout(timer);
-  }
-};
-
-export const apiRequest = async (path, options = {}) => {
-  try {
-    return await fetchWithTimeout(path, options);
-  } catch (error) {
-    if (error?.timeout) throw error;
-    if (!canUseApiFallback(path)) throw offlineError();
-
-    try {
-      return await fetchWithTimeout(`${API_FALLBACK_ORIGIN}${path}`, options);
-    } catch (fallbackError) {
-      if (fallbackError?.timeout) throw fallbackError;
-      throw offlineError();
-    }
-  }
-};
-
-export const apiJson = async (path, options = {}) => {
-  const response = await apiRequest(path, options);
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const error = new Error(payload.message || 'Permintaan ke server gagal.');
-    error.status = response.status;
-    throw error;
-  }
-  return payload;
-};
-
-/**
- * `apiJson` dengan badan JSON — satu tempat untuk kontrak `Content-Type` +
- * `JSON.stringify`. Bentuk tiga baris (`method`, `headers`, `body`) sebelumnya
- * ditulis ulang di 20 titik pada 13 berkas, sehingga perubahan kontrak (mis.
- * menambah `Accept`) harus dicari di seluruh aplikasi.
- *
- * @param {string} path - URL relatif `/api/...`
- * @param {object} body - Nilai yang diserialisasi menjadi JSON
- * @param {object} [options] - `method` (bawaan POST), `headers` tambahan
- *   (mis. otorisasi dari `authHeaders`), dan opsi `fetch` lain seperti `timeoutMs`
- * @returns {Promise<object>} Payload JSON respons
- */
-export const apiJsonSend = (path, body, { method = 'POST', headers, ...rest } = {}) =>
-  apiJson(path, {
-    ...rest,
-    method,
-    headers: { ...headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-
-export const readableError = (error) => {
-  if (error?.timeout) return 'Server tidak membalas tepat waktu. Coba lagi.';
-  if (error?.network) return 'Server tidak dapat dihubungi.';
-  if (error?.status === 503 || error?.status === 500)
-    return 'Server menolak permintaan (basis data mungkin mati).';
-  return error?.message || 'Data gagal dimuat.';
-};
+export { readableError };

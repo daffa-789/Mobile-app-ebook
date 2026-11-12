@@ -1,19 +1,9 @@
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { DEFAULT_SUPABASE_URL } from './env.js';
 import { createClient } from '@supabase/supabase-js';
 import { logger } from './logger.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, '..', '.env'), override: true });
-dotenv.config({ path: path.resolve(__dirname, '.env'), override: true });
-dotenv.config({ override: true });
-
-const SUPABASE_PROJECT_URL = 'https://pfiowztxlbcclazpdsxe.supabase.co';
-
 const resolveSupabaseCredentials = (env = process.env) => {
-  const url = env.VITE_SUPABASE_URL || env.SUPABASE_URL || SUPABASE_PROJECT_URL;
+  const url = env.VITE_SUPABASE_URL || env.SUPABASE_URL || DEFAULT_SUPABASE_URL;
   const secretKey = String(env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
   const anonKey = String(env.SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_ANON_KEY || '').trim();
 

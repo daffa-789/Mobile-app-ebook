@@ -43,8 +43,8 @@
   },
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
-    "package.json": "package-lock.json, .nvmrc, jsconfig.json, .prettierrc*",
-    "vite.config.js": "tailwind.config.js, postcss.config.js, component.json",
+    "package.json": "package-lock.json, jsconfig.json, .prettierrc*",
+    "vite.config.js": "tailwind.config.js, component.json",
     ".env": ".env.*"
   }
 }

@@ -10,7 +10,7 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
 const FIGCRAFT_CLI = 'C:/Program Files/ArtCraft/FigCraft/figcraft-cli.exe';
-const TARGET_FIGCRAFT = path.join(ROOT_DIR, 'Design APP.figcraft');
+const TARGET_FIGCRAFT = path.join(ROOT_DIR, 'project-resources', 'design', 'Design APP.figcraft');
 const TEST_TEMP_DIR = path.join(ROOT_DIR, 'tests', '.temp_challenger_m1_2');
 const ROUNDTRIP_JSON = path.join(TEST_TEMP_DIR, 'roundtrip.json');
 const ROUNDTRIP_FIGCRAFT = path.join(TEST_TEMP_DIR, 'roundtrip.figcraft');
@@ -48,7 +48,7 @@ test.before(() => {
 
 test('CHALLENGER-1: Package Round-Trip Integrity Verification', async (t) => {
   await t.test('FigCraft binary exists and is readable', () => {
-    assert.ok(fs.existsSync(TARGET_FIGCRAFT), 'Design APP.figcraft must exist at project root');
+    assert.ok(fs.existsSync(TARGET_FIGCRAFT), 'Design APP.figcraft must exist in project-resources/design');
     const stats = fs.statSync(TARGET_FIGCRAFT);
     assert.ok(
       stats.size > 100000,

@@ -6,25 +6,37 @@
  */
 
 import http from 'http';
-import { createApiApp } from '../../../server/app.js';
-import { createSessionToken } from '../../../server/auth.js';
+import { seedE2eDatabase } from '../fixtures/seedE2eDatabase.mjs';
+
+process.env.E2E_TEST_MODE = '1';
+process.env.NODE_ENV = 'test';
+
+await import('../../../server/env.js');
+const [{ createApiApp }, { createSessionToken }, { supabaseServer }] = await Promise.all([
+  import('../../../server/app.js'),
+  import('../../../server/auth.js'),
+  import('../../../server/db.js'),
+]);
 
 export const KNOWN_USERS = {
   admin: {
-    id: 'usr-fe45357faf4948ffaa5fe73a6ab98465',
-    email: 'jualepic1610@gmail.com',
+    id: 'e2e-admin-000000000000000000000000000001',
+    email: 'e2e-admin@wahidiyah.test',
+    name: 'E2E Admin',
     role: 'admin',
     isPro: false,
   },
   pro: {
-    id: 'usr-9747dba536d24e5abbd4ce8778077a19',
-    email: 'ghazalahramadhan6@gmail.com',
+    id: 'e2e-pro-000000000000000000000000000001',
+    email: 'e2e-pro@wahidiyah.test',
+    name: 'E2E Pro Reader',
     role: 'user',
     isPro: true,
   },
   regular: {
-    id: 'usr-cab2053f807948afbb5888deb258158a',
-    email: 'jualendfield1610@gmail.com',
+    id: 'e2e-user-000000000000000000000000000001',
+    email: 'e2e-user@wahidiyah.test',
+    name: 'E2E Regular Reader',
     role: 'user',
     isPro: false,
   },
@@ -35,6 +47,8 @@ export const KNOWN_USERS = {
  * @returns {Promise<{ server: http.Server, baseUrl: string, port: number, close: Function, request: Function }>}
  */
 export async function startTestServer() {
+  await seedE2eDatabase(supabaseServer, KNOWN_USERS);
+
   const app = createApiApp();
   const server = http.createServer(app);
 
@@ -71,6 +85,7 @@ export async function startTestServer() {
     }
 
     const res = await fetch(`${baseUrl}${endpoint}`, {
+      redirect: options.redirect || 'manual',
       ...rest,
       headers: reqHeaders,
       body: reqBody,

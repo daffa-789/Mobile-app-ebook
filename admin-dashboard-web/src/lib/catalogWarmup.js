@@ -19,34 +19,6 @@
  */
 
 import { apiJson } from '@lib/api';
+import { createCatalogWarmup } from '@shared/catalogWarmup.js';
 
-const warmup = {};
-
-const warmCatalogEndpoint = (path) => {
-  try {
-    const promise = apiJson(path);
-    /* rejection tidak boleh mengambang tanpa konsumen (mis. pengguna keluar
-     * aplikasi sebelum slice mount), tetapi konsumen sesungguhnya yang
-     * meng-`await` janji yang sama tetap menerima errornya. */
-    promise.catch(() => {});
-    warmup[path] = promise;
-  } catch {
-    /* Lingkungan tanpa fetch — abaikan, slice mengambil data jalur normal. */
-  }
-};
-
-warmCatalogEndpoint('/api/books');
-warmCatalogEndpoint('/api/events');
-
-/**
- * Ambil janji warm-up untuk path (begitu saja), lalu tandai terkonsumsi.
- *
- * @param {string} path - Jalur API yang dipanggil saat warm-up
- * @returns {Promise<object>|null} Janji payload JSON, atau `null` bila sudah
- *   dikonsumsi / tak pernah dipicu
- */
-export const takeWarmCatalogResponse = (path) => {
-  const promise = warmup[path] ?? null;
-  delete warmup[path];
-  return promise;
-};
+export const { takeWarmCatalogResponse } = createCatalogWarmup(apiJson, ['/api/books', '/api/events']);

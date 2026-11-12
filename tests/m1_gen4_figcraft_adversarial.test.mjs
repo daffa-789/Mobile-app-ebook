@@ -6,7 +6,7 @@ import { execSync } from 'node:child_process';
 
 const ROOT_DIR = 'E:/Wahidiyah Book Mobile app';
 const FIGCRAFT_CLI = 'C:/Program Files/ArtCraft/FigCraft/figcraft-cli.exe';
-const TARGET_FIGCRAFT = path.join(ROOT_DIR, 'Design APP.figcraft');
+const TARGET_FIGCRAFT = path.join(ROOT_DIR, 'project-resources', 'design', 'Design APP.figcraft');
 const EXPORTED_JSON = path.join(ROOT_DIR, 'dist/challenger_doc.json');
 
 // Helper to convert fresh AST from .figcraft

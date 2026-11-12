@@ -13,7 +13,7 @@
 import { supabaseServer } from '../../db.js';
 import { generateId, toPublicUser, TRANSACTION_PENDING_STATUS } from '../../auth.js';
 import { insertTransaction, resolvePurchaseGate } from '../../lib/membership.js';
-import { QRIS_ADMIN_FEE, findPlan } from '../../lib/constants.js';
+import { QRIS_ADMIN_FEE, SUBSCRIPTION_PLANS, findPlan } from '../../lib/constants.js';
 import { createServiceError } from '../../lib/errors.js';
 import {
   MIDTRANS_IS_PRODUCTION,
@@ -75,6 +75,11 @@ export async function createQrisOrder({ planId, userId, fallbackUser, phone }) {
       code: error.code,
       message: error.message,
     };
+  }
+
+  const trimmedPlanId = String(planId || '').trim();
+  if (trimmedPlanId && !SUBSCRIPTION_PLANS.some((p) => p.id === trimmedPlanId)) {
+    throw createServiceError(400, 'Paket langganan tidak valid.');
   }
 
   const plan = findPlan(planId);

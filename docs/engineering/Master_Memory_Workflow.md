@@ -15,7 +15,7 @@
 > Berkas ini adalah **SATU-SATUNYA SUMBER KEBENARAN (Single Source of Truth / Memory Tunggal)** untuk seluruh arsitektur, spesifikasi REST API, alur pembayaran Midtrans QRIS, gateway autentikasi WhatsApp, integrasi database Supabase Cloud, panduan developer, naskah akademik/Zotero, standar keamanan siber, dan riwayat rilis aplikasi **Wahidiyah Book**.
 >
 > 
-> Ini satu-satunya **memory teknis utama**. `README.md` hanya pintu masuk; `ARCHITECTURE.md`, `DESIGN.md`, dan `docs/ARCHITECTURE_AND_ENGINEERING_GUIDELINES.md` hanya pengarah ke bagian terkait di sini. Panduan operasional khusus, seperti panduan upload admin, tetap berdiri sendiri. Jika dokumentasi berbeda dengan kode aktif atau `full_setup.sql`, kode dan skema aktif menjadi acuan lalu memory ini diperbarui.
+> Ini satu-satunya **memory teknis utama**. Spesifikasi produk khusus, seperti spesifikasi aplikasi mobile dan panduan upload buku, tetap berada di dokumen terpisah. Jika dokumentasi berbeda dengan kode aktif atau `full_setup.sql`, kode dan skema aktif menjadi acuan lalu memory ini diperbarui.
 
 ---
 
@@ -1186,7 +1186,7 @@ npm install
 | **`npm start`** | **Mode Produksi Lokal:** `scripts/start.js` mem-build `dist/` bila belum ada, lalu menyalakan server produksi di `PORT` (default **5000**) dengan `SERVE_STATIC=true`. Flag: `--rebuild` (paksa build ulang) dan `--no-build` (wajib ada `dist/`). |
 | **`npm run build`** | Mengompilasi React + Tailwind ke `dist/` lewat Vite (manual chunk: `charts`, `excel`, `pdfjs`, `supabase-sdk`, `vendor`, dll.). |
 | **`npm run preview`** | Menyajikan hasil `dist/` lewat `vite preview` untuk inspeksi cepat aset hasil build. |
-| **`npm run format`** | Merapikan seluruh berkas dengan Prettier (`printWidth: 100`, kutip tunggal, `endOfLine: lf`). `.prettierignore` mengecualikan `.md`, `docs/`, `document skripsi/`, `buku-siap-upload/`, `public/`, `supabase_database/`, `package-lock.json`, `dist/`, dan `.qoder/`. |
+| **`npm run format`** | Merapikan seluruh berkas dengan Prettier (`printWidth: 100`, kutip tunggal, `endOfLine: lf`). `.prettierignore` mengecualikan `.md`, `docs/`, `project-resources/`, `public/`, `supabase_database/`, `package-lock.json`, `dist/`, dan `.qoder/`. |
 | **`npm run format:check`** | Memeriksa kepatuhan format tanpa mengubah berkas — dipakai sebelum commit. |
 | **`npm run health`** | **Uji Kesehatan Sistem (7/7 Checklist):** Supabase, Midtrans, WhatsApp Gateway, serta tabel `users`, `books`, `transactions`, `events`. |
 | **`npm test`** / **`npm run check`** | **Quality Gate Cepat:** Menjalankan `npm run format:check` diikuti `npm run health` untuk validasi kualitas berkas dan koneksi layanan secara terpadu. |
@@ -1208,11 +1208,13 @@ Wahidiyah Book + Real Midtrans Skripsi/
 ├── api/
 │   └── index.js            # Entry serverless Vercel → Express
 ├── docs/
-│   ├── ARCHITECTURE_AND_ENGINEERING_GUIDELINES.md
-│   └── diagrams/           # wahidiyah_book_uml_all.drawio, sequence-*.json,
-│                           # mermaid-v12.html, fig_*.png, visual-flows/
-├── buku-siap-upload/       # Paket naskah + sampul siap unggah lewat panel admin
-├── document skripsi/       # Naskah, generator .py, _refwork/ (tidak diformat Prettier)
+│   ├── diagrams/           # wahidiyah_book_uml_all.drawio, sequence-*.json,
+│   │                       # mermaid-v12.html, fig_*.png, visual-flows/
+│   ├── engineering/
+│   │   └── Master_Memory_Workflow.md # Panduan teknis utama
+│   └── specifications/
+│       └── MOBILE_APP_SPEC.md # Spesifikasi fitur aplikasi native
+├── project-resources/      # Materi lokal yang tidak dilacak Git (buku, skripsi, desain)
 ├── public/
 │   ├── payments/           # Hanya qris.svg & qris-putih.svg
 │   ├── sw.js               # Service worker Web Push
@@ -1246,8 +1248,10 @@ Wahidiyah Book + Real Midtrans Skripsi/
 │   ├── whatsapp.js         # Delegator provider WhatsApp
 │   └── server.js           # Titik masuk Express
 ├── shared/
-│   └── sanitizeHtml.js     # Sanitizer dipakai server saat tulis & klien saat render
+│   ├── sanitizeHtml.js     # Sanitizer dipakai server saat tulis & klien saat render
+│   └── styles/global.css   # Tailwind, token warna, dan gaya dasar bersama web
 ├── src/
+│   ├── styles/index.css    # Entry CSS reader + gaya khusus autentikasi/reader
 │   ├── components/
 │   │   ├── layout/         # SidebarContent, SidebarNavButton, MobileBottomNav, navigationConfig, LogoutConfirmDialog
 │   │   ├── routing/        # RouteGuards (RequireAuth, UserOnly, AdminRoute), RouterBridge
@@ -1270,8 +1274,9 @@ Wahidiyah Book + Real Midtrans Skripsi/
 │   ├── lib/                # api (termasuk `apiJsonSend`), phone, date, excelExport, receiptPdf, receiptFields, navigation, normalizers, ...
 │   ├── theme/              # themeInjector (satu tema terang, tanpa provider)
 │   ├── App.jsx             # Router navigasi utama
-│   ├── index.css           # Token Tailwind 4 + palet Editorial Elegan
 │   └── main.jsx            # Entry point React DOM
+├── admin-dashboard-web/src/styles/index.css # Entry CSS dashboard + fondasi bersama
+├── landing-page/src/styles/index.css        # Entry CSS landing + fondasi bersama
 ├── supabase_database/
 │   └── full_setup.sql      # Satu-satunya setup SQL; hanya database baru/reset yang disetujui
 ├── supabase/.temp/         # State lokal CLI Supabase (di-ignore Git)
@@ -1280,13 +1285,9 @@ Wahidiyah Book + Real Midtrans Skripsi/
 ├── .prettierignore         # Kecualikan md, docs, public, SQL, dist, package-lock
 ├── component.json          # Sumber token desain → disuntik themeInjector.js
 ├── jsconfig.json           # Alias @, @features, @ui, @lib, @data, @context, @theme
-├── tailwind.config.js / postcss.config.js / vite.config.js
+├── tailwind.config.js / vite.config.js # Tailwind 4 memakai plugin Vite; PostCSS config khusus tidak diperlukan
 ├── vercel.json             # Deployment serverless Vercel (Node 24.x)
 ├── package.json            # Manifest dependensi & skrip proyek
-├── README.md               # Pintu masuk dan quick start
-├── ARCHITECTURE.md         # Pengarah ke bagian arsitektur di master
-├── DESIGN.md               # Pengarah ke bagian desain di master
-└── Master_Memory_Workflow.md # SATU-SATUNYA MEMORY TEKNIS UTAMA
 ```
 
 ---
@@ -1323,7 +1324,7 @@ Dicatat agar tidak ada sesi berikutnya yang mencari atau menghidupkan kembali be
 
 - `shared/sanitizeHtml.js` — dipakai `PdfReaderScreen.jsx:177` (me-render HTML naskah ke semua pembaca) dan `books_service.js:275` (sanitasi saat menyajikan hasil konversi). Menghapusnya membuka stored XSS.
 - `src/data/mockData.js` — namanya menyesatkan tapi isinya hidup: `PAYMENT_METHODS` dipakai `usePaymentSlice.js:29` + `PaymentMethodScreen.jsx:57`, `FAQ_ITEMS` dipakai `HelpCenterScreen.jsx:9`.
-- `document skripsi/` dan `docs/diagrams/` — naskah Bab 1, generator gambar, dan figur UML; bukan bagian aplikasi tapi bukan sampah.
+- `project-resources/documents/thesis/` — naskah serta generator pribadi. `docs/diagrams/` tetap menyimpan diagram teknis aplikasi.
 - `server/mailer.js` + `scripts/get-gmail-token.js` — jalur OTP email masih hidup di `server/lib/otp.js:2`/`:83` dan `sendGoogleAccountEmail` di `server/services/auth/password_reset_service.js:103`.
 
 ### 15.21 Modernisasi Mesin Dokumen (Native PDF.js Viewer & Docx-Preview), Top Bar Minimalis, dan Pembukaan Akses Hadits Arba'in R91 (4 November 2026)
@@ -1519,7 +1520,7 @@ Semua keputusan jalur mobile dari sesi 4 November dirapikan ke **16.2** (satu-sa
 | Cakupan | Login, katalog, reader, unduh-offline, Setting + tombol Update. **Admin, pembayaran, dan dashboard tetap web.** |
 | Distribusi | Sideload APK lewat GitHub Releases, **tanpa Play Store**. iOS ditunda (build bisa dari cloud Expo, tapi pemasangan ke iPhone butuh Apple Developer $99/tahun). |
 | Branch | `mobile-app` dibuat dan di-push ke `origin` (`b8057af`). Vercel tidak ikut deploy karena build hanya dari `main`. |
-| Penjaga build | `mobile/` masuk `.prettierignore` dan `@source not "../mobile"` di `src/index.css`. Terverifikasi: build 15,77 s, `prettier --check .` bersih, `npm run health` 7/7. |
+| Penjaga build | `mobile/` masuk `.prettierignore` dan `@source not "../mobile"` di stylesheet reader lama (`src/index.css`; kini `src/styles/index.css` dengan fondasi bersama di `shared/styles/global.css`). Terverifikasi: build 15,77 s, `prettier --check .` bersih, `npm run health` 7/7. |
 | Anti-screenshot | `expo-screen-capture` (`FLAG_SECURE`) **hanya selama jendela buku terbuka**, untuk semua buku. Konsekuensi: reader tidak bisa di-screenshot untuk Bab IV, jadi hatch build `preview` dibutuhkan. |
 | Fakta storage | Naskah sudah di Supabase Storage (`storage://buku/naskah/...`, signed URL 300 detik, maks 50 MB) — bukan data URL base64 di kolom. Ini yang membuat offline layak dikerjakan. |
 | **Koreksi M1** | Klaim lama "✅ 100% SELESAI" **tidak benar**: tanda air di kanvas dan blokir klik kanan tidak ada di kode; hanya `select-none` yang tersisa. Relevan langsung ke judul skripsi dan Bab IV — keputusan pemulihan atau penurunan klaim belum diambil. |
@@ -1572,7 +1573,7 @@ Fitur inti web sudah tersedia, tetapi kelulusan build, verifikasi manual, UAT, d
 
 **Tiga hal yang harus dibuktikan lebih dulu, bukan diasumsikan:** (1) OTA bekerja pada APK sideload — dokumentasi Expo tidak membahas distribusi di luar store; (2) `FLAG_SECURE` tidak membuat native PDF view hitam di HP nyata — perilakunya di atas native view tidak terdokumentasi; (3) API unduh `expo-file-system` bisa mengirim header `Authorization` menembus redirect ke signed URL.
 
-**Penjaga build yang sudah dipasang dan terverifikasi:** `mobile/` masuk `.prettierignore`, dan `@source not "../mobile"` di `src/index.css` agar Tailwind v4 tidak menyapu kode RN ke CSS web. Dibuktikan dengan `vite build` sukses, direktif tidak tersisa di CSS hasil build, `prettier --check .` bersih.
+**Penjaga build yang sudah dipasang dan terverifikasi:** `mobile/` masuk `.prettierignore`, dan `@source not "../mobile"` dahulu berada di stylesheet reader (sekarang `src/styles/index.css`; fondasi bersama berada di `shared/styles/global.css`) agar Tailwind v4 tidak menyapu kode RN ke CSS web. Dibuktikan dengan `vite build` sukses, direktif tidak tersisa di CSS hasil build, `prettier --check .` bersih.
 
 **Yang dibatalkan atau diperkecil, supaya tidak diusulkan ulang:**
 

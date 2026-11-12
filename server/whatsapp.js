@@ -1,6 +1,4 @@
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import './env.js';
 import { logger } from './logger.js';
 import {
   getActiveWhatsAppProvider,
@@ -8,10 +6,6 @@ import {
   listSupportedProviders,
 } from './providers/index.js';
 import { isValidPhoneNumber } from 'libphonenumber-js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
-dotenv.config();
 
 /**
  * Normalisasi nomor HP (Indonesia maupun internasional) ke format standar angka (E.164 tanpa +).

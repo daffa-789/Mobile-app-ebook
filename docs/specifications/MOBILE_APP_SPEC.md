@@ -1,4 +1,4 @@
-# MASTER PROMPT: PENGEMBANGAN MOBILE-APP (EXPO / REACT NATIVE)
+# Spesifikasi Aplikasi Mobile Native (Expo / React Native)
 
 > **Tujuan:** Replikasi 1:1 tampilan dan alur mobile-web Wahidiyah Book ke aplikasi mobile native menggunakan Expo SDK 58 & React Native.
 > **Lokasi Pengerjaan:** Folder `mobile-app/`

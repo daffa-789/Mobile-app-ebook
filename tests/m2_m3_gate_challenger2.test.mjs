@@ -46,12 +46,7 @@ describe('CHALLENGER 2 — Integrated Monorepo, Build & Admin Auth Stress Harnes
       }
     });
 
-    test('Root package.json and .nvmrc enforce Node 24 compatibility', () => {
-      const nvmrcPath = path.join(rootDir, '.nvmrc');
-      assert.equal(fs.existsSync(nvmrcPath), true);
-      const nvmrcContent = fs.readFileSync(nvmrcPath, 'utf8').trim();
-      assert.equal(nvmrcContent, '24', '.nvmrc must specify 24');
-
+    test('Root package.json enforces Node 24 compatibility', () => {
       const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
       assert.equal(pkg.engines?.node, '24.x', 'package.json engines.node must be 24.x');
 

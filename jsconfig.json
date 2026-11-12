@@ -46,8 +46,7 @@
     "vite.config.js",
     "vite.config.landing.js",
     "vite.config.admin.js",
-    "tailwind.config.js",
-    "postcss.config.js"
+    "tailwind.config.js"
   ],
   "exclude": ["node_modules", "dist", "dist-*", ".agents"]
 }

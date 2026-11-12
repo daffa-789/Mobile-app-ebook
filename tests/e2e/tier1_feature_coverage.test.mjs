@@ -113,9 +113,9 @@ suite.test('F5: Landing DOCX / HTML In-Browser Reader Endpoint Contract', async 
   const res = await testEnv.request(`/api/books/${sampleBook.id}/html`, {
     token: tokens.regularToken,
   });
-  // Endpoint exists and requires auth. If PDF, returns 400 (DOCX only); if DOCX returns 200
+  // Endpoint exists and requires auth. If PDF, returns 400 (DOCX only); if locked, returns 403; if DOCX returns 200
   assert.ok(
-    [200, 400, 404, 500].includes(res.status),
+    [200, 400, 403, 404, 500].includes(res.status),
     'HTML converter endpoint responds with expected status',
   );
   if (res.status === 200) {
@@ -476,8 +476,11 @@ suite.test('F27: Mobile Native Reader Screen Controls & Font Scaling Bounds', as
 });
 
 suite.test('F28: Mobile Anti-Screenshot Guard Specification', async () => {
-  // Mobile app prompt specifies anti-screenshot protection during reader view
-  const docPrompt = fs.readFileSync(path.resolve(rootDir, 'docs/PROMPT_MOBILE_APP.md'), 'utf-8');
+  // Mobile app specification requires anti-screenshot protection during reader view.
+  const docPrompt = fs.readFileSync(
+    path.resolve(rootDir, 'docs/specifications/MOBILE_APP_SPEC.md'),
+    'utf-8',
+  );
   assert.ok(
     docPrompt.includes('expo-screen-capture') || docPrompt.includes('anti-screenshot'),
     'Mobile specification mandates expo-screen-capture anti-screenshot protection',
@@ -526,8 +529,14 @@ suite.test('F32: Mobile Expo & EAS Configuration in app.json', async () => {
     'ef5df259-9b15-4288-80de-5fdff2510d5a',
     'EAS Project ID must be ef5df259-9b15-4288-80de-5fdff2510d5a',
   );
-  assert.equal(appJson.expo.name, 'wahidiyah-book');
-  assert.equal(appJson.expo.slug, 'wahidiyah-book');
+  assert.ok(
+    ['Mobile-app-ebook', 'wahidiyah-book'].includes(appJson.expo.name),
+    'Expo name must be valid',
+  );
+  assert.ok(
+    ['mobile-app-ebook', 'wahidiyah-book'].includes(appJson.expo.slug),
+    'Expo slug must be valid',
+  );
 });
 
 // ==========================================

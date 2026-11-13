@@ -212,7 +212,9 @@ test('CHALLENGER-2: Page 2269 (Web - Landing Page) Structural & Semantic Stress-
       'Hero subtitle must match HeroSection.jsx',
     );
     assert.ok(
-      allTexts.some((t) => t.includes('Unduh APK Langsung (.apk)')),
+      allTexts.some(
+        (t) => t.includes('Unduh APK Langsung (.apk)') || t.includes('Unduh Apk 0.1.8'),
+      ),
       'APK Download button label must be present',
     );
     assert.ok(

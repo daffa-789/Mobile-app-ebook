@@ -93,7 +93,10 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
     const content = fs.readFileSync(heroPath, 'utf8');
 
     const { expo } = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'app.json'), 'utf8'));
-    assert.ok(content.includes(`v${expo.version} (Alpha)`), 'Versi unduhan harus sesuai app.json');
+    assert.ok(
+      content.includes(`v${expo.version} (Alpha)`) || content.includes(`Unduh Apk ${expo.version}`),
+      'Versi unduhan harus sesuai app.json',
+    );
     assert.ok(
       content.includes('APK_DOWNLOAD_URL') || content.includes(EXPECTED_APK_URL),
       'HeroSection must link to official APK URL or centralized constant',

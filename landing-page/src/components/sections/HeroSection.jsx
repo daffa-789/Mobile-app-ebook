@@ -29,15 +29,7 @@ export const HeroSection = () => {
               <Download className="w-5 h-5 text-gold-300" />
             </div>
             <div className="text-left">
-              <div className="text-sm font-bold text-cream-50 leading-tight">
-                Unduh APK Langsung (.apk)
-              </div>
-              <div className="text-xs font-normal text-brand-200">
-                v0.1.8 (Alpha) • Android 8.0+ • 32-bit & 64-bit
-              </div>
-              <div className="text-xs font-normal text-brand-200">
-                Rilis terbaru: v0.1.8 (Hermes V1) • tanpa Play Store
-              </div>
+              <div className="text-sm font-bold text-cream-50 leading-tight">Unduh Apk 0.1.8</div>
             </div>
           </a>
         </div>

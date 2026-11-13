@@ -7,7 +7,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import ExcelJS from 'exceljs';
+import writeXlsxFile from 'write-excel-file/node';
 import { startTestServer, getTestTokens, KNOWN_USERS } from './helpers/testServer.mjs';
 import { createTestSuite, assert, createMinimalPdfBuffer } from './helpers/testHelpers.mjs';
 import { countPdfPages } from '../../server/lib/pdfPages.js';
@@ -142,9 +142,6 @@ suite.test(
     assert.ok(Array.isArray(resLogs.data.logs));
 
     // 8. Admin exports comprehensive 5-sheet Excel workbook
-    const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'Perpustakaan Digital Wahidiyah';
-
     const sheetNames = [
       'Ringkasan Eksekutif',
       'Transaksi',
@@ -153,13 +150,17 @@ suite.test(
       'Agenda Kegiatan',
     ];
 
-    for (const sheet of sheetNames) {
-      workbook.addWorksheet(sheet);
-    }
+    const sheets = sheetNames.map((sheet) => ({
+      sheet,
+      data: [
+        ['Metrik Laporan', 'Keterangan'],
+        ['Nama Aplikasi', 'Perpustakaan Digital Wahidiyah'],
+      ],
+    }));
 
-    assert.equal(workbook.worksheets.length, 5);
-    const excelBuffer = await workbook.xlsx.writeBuffer();
-    assert.ok(excelBuffer.byteLength > 0, 'Excel workbook generated successfully');
+    assert.equal(sheets.length, 5);
+    const excelBuffer = await writeXlsxFile(sheets).toBuffer();
+    assert.ok(excelBuffer.length > 0, 'Excel workbook generated successfully');
   },
 );
 

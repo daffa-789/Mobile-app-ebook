@@ -73,7 +73,9 @@ function mountStatic(app) {
     }),
   );
 
-  app.get('*', (req, res, next) => {
+  /* Express 5 memakai path-to-regexp v8: wildcard wajib bernama.
+   * '/{*splat}' setara dengan '*' di Express 4 untuk fallback SPA. */
+  app.get('/{*splat}', (req, res, next) => {
     const requestPath = String(req.path || '');
     if (requestPath.startsWith('/api')) return next();
     if (NON_SPA_EXTENSIONS.has(path.extname(requestPath).toLowerCase())) return next();

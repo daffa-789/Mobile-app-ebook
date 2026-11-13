@@ -7,7 +7,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import ExcelJS from 'exceljs';
+import writeXlsxFile from 'write-excel-file/node';
 import { startTestServer, getTestTokens, KNOWN_USERS } from './helpers/testServer.mjs';
 import {
   createTestSuite,
@@ -261,10 +261,7 @@ suite.test('F13: Admin Subscription Donut Chart Distribution Data', async () => 
   assert.equal(donutData[1].color, '#14523A', 'Regular slice must use brand green');
 });
 
-suite.test('F14: Admin Multi-Sheet Excel Export Structure via ExcelJS', async () => {
-  const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'Perpustakaan Digital Wahidiyah';
-
+suite.test('F14: Admin Multi-Sheet Excel Export Structure via write-excel-file', async () => {
   const sheetNames = [
     'Ringkasan Eksekutif',
     'Transaksi',
@@ -273,18 +270,22 @@ suite.test('F14: Admin Multi-Sheet Excel Export Structure via ExcelJS', async ()
     'Agenda Kegiatan',
   ];
 
-  for (const name of sheetNames) {
-    workbook.addWorksheet(name);
-  }
+  const sheets = sheetNames.map((sheet) => ({
+    sheet,
+    data: [
+      ['Metrik Laporan', 'Keterangan'],
+      ['Nama Aplikasi', 'Perpustakaan Digital Wahidiyah'],
+    ],
+  }));
 
-  assert.equal(workbook.worksheets.length, 5, 'Export workbook must contain exactly 5 worksheets');
+  assert.equal(sheets.length, 5, 'Export workbook must contain exactly 5 worksheets');
   for (let i = 0; i < sheetNames.length; i++) {
-    assert.equal(workbook.worksheets[i].name, sheetNames[i]);
+    assert.equal(sheets[i].sheet, sheetNames[i]);
   }
 
   // Verify buffer write capability
-  const buffer = await workbook.xlsx.writeBuffer();
-  assert.ok(buffer.byteLength > 0, 'Excel buffer must not be empty');
+  const buffer = await writeXlsxFile(sheets).toBuffer();
+  assert.ok(buffer.length > 0, 'Excel buffer must not be empty');
 });
 
 suite.test('F15: Admin Direct-to-Storage Upload Intent Contract', async () => {

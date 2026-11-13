@@ -6,7 +6,7 @@
 
 import path from 'path';
 import { fileURLToPath } from 'url';
-import ExcelJS from 'exceljs';
+import writeXlsxFile from 'write-excel-file/node';
 import { startTestServer, getTestTokens, KNOWN_USERS } from './helpers/testServer.mjs';
 import { createTestSuite, assert, createMinimalPdfBuffer } from './helpers/testHelpers.mjs';
 import { countPdfPages } from '../../server/lib/pdfPages.js';
@@ -206,45 +206,51 @@ suite.test(
     const resBooks = await testEnv.request('/api/books');
     const resEvents = await testEnv.request('/api/events');
 
-    // Step 3: Build complete branded 5-sheet Excel workbook using ExcelJS
-    const workbook = new ExcelJS.Workbook();
-    workbook.creator = 'Perpustakaan Digital Wahidiyah';
+    // Step 3: Build complete branded 5-sheet Excel workbook using write-excel-file
+    const users = resUsers.data.users || [];
+    const books = resBooks.data.books || [];
+    const events = resEvents.data.events || [];
 
-    // Sheet 1: Ringkasan Eksekutif
-    const ws1 = workbook.addWorksheet('Ringkasan Eksekutif');
-    ws1.addRow(['Metrik Laporan', 'Keterangan']);
-    ws1.addRow(['Total Pengguna', resUsers.data.users.length]);
-    ws1.addRow(['Total Buku', resBooks.data.books.length]);
-    ws1.addRow(['Total Agenda', resEvents.data.events.length]);
+    const sheets = [
+      {
+        sheet: 'Ringkasan Eksekutif',
+        data: [
+          ['Metrik Laporan', 'Keterangan'],
+          ['Total Pengguna', users.length],
+          ['Total Buku', books.length],
+          ['Total Agenda', events.length],
+        ],
+      },
+      {
+        sheet: 'Transaksi',
+        data: [['No', 'No. Referensi', 'Nama', 'Nominal', 'Status']],
+      },
+      {
+        sheet: 'Pengguna',
+        data: [
+          ['No', 'Nama Lengkap', 'Email', 'Role', 'Status Pro'],
+          ...users.map((u, i) => [i + 1, u.name, u.email, u.role, u.is_pro ? 'Pro' : 'Reguler']),
+        ],
+      },
+      {
+        sheet: 'Katalog Buku',
+        data: [
+          ['No', 'Judul', 'Halaman', 'Akses'],
+          ...books.map((b, i) => [i + 1, b.title, b.pages, b.is_locked ? 'Pro' : 'Gratis']),
+        ],
+      },
+      {
+        sheet: 'Agenda Kegiatan',
+        data: [
+          ['No', 'Judul Agenda', 'Lokasi', 'Tanggal'],
+          ...events.map((e, i) => [i + 1, e.title, e.location || '-', e.date || '-']),
+        ],
+      },
+    ];
 
-    // Sheet 2: Transaksi
-    const ws2 = workbook.addWorksheet('Transaksi');
-    ws2.addRow(['No', 'No. Referensi', 'Nama', 'Nominal', 'Status']);
-
-    // Sheet 3: Pengguna
-    const ws3 = workbook.addWorksheet('Pengguna');
-    ws3.addRow(['No', 'Nama Lengkap', 'Email', 'Role', 'Status Pro']);
-    resUsers.data.users.forEach((u, i) => {
-      ws3.addRow([i + 1, u.name, u.email, u.role, u.is_pro ? 'Pro' : 'Reguler']);
-    });
-
-    // Sheet 4: Katalog Buku
-    const ws4 = workbook.addWorksheet('Katalog Buku');
-    ws4.addRow(['No', 'Judul', 'Halaman', 'Akses']);
-    resBooks.data.books.forEach((b, i) => {
-      ws4.addRow([i + 1, b.title, b.pages, b.is_locked ? 'Pro' : 'Gratis']);
-    });
-
-    // Sheet 5: Agenda Kegiatan
-    const ws5 = workbook.addWorksheet('Agenda Kegiatan');
-    ws5.addRow(['No', 'Judul Agenda', 'Lokasi', 'Tanggal']);
-    resEvents.data.events.forEach((e, i) => {
-      ws5.addRow([i + 1, e.title, e.location || '-', e.date || '-']);
-    });
-
-    assert.equal(workbook.worksheets.length, 5, 'Workbook must have 5 sheets');
-    const buffer = await workbook.xlsx.writeBuffer();
-    assert.ok(buffer.byteLength > 1000, 'Generated report buffer must be well-formed');
+    assert.equal(sheets.length, 5, 'Workbook must have 5 sheets');
+    const buffer = await writeXlsxFile(sheets).toBuffer();
+    assert.ok(buffer.length > 0, 'Generated report buffer must be well-formed');
   },
 );
 

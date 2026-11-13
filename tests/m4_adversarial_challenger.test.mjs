@@ -237,7 +237,10 @@ test('M4 Suite 3: Monorepo Build Scripts & Compilation Verification', async (t) 
       cwd: ROOT_DIR,
       encoding: 'utf-8',
     });
-    assert.ok(output.includes('building for production'), 'Vite build output detected');
+    /* Vite 6: "building for production..."; Vite 8/Rolldown:
+     * "building client environment for production...". Yang diuji adalah
+     * build produksi berjalan, bukan bunyi log versi tertentu. */
+    assert.ok(/building[^\n]*for production/.test(output), 'Vite build output detected');
     assert.ok(output.includes('built in'), 'Vite build completion message detected');
 
     const landingHtmlPath = path.join(ROOT_DIR, 'dist', 'landing', 'index.html');
@@ -263,7 +266,8 @@ test('M4 Suite 3: Monorepo Build Scripts & Compilation Verification', async (t) 
       cwd: ROOT_DIR,
       encoding: 'utf-8',
     });
-    assert.ok(output.includes('building for production'), 'Vite build output detected');
+    /* Lihat catatan versi Vite pada 3.1. */
+    assert.ok(/building[^\n]*for production/.test(output), 'Vite build output detected');
     assert.ok(output.includes('built in'), 'Vite build completion message detected');
 
     const adminHtmlPath = path.join(ROOT_DIR, 'dist', 'admin', 'index.html');

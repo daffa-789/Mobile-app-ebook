@@ -39,7 +39,7 @@ export default defineConfig(({ mode }) => {
             if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) {
               return 'charts';
             }
-            if (id.includes('node_modules/exceljs')) {
+            if (id.includes('node_modules/write-excel-file')) {
               return 'excel';
             }
             if (id.includes('node_modules/pdfjs-dist')) {

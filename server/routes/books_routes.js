@@ -161,7 +161,7 @@ booksRouter.get(
   }),
 );
 
-// GET /api/books/:id/content-url — URL baca singkat untuk PDF native/browser
+// GET /api/books/:id/content-url — URL baca singkat untuk reader PDF native
 booksRouter.get(
   '/books/:id/content-url',
   requireAuth,

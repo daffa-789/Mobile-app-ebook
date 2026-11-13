@@ -48,4 +48,4 @@ export const APP_CONFIG = {
 
 /* Versi tampilan aplikasi. Jaga agar sama dengan `expo.version` di app.json
  * supaya layar Profil tidak menampilkan versi yang basi. */
-export const APP_VERSION = '0.1.6';
+export const APP_VERSION = '0.1.7';

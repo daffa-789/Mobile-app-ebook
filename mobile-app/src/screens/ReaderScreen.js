@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Platform,
   View,
   Text,
   StyleSheet,
@@ -11,7 +10,9 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import * as WebBrowser from 'expo-web-browser';
+/* Reader PDF native: berkas dirender di dalam aplikasi (bukan Chrome Custom
+ * Tab), sehingga tidak ada bilah alamat maupun tombol unduh bawaan browser. */
+import Pdf from 'react-native-pdf';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../theme';
 import { useBooks } from '../context/BookContext';
@@ -24,10 +25,7 @@ export const ReaderScreen = ({ book, onBack }) => {
   const [pdfUrl, setPdfUrl] = useState(null);
   const [pdfStatus, setPdfStatus] = useState('idle');
   const [pdfError, setPdfError] = useState('');
-  const [isPdfOpening, setIsPdfOpening] = useState(false);
   const [pdfReloadToken, setPdfReloadToken] = useState(0);
-  const pdfBrowserOpenRef = useRef(false);
-  const autoOpenedPdfRef = useRef(null);
 
   const [fontSize, setFontSize] = useState(16);
   const [currentPage, setCurrentPage] = useState(1);
@@ -42,21 +40,6 @@ export const ReaderScreen = ({ book, onBack }) => {
       .toLowerCase()
       .endsWith('.pdf');
   const downloaded = isDownloaded(book.id);
-
-  const openPdf = useCallback(async () => {
-    if (!pdfUrl || pdfBrowserOpenRef.current) return;
-
-    pdfBrowserOpenRef.current = true;
-    setIsPdfOpening(true);
-    try {
-      await WebBrowser.openBrowserAsync(pdfUrl);
-    } catch (error) {
-      setPdfError(error?.message || 'PDF tidak dapat dibuka. Coba lagi.');
-    } finally {
-      pdfBrowserOpenRef.current = false;
-      setIsPdfOpening(false);
-    }
-  }, [pdfUrl]);
 
   useEffect(() => {
     if (!isPdf || !book?.id) {
@@ -95,19 +78,6 @@ export const ReaderScreen = ({ book, onBack }) => {
       isMounted = false;
     };
   }, [book?.id, isPdf, pdfReloadToken]);
-
-  useEffect(() => {
-    if (
-      Platform.OS === 'web' ||
-      !pdfUrl ||
-      autoOpenedPdfRef.current === pdfUrl
-    ) {
-      return;
-    }
-
-    autoOpenedPdfRef.current = pdfUrl;
-    openPdf();
-  }, [openPdf, pdfUrl]);
 
   // Ambil konten naskah dari cache lokal atau server /api/books/:id/html
   useEffect(() => {
@@ -205,6 +175,15 @@ export const ReaderScreen = ({ book, onBack }) => {
   };
 
   if (isPdf) {
+    const handlePdfError = (error) => {
+      const message =
+        typeof error === 'string'
+          ? error
+          : error?.message || 'Berkas PDF tidak dapat ditampilkan.';
+      setPdfError(message);
+      setPdfStatus('error');
+    };
+
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.pdfTopBar}>
@@ -214,46 +193,45 @@ export const ReaderScreen = ({ book, onBack }) => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.pdfScreen}>
-          {pdfStatus === 'loading' ? (
-            <View style={styles.loadingWrapper}>
-              <ActivityIndicator size="large" color="#14523A" />
-              <Text style={styles.loadingText}>Menyiapkan PDF...</Text>
-            </View>
-          ) : pdfStatus === 'error' ? (
-            <View style={styles.pdfMessage}>
-              <Feather name="alert-circle" size={28} color="#854D0E" />
-              <Text style={styles.pdfErrorText}>{pdfError}</Text>
-              <TouchableOpacity
-                style={styles.pdfOpenButton}
-                onPress={() => setPdfReloadToken((token) => token + 1)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.pdfOpenButtonText}>Coba Lagi</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.pdfMessage}>
-              <Feather name="file-text" size={30} color="#14523A" />
-              <Text style={styles.pdfHelpText}>
-                Gulir halaman untuk membaca dan cubit layar untuk memperbesar atau memperkecil.
-              </Text>
-              <TouchableOpacity
-                style={styles.pdfOpenButton}
-                onPress={openPdf}
-                disabled={isPdfOpening}
-                activeOpacity={0.8}
-              >
-                {isPdfOpening ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.pdfOpenButtonText}>Buka PDF</Text>
-                )}
-              </TouchableOpacity>
-              {pdfError ? <Text style={styles.pdfErrorText}>{pdfError}</Text> : null}
-            </View>
-          )}
-        </View>
+        {pdfStatus === 'loading' ? (
+          <View style={styles.pdfCenter}>
+            <ActivityIndicator size="large" color="#14523A" />
+            <Text style={styles.loadingText}>Menyiapkan PDF...</Text>
+          </View>
+        ) : pdfStatus === 'error' ? (
+          <View style={styles.pdfCenter}>
+            <Feather name="alert-circle" size={28} color="#854D0E" />
+            <Text style={styles.pdfErrorText}>{pdfError}</Text>
+            <TouchableOpacity
+              style={styles.pdfRetryButton}
+              onPress={() => setPdfReloadToken((token) => token + 1)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.pdfRetryButtonText}>Coba Lagi</Text>
+            </TouchableOpacity>
+          </View>
+        ) : pdfUrl ? (
+          <Pdf
+            source={{ uri: pdfUrl }}
+            style={styles.pdfCanvas}
+            horizontal={false}
+            enablePaging={false}
+            fitPolicy={0}
+            spacing={10}
+            scale={1}
+            minScale={1}
+            maxScale={5}
+            enableDoubleTapZoom
+            enableAntialiasing
+            onError={handlePdfError}
+            renderActivityIndicator={() => (
+              <View style={styles.pdfCenter}>
+                <ActivityIndicator size="large" color="#14523A" />
+                <Text style={styles.loadingText}>Memuat halaman buku...</Text>
+              </View>
+            )}
+          />
+        ) : null}
       </SafeAreaView>
     );
   }
@@ -414,23 +392,19 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E4D9C6',
     backgroundColor: '#FFFDF9',
   },
-  pdfScreen: {
+  /* Kanvas PDF memenuhi sisa layar: halaman digulir vertikal, cubit untuk
+   * memperbesar/memperkecil lewat minScale/maxScale pada komponen native. */
+  pdfCanvas: {
+    flex: 1,
+    width: '100%',
+    backgroundColor: '#EDE7DC',
+  },
+  pdfCenter: {
     flex: 1,
     paddingHorizontal: 28,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  pdfMessage: {
-    width: '100%',
-    maxWidth: 380,
-    alignItems: 'center',
-    gap: 16,
-  },
-  pdfHelpText: {
-    color: '#5A544C',
-    fontSize: 14,
-    lineHeight: 21,
-    textAlign: 'center',
+    gap: 14,
   },
   pdfErrorText: {
     color: '#854D0E',
@@ -438,7 +412,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     textAlign: 'center',
   },
-  pdfOpenButton: {
+  pdfRetryButton: {
     minWidth: 148,
     minHeight: 46,
     alignItems: 'center',
@@ -447,7 +421,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: '#14523A',
   },
-  pdfOpenButtonText: {
+  pdfRetryButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',

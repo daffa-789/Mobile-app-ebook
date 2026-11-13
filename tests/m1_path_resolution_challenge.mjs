@@ -63,31 +63,45 @@ function runPathResolutionAudit() {
     assert.strictEqual(resolved, tc.expected, `Resolution failed for ${tc.importPath}`);
   }
 
-  // Verify Vite configurations have matching aliases
+  // Setiap workspace punya kebutuhan alias sendiri. jsconfig.json tetap
+  // mendeklarasikan SEMUA alias (untuk editor/IDE), tetapi config Vite hanya
+  // boleh membawa alias yang benar-benar dipakai workspace itu — alias mati
+  // menyembunyikan import yang sudah dihapus (lihat dead-code cleanup M1).
   const viteConfigs = [
-    { name: 'Root vite.config.js', file: 'vite.config.js', expectedRoot: './src' },
+    {
+      name: 'Root vite.config.js',
+      file: 'vite.config.js',
+      expectedRoot: './src',
+      expected: ['@', '@features', '@ui', '@lib', '@data', '@context', '@theme', '@shared'],
+      forbidden: [],
+    },
     {
       name: 'Landing vite.config.landing.js',
       file: 'vite.config.landing.js',
       expectedRoot: './landing-page/src',
+      expected: ['@'],
+      forbidden: ['@features', '@ui', '@lib', '@data', '@context', '@theme', '@shared'],
     },
     {
       name: 'Admin vite.config.admin.js',
       file: 'vite.config.admin.js',
       expectedRoot: './admin-dashboard-web/src',
+      // @shared aktif: dipakai admin-dashboard-web/src/lib/{api,catalogWarmup,plans}.js
+      expected: ['@', '@ui', '@lib', '@data', '@context', '@shared'],
+      forbidden: ['@features', '@theme'],
     },
   ];
 
   for (const cfg of viteConfigs) {
     const content = fs.readFileSync(path.resolve(cfg.file), 'utf8');
-    assert(content.includes("'@':"), `${cfg.name} missing '@' alias`);
-    assert(content.includes("'@features':"), `${cfg.name} missing '@features' alias`);
-    assert(content.includes("'@ui':"), `${cfg.name} missing '@ui' alias`);
-    assert(content.includes("'@lib':"), `${cfg.name} missing '@lib' alias`);
-    assert(content.includes("'@shared':"), `${cfg.name} missing '@shared' alias`);
-    console.log(
-      `✔ ${cfg.name} contains all required bundler aliases: @, @features, @ui, @lib, @shared`,
-    );
+    for (const alias of cfg.expected) {
+      assert(content.includes(`'${alias}':`), `${cfg.name} missing live alias ${alias}`);
+    }
+    for (const alias of cfg.forbidden) {
+      assert(!content.includes(`'${alias}':`), `${cfg.name} must not keep the dead alias ${alias}`);
+    }
+    assert(content.includes(cfg.expectedRoot), `${cfg.name} must map '@' to ${cfg.expectedRoot}`);
+    console.log(`✔ ${cfg.name} live aliases: ${cfg.expected.join(', ')} -> ${cfg.expectedRoot}`);
   }
 
   console.log('\n✔ Path resolution audit PASSED successfully!');

@@ -28,26 +28,58 @@ test('Milestone 1 — Supabase Database & Configuration Verification', async (t)
     },
   );
 
-  await t.test('2. Hardcoded fallback configurations point to pfiowztxlbcclazpdsxe', () => {
-    const filesToCheck = [
+  await t.test('2. Konfigurasi Supabase terpusat & bebas kredensial hardcoded', async () => {
+    // Dulu tiap konsumen menyimpan ref proyek + publishable key sebagai
+    // fallback literal. Itu membuat rotasi env sia-sia dan kunci ikut ter-bundle.
+    // Hardening memindahkan semuanya ke .env lewat satu modul bersama.
+    const sharedPath = path.join(rootDir, 'shared/supabaseConfig.js');
+    assert.ok(fs.existsSync(sharedPath), 'shared/supabaseConfig.js harus menjadi sumber tunggal');
+
+    const consumers = [
       'server/db.js',
       'src/lib/supabaseConfig.js',
       'admin-dashboard-web/src/lib/supabaseConfig.js',
     ];
 
-    for (const relPath of filesToCheck) {
-      const fullPath = path.join(rootDir, relPath);
-      assert.ok(fs.existsSync(fullPath), `File ${relPath} should exist`);
-      const content = fs.readFileSync(fullPath, 'utf8');
-      assert.ok(
-        content.includes(EXPECTED_PROJECT_REF),
-        `File ${relPath} must include ${EXPECTED_PROJECT_REF}`,
-      );
+    for (const relPath of [...consumers, 'shared/supabaseConfig.js']) {
+      const content = fs.readFileSync(path.join(rootDir, relPath), 'utf8');
       assert.ok(
         !content.includes('pdimjmbjutlzjdfjaqgt'),
-        `File ${relPath} must NOT contain stale ref pdimjmbjutlzjdfjaqgt`,
+        `${relPath} masih memuat ref proyek usang`,
+      );
+      assert.ok(
+        !/sb_(publishable|secret)_[A-Za-z0-9_-]{10,}/.test(content),
+        `${relPath} tidak boleh menyimpan kunci Supabase hardcoded`,
       );
     }
+
+    const dbSrc = fs.readFileSync(path.join(rootDir, 'server/db.js'), 'utf8');
+    assert.ok(
+      dbSrc.includes("from './env.js'"),
+      'server/db.js harus membaca konfigurasi dari env.js',
+    );
+    assert.ok(
+      !/https:\/\/[a-z0-9]+\.supabase\.co/.test(dbSrc),
+      'server/db.js tidak boleh menyimpan URL proyek hardcoded',
+    );
+
+    const sharedSrc = fs.readFileSync(sharedPath, 'utf8');
+    assert.ok(sharedSrc.includes('VITE_SUPABASE_URL'), 'URL harus dibaca dari variabel env');
+    assert.ok(sharedSrc.includes('VITE_SUPABASE_ANON_KEY'), 'Kunci harus dibaca dari variabel env');
+
+    for (const relPath of consumers.slice(1)) {
+      const src = fs.readFileSync(path.join(rootDir, relPath), 'utf8');
+      assert.ok(
+        /shared\/supabaseConfig\.js/.test(src),
+        `${relPath} harus re-export modul bersama, bukan menduplikasi konfigurasi`,
+      );
+    }
+
+    // Nilai runtime tetap menunjuk proyek aktif, tetapi bersumber dari .env.
+    const config = await import('../shared/supabaseConfig.js');
+    assert.equal(config.SUPABASE_URL, EXPECTED_PROJECT_URL);
+    assert.equal(config.SUPABASE_ANON_KEY, process.env.VITE_SUPABASE_ANON_KEY);
+    assert.equal(config.isSupabaseConfigured, true);
   });
 
   await t.test(

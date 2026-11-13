@@ -146,7 +146,7 @@ test('Challenger 2 Suite: Milestone 1 Monorepo Stress & Boundary Verification', 
     const expectedViteAliases = {
       'vite.config.js': ['@', '@features', '@ui', '@lib', '@data', '@context', '@theme', '@shared'],
       'vite.config.landing.js': ['@'],
-      'vite.config.admin.js': ['@', '@ui', '@lib', '@data', '@context'],
+      'vite.config.admin.js': ['@', '@ui', '@lib', '@data', '@context', '@shared'],
     };
 
     for (const [viteFile, aliases] of Object.entries(expectedViteAliases)) {
@@ -160,9 +160,17 @@ test('Challenger 2 Suite: Milestone 1 Monorepo Stress & Boundary Verification', 
       !fs.readFileSync('vite.config.landing.js', 'utf8').includes("'@features':"),
       'vite.config.landing.js must not keep the dead @features alias',
     );
+    // @shared JUSTRU masih hidup di admin: modul admin-dashboard-web/src/lib/*
+    // mengimpornya. Menghapus alias ini merusak build admin, jadi yang diuji
+    // adalah keberadaan alias + bukti pemakaiannya, bukan penghapusannya.
     assert.ok(
-      !fs.readFileSync('vite.config.admin.js', 'utf8').includes("'@shared':"),
-      'vite.config.admin.js must not keep the dead @shared alias',
+      fs.readFileSync('vite.config.admin.js', 'utf8').includes("'@shared':"),
+      'vite.config.admin.js must keep the live @shared alias',
+    );
+    const adminSharedConsumer = fs.readFileSync('admin-dashboard-web/src/lib/plans.js', 'utf8');
+    assert.ok(
+      adminSharedConsumer.includes("from '@shared/plans.js'"),
+      'admin-dashboard-web must actually import @shared/plans.js',
     );
   });
 

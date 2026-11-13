@@ -14,12 +14,14 @@ dotenv.config({ path: path.join(rootDir, '.env') });
 
 const EXPECTED_PROJECT_REF = 'pfiowztxlbcclazpdsxe';
 const EXPECTED_PROJECT_URL = `https://${EXPECTED_PROJECT_REF}.supabase.co`;
-const EXPECTED_PUBLISHABLE_KEY = 'sb_publishable_dXKLW87Q8CdC8pBtJ4KOPg_OQOfb44p';
 
 test('Milestone 3 — Admin Dashboard Web Configuration & Deployment Suite', async (t) => {
   await t.test(
-    '1. Supabase Config in admin-dashboard-web connects to pfiowztxlbcclazpdsxe',
+    '1. Supabase Config in admin-dashboard-web is env-driven and points to pfiowztxlbcclazpdsxe',
     async () => {
+      // Publishable key tidak lagi ditanam sebagai fallback literal: kunci kini
+      // dibaca dari .env lewat shared/supabaseConfig.js agar rotasi efektif dan
+      // tidak ada kredensial yang ikut ter-bundle ke aset statis.
       const configPath = path.join(rootDir, 'admin-dashboard-web/src/lib/supabaseConfig.js');
       assert.ok(
         fs.existsSync(configPath),
@@ -28,12 +30,12 @@ test('Milestone 3 — Admin Dashboard Web Configuration & Deployment Suite', asy
 
       const configContent = fs.readFileSync(configPath, 'utf8');
       assert.ok(
-        configContent.includes(EXPECTED_PROJECT_REF),
-        `supabaseConfig.js must contain project ref ${EXPECTED_PROJECT_REF}`,
+        /shared\/supabaseConfig\.js/.test(configContent),
+        'supabaseConfig.js harus re-export modul konfigurasi bersama',
       );
       assert.ok(
-        configContent.includes(EXPECTED_PUBLISHABLE_KEY),
-        `supabaseConfig.js must contain fallback publishable key ${EXPECTED_PUBLISHABLE_KEY}`,
+        !/sb_(publishable|secret)_[A-Za-z0-9_-]{10,}/.test(configContent),
+        'supabaseConfig.js must not embed a hardcoded publishable/secret key',
       );
       assert.ok(
         !configContent.includes('pdimjmbjutlzjdfjaqgt'),
@@ -43,6 +45,7 @@ test('Milestone 3 — Admin Dashboard Web Configuration & Deployment Suite', asy
       // Dynamic import to test exported values
       const configModule = await import('../admin-dashboard-web/src/lib/supabaseConfig.js');
       assert.equal(configModule.SUPABASE_URL, EXPECTED_PROJECT_URL);
+      assert.equal(configModule.SUPABASE_ANON_KEY, process.env.VITE_SUPABASE_ANON_KEY);
       assert.ok(configModule.SUPABASE_ANON_KEY.startsWith('sb_publishable_'));
       assert.equal(configModule.isSupabaseConfigured, true);
     },

@@ -396,10 +396,13 @@ suite.test('F23: Mobile Shell & Bottom Tabs Architecture', async () => {
   const screensDir = path.resolve(rootDir, 'mobile-app/src/screens');
   assert.ok(fs.existsSync(screensDir), 'mobile-app/src/screens must exist');
 
+  // F23 mengikuti navigasi 4 tab aktif. DownloadsScreen.js sudah dihapus pada
+  // pembersihan dead code M1 (tidak pernah diimpor App.js); ProScreen.js adalah
+  // layar tab Pro yang benar-benar dirender.
   const expectedScreens = [
     'HomeScreen.js',
     'CalendarScreen.js',
-    'DownloadsScreen.js',
+    'ProScreen.js',
     'ProfileScreen.js',
     'ReaderScreen.js',
   ];

@@ -490,9 +490,16 @@ test('Challenger Suite 3: PaywallModal Lock Interaction & Dialog Focus Trap', as
   });
 
   await t.test('3.3 Dialog Focus Trap logic verification (useDialogFocusTrap.js)', () => {
-    // Implementasi kanonik sekarang hidup di root src/lib dan dipakai BookModal
-    // pada admin dashboard (duplikat di landing-page sudah dihapus di M1).
-    const focusTrapContent = fs.readFileSync('src/lib/useDialogFocusTrap.js', 'utf8');
+    // Sejak sentralisasi utilitas bersama, implementasi kanonik hidup di
+    // shared/useDialogFocusTrap.js; src/lib/useDialogFocusTrap.js hanya barrel
+    // re-export yang dipakai BookModal pada admin dashboard. Uji logikanya pada
+    // sumber kanonik, dan pastikan barrel-nya tetap menunjuk ke sana.
+    const focusTrapContent = fs.readFileSync('shared/useDialogFocusTrap.js', 'utf8');
+    const barrelContent = fs.readFileSync('src/lib/useDialogFocusTrap.js', 'utf8');
+    assert.ok(
+      /shared\/useDialogFocusTrap\.js/.test(barrelContent),
+      'src/lib/useDialogFocusTrap.js harus menjadi barrel untuk modul bersama',
+    );
 
     // Checks key requirements:
     // 1. Selects all focusable selectors

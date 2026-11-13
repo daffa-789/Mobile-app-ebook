@@ -124,10 +124,33 @@ test('Challenger M1.1: Empirical Stress-Test & Boundary Verification of Design A
     );
     console.log(`[CHALLENGER] Dimensions: width=${maxX - minX}px, height=${maxY - minY}px`);
 
+    // Kanvas desain bertumbuh mengikuti komponen baru yang ditambahkan pemilik
+    // (kini 2350x1335 px). Jangan kunci ke angka lama 2000x1200: yang dijaga
+    // adalah koordinat terdefinisi, bermargin dari origin, dan tidak melonjak
+    // keluar kanvas kerja (mis. transform yang belum diinisialisasi).
+    const CANVAS_MAX_WIDTH = 4000;
+    const CANVAS_MAX_HEIGHT = 3000;
+    const unionWidth = maxX - minX;
+    const unionHeight = maxY - minY;
+
     assert.ok(minX >= 50, `minX (${minX}) should be >= 50 (margin away from origin 0,0)`);
     assert.ok(minY >= 50, `minY (${minY}) should be >= 50 (margin away from origin 0,0)`);
-    assert.ok(maxX <= 2000, `maxX (${maxX}) should be within reasonable bounds (<= 2000)`);
-    assert.ok(maxY <= 1200, `maxY (${maxY}) should be within reasonable bounds (<= 1200)`);
+    assert.ok(
+      Number.isFinite(unionWidth) && unionWidth > 0,
+      `Union bounding box width (${unionWidth}) must be finite and positive`,
+    );
+    assert.ok(
+      Number.isFinite(unionHeight) && unionHeight > 0,
+      `Union bounding box height (${unionHeight}) must be finite and positive`,
+    );
+    assert.ok(
+      unionWidth <= CANVAS_MAX_WIDTH,
+      `Union width (${unionWidth}) should stay within the working canvas (<= ${CANVAS_MAX_WIDTH})`,
+    );
+    assert.ok(
+      unionHeight <= CANVAS_MAX_HEIGHT,
+      `Union height (${unionHeight}) should stay within the working canvas (<= ${CANVAS_MAX_HEIGHT})`,
+    );
 
     // Exhaustive Pairwise AABB Intersection Test
     const overlaps = [];
@@ -370,15 +393,31 @@ test('Challenger M1.1: Empirical Stress-Test & Boundary Verification of Design A
     }
 
     const adminPage = doc.nodes[adminPageId];
-    assert.strictEqual(adminPage.children.length, 1, 'Web - Admin Dashboard must have 1 frame');
-    const adminFrame = doc.nodes[adminPage.children[0]];
+    // Desain admin kini punya beberapa frame (Dashboard, Buku, Pengguna,
+    // Agenda, Log). Jumlahnya boleh bertambah; yang diuji adalah struktur
+    // setiap frame, bukan angka tetap yang usang.
     assert.ok(
-      adminFrame.children && adminFrame.children.length > 0,
-      'Admin frame must have children',
+      adminPage.children.length >= 1,
+      'Web - Admin Dashboard must contain at least one frame',
     );
-    console.log(
-      `[CHALLENGER] Web Admin Frame: "${adminFrame.name}" (${adminFrame.width}x${adminFrame.height}), children: ${adminFrame.children.length}`,
-    );
+    for (const childId of adminPage.children) {
+      const adminFrame = doc.nodes[childId];
+      assert.ok(adminFrame, `Admin frame ${childId} must exist in doc.nodes`);
+      assert.ok(
+        typeof adminFrame.width === 'number' &&
+          adminFrame.width > 0 &&
+          typeof adminFrame.height === 'number' &&
+          adminFrame.height > 0,
+        `Admin frame "${adminFrame.name}" must have positive dimensions`,
+      );
+      assert.ok(
+        adminFrame.children && adminFrame.children.length > 0,
+        `Admin frame "${adminFrame.name}" must have children`,
+      );
+      console.log(
+        `[CHALLENGER] Web Admin Frame: "${adminFrame.name}" (${adminFrame.width}x${adminFrame.height}), children: ${adminFrame.children.length}`,
+      );
+    }
   });
 
   await t.test('6. Deep Hierarchy & Minimum Distance Boundary Verification', () => {

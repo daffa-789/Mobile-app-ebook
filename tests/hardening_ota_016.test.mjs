@@ -105,20 +105,20 @@ test('server: idToken dibatasi umurnya, endpoint native dibatasi lajunya', () =>
   assert.match(read('server/config.js'), /process\.env\.VERCEL \? 1/, 'trust proxy di Vercel');
 });
 
-test('komentar versi sudah mengikuti 0.1.7', () => {
+test('komentar versi sudah mengikuti 0.1.8', () => {
   const health = read('server/routes/health_routes.js');
   assert.ok(!health.includes('APK v0.1.5 menyematkan'), 'komentar APK lama dibuang');
   assert.ok(!health.includes('versionCode 7'), 'versionCode lama dibuang');
-  assert.match(health, /v0\.1\.7/);
+  assert.match(health, /v0\.1\.8/);
   const landing = read('landing-page/src/config/constants.js');
   assert.ok(!landing.includes('Rilis v0.1.5 memakai Hermes'), 'komentar landing diperbarui');
-  assert.match(landing, /v0\.1\.7/);
+  assert.match(landing, /v0\.1\.8/);
 });
 
-test('rilis 0.1.7: modul native terlarang tetap tidak dipakai', () => {
+test('rilis 0.1.8: modul native terlarang tetap tidak dipakai', () => {
   const appJson = JSON.parse(read('app.json'));
-  assert.equal(appJson.expo.version, '0.1.7');
-  assert.equal(appJson.expo.android.versionCode, 9);
+  assert.equal(appJson.expo.version, '0.1.8');
+  assert.equal(appJson.expo.android.versionCode, 10);
   assert.deepEqual(appJson.expo.runtimeVersion, { policy: 'appVersion' });
   assert.equal(appJson.expo.jsEngine, undefined, 'Hermes tidak boleh dimatikan');
 

@@ -46,7 +46,7 @@ test('Expo menyisipkan URL API publik ke bundle Android produksi', () => {
   }
 });
 
-const DEFAULT_APK = '/unduh/wahidiyah-v0.1.7-hermes-32bit.apk';
+const DEFAULT_APK = '/unduh/wahidiyah-v0.1.8-hermes-32bit.apk';
 
 // Helper to run code in an isolated subprocess with specific env variables
 async function runInSubprocess(moduleRelativePath, envOverrides = {}) {

@@ -74,7 +74,7 @@ test('versionCode naik di atas build JSC v0.1.2 yang cacat (4)', () => {
 });
 
 test('unduh terjadi langsung dari domain sendiri (same-origin), bukan ke GitHub', () => {
-  const apkPath = '/unduh/wahidiyah-v0.1.7-hermes-32bit.apk';
+  const apkPath = '/unduh/wahidiyah-v0.1.8-hermes-32bit.apk';
   const sameOriginBase = 'https://mobile-app-ebook.vercel.app';
   const jscArtifact = 'xA4OBPWr4r68oBF-zo0p9olad0QSUX0bR4vsbf7pX-s.apk';
   const sources = {
@@ -124,9 +124,9 @@ test('unduh terjadi langsung dari domain sendiri (same-origin), bukan ke GitHub'
   assert.equal(headerMap['Content-Type'], 'application/vnd.android.package-archive');
 });
 
-test('rilis 0.1.7 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => {
-  assert.equal(appJson.expo.version, '0.1.7', 'versi rilisan harus 0.1.7');
-  assert.equal(appJson.expo.android.versionCode, 9, 'versionCode rilis final harus 9');
+test('rilis 0.1.8 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => {
+  assert.equal(appJson.expo.version, '0.1.8', 'versi rilisan harus 0.1.8');
+  assert.equal(appJson.expo.android.versionCode, 10, 'versionCode rilis final harus 10');
   assert.ok(appJson.expo.android.versionCode > 4);
 
   const buildProperties = appJson.expo.plugins.find(
@@ -142,7 +142,7 @@ test('rilis 0.1.7 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => 
     'expo-font',
     '@react-native-google-signin/google-signin',
   ]) {
-    assert.ok(plugins.includes(plugin), `${plugin} tidak boleh hilang dari build 0.1.7`);
+    assert.ok(plugins.includes(plugin), `${plugin} tidak boleh hilang dari build 0.1.8`);
   }
   assert.equal(appJson.expo.jsEngine, undefined, 'jsEngine jsc tidak didukung SDK 58');
   assert.equal(appJson.expo.runtimeVersion?.policy, 'appVersion');
@@ -153,6 +153,26 @@ test('rilis 0.1.7 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => 
  * bukan versionName di APK. Kalau konstanta ini tertinggal, pengguna 0.1.3
  * yang sudah menerima update tetap melihat "v0.1.3". Kunci nilainya ke
  * expo.version supaya rilis berikutnya tidak bisa lupa menaikkannya. */
+/* Regresi 13 November 2026: saat APK dibuka, splash masih memakai gambar bawaan
+ * Expo berupa grid + lingkaran konsentris, dan adaptiveIcon.monochromeImage masih
+ * memakai huruf "A" abu-abu bawaan template. Keduanya terlihat seperti logo
+ * lingkaran hitam/"setingan default". Konfigurasi splash resmi TANPA image
+ * menghasilkan layar polos warna aplikasi, tanpa logo apa pun. */
+test('splash bawaan (grid + lingkaran) dan ikon monokrom "A" sudah dihapus', () => {
+  const plugins = appJson.expo.plugins;
+  const splash = plugins.find((entry) => Array.isArray(entry) && entry[0] === 'expo-splash-screen');
+  assert.ok(splash, 'plugin expo-splash-screen wajib aktif agar splash bisa diatur');
+  assert.equal(splash[1].backgroundColor, '#FBF8F3', 'latar splash mengikuti warna aplikasi');
+  assert.equal(splash[1].image, undefined, 'tanpa image → tidak ada logo placeholder bawaan');
+  assert.equal(
+    appJson.expo.android.adaptiveIcon.monochromeImage,
+    undefined,
+    'ikon monokrom "A" bawaan template tidak boleh dipakai',
+  );
+  const pkg = require(path.join(root, 'package.json'));
+  assert.ok(pkg.dependencies['expo-splash-screen'], 'modul splash resmi harus terdaftar');
+});
+
 test('APP_VERSION mengikuti expo.version agar versi tampil tidak basi setelah OTA', () => {
   const constants = fs.readFileSync(
     path.join(root, 'mobile-app', 'src', 'config', 'constants.js'),

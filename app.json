@@ -3,7 +3,7 @@
     "name": "Mobile-app-ebook",
     "slug": "mobile-app-ebook",
     "owner": "jualendfield1610s-team",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "scheme": "mobileappebook",
     "orientation": "portrait",
     "icon": "./mobile-app/assets/icon.png",
@@ -13,12 +13,11 @@
     },
     "android": {
       "package": "id.wahidiyah.book",
-      "versionCode": 9,
+      "versionCode": 10,
       "adaptiveIcon": {
         "backgroundColor": "#067554",
         "foregroundImage": "./mobile-app/assets/android-icon-foreground.png",
-        "backgroundImage": "./mobile-app/assets/android-icon-background.png",
-        "monochromeImage": "./mobile-app/assets/android-icon-monochrome.png"
+        "backgroundImage": "./mobile-app/assets/android-icon-background.png"
       }
     },
     "web": {
@@ -43,6 +42,12 @@
         }
       ],
       "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FBF8F3"
+        }
+      ],
       [
         "@react-native-google-signin/google-signin",
         {

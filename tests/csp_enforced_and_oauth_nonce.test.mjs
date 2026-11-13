@@ -183,9 +183,9 @@ test('admin tidak punya skrip inline yang akan diblokir CSP enforced', () => {
   assert.match(cleaner, /caches\s*\.keys\(\)/);
 });
 
-test('rilis 0.1.7 tetap memakai Hermes & runtime appVersion', () => {
+test('rilis 0.1.8 tetap memakai Hermes & runtime appVersion', () => {
   const appJson = json('app.json');
-  assert.equal(appJson.expo.version, '0.1.7');
-  assert.equal(appJson.expo.android.versionCode, 9);
+  assert.equal(appJson.expo.version, '0.1.8');
+  assert.equal(appJson.expo.android.versionCode, 10);
   assert.deepEqual(appJson.expo.runtimeVersion, { policy: 'appVersion' });
 });

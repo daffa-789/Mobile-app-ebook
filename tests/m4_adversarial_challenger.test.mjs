@@ -12,7 +12,7 @@ const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
 const LIVE_VERCEL_URL = 'https://mobile-app-ebook.vercel.app';
-const OFFICIAL_APK_URL = '/unduh/wahidiyah-v0.1.7-hermes-32bit.apk';
+const OFFICIAL_APK_URL = '/unduh/wahidiyah-v0.1.8-hermes-32bit.apk';
 // URL di sumber sengaja relatif (same-origin); untuk pemeriksaan jaringan
 // gabungkan dengan origin produksi.
 const ABSOLUTE_APK_URL = `${LIVE_VERCEL_URL}${OFFICIAL_APK_URL}`;

@@ -56,12 +56,12 @@ healthRouter.get('/health', async (req, res) => {
 // github.com: atribut HTML `download` diabaikan browser untuk URL cross-origin
 // sehingga pengguna malah melihat halaman GitHub. Arsip rilis kanonik tetap di
 // GitHub Release v0.1.5. Build JSC v0.1.2 sudah dihapus (force close 32-bit).
-// APK v0.1.7 menyematkan reader PDF native + bundel JS rilisnya.
-// Sertifikat penandatanganan v2 IDENTIK di semua build EAS (0.1.1 s.d. 0.1.7),
-// jadi upgrade in-place ke 0.1.7 (versionCode 9) diperbolehkan. Uninstall hanya
+// APK v0.1.8 menyematkan reader PDF native + splash bersih tanpa logo bawaan.
+// Sertifikat penandatanganan v2 IDENTIK di semua build EAS (0.1.1 s.d. 0.1.8),
+// jadi upgrade in-place ke 0.1.8 (versionCode 10) diperbolehkan. Uninstall hanya
 // disarankan bila ada sisa cache OTA runtime lama.
 healthRouter.get('/download/apk', (req, res) => {
-  res.redirect(302, '/unduh/wahidiyah-v0.1.7-hermes-32bit.apk');
+  res.redirect(302, '/unduh/wahidiyah-v0.1.8-hermes-32bit.apk');
 });
 
 healthRouter.get('/stats', requireAuth, requireAdmin, async (req, res) => {

@@ -1,5 +1,5 @@
 /**
- * Regresi optimasi update kecil + rilis 0.1.7 (reader PDF native):
+ * Regresi optimasi update kecil + rilis 0.1.8 (reader PDF native + splash bersih):
  * 1. Header CSP enforced & report-only halaman handoff selaras.
  * 2. Saat aplikasi dibuka dan ada OTA, pengguna mendapat DUA pilihan jelas
  *    (perbarui / nanti), lewat modul terpisah — bukan logik bertumpuk di App.js.
@@ -23,7 +23,7 @@ const hookSrc = read('mobile-app/src/hooks/useOtaUpdate.js');
 const promptSrc = read('mobile-app/src/components/OtaUpdatePrompt.js');
 const appConfig = JSON.parse(read('app.json'));
 
-test('Optimasi update kecil & rilis native 0.1.7', async (t) => {
+test('Optimasi update kecil & rilis native 0.1.8', async (t) => {
   await t.test('CSP enforced dan report-only identik', () => {
     assert.equal(
       MOBILE_HANDOFF_HEADERS['Content-Security-Policy-Report-Only'],
@@ -32,9 +32,9 @@ test('Optimasi update kecil & rilis native 0.1.7', async (t) => {
     assert.match(MOBILE_HANDOFF_HEADERS['Content-Security-Policy'], /script-src 'sha256-/);
   });
 
-  await t.test('Versi 0.1.7 naik karena modul native PDF, bukan karena update JS', () => {
-    assert.equal(appConfig.expo.version, '0.1.7');
-    assert.equal(appConfig.expo.android.versionCode, 9);
+  await t.test('Versi 0.1.8 naik karena modul native PDF & splash, bukan karena update JS', () => {
+    assert.equal(appConfig.expo.version, '0.1.8');
+    assert.equal(appConfig.expo.android.versionCode, 10);
     assert.deepEqual(appConfig.expo.runtimeVersion, { policy: 'appVersion' });
     const pkg = JSON.parse(read('package.json'));
     assert.ok(

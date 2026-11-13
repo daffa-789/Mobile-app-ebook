@@ -74,7 +74,7 @@ test('versionCode naik di atas build JSC v0.1.2 yang cacat (4)', () => {
 });
 
 test('unduh terjadi langsung dari domain sendiri (same-origin), bukan ke GitHub', () => {
-  const apkPath = '/unduh/wahidiyah-v0.1.6-hermes-32bit.apk';
+  const apkPath = '/unduh/wahidiyah-v0.1.7-hermes-32bit.apk';
   const sameOriginBase = 'https://mobile-app-ebook.vercel.app';
   const jscArtifact = 'xA4OBPWr4r68oBF-zo0p9olad0QSUX0bR4vsbf7pX-s.apk';
   const sources = {
@@ -124,9 +124,9 @@ test('unduh terjadi langsung dari domain sendiri (same-origin), bukan ke GitHub'
   assert.equal(headerMap['Content-Type'], 'application/vnd.android.package-archive');
 });
 
-test('rilis 0.1.6 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => {
-  assert.equal(appJson.expo.version, '0.1.6', 'versi rilisan harus 0.1.6');
-  assert.equal(appJson.expo.android.versionCode, 8, 'versionCode rilis final harus 8');
+test('rilis 0.1.7 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => {
+  assert.equal(appJson.expo.version, '0.1.7', 'versi rilisan harus 0.1.7');
+  assert.equal(appJson.expo.android.versionCode, 9, 'versionCode rilis final harus 9');
   assert.ok(appJson.expo.android.versionCode > 4);
 
   const buildProperties = appJson.expo.plugins.find(
@@ -142,7 +142,7 @@ test('rilis 0.1.6 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => 
     'expo-font',
     '@react-native-google-signin/google-signin',
   ]) {
-    assert.ok(plugins.includes(plugin), `${plugin} tidak boleh hilang dari build 0.1.6`);
+    assert.ok(plugins.includes(plugin), `${plugin} tidak boleh hilang dari build 0.1.7`);
   }
   assert.equal(appJson.expo.jsEngine, undefined, 'jsEngine jsc tidak didukung SDK 58');
   assert.equal(appJson.expo.runtimeVersion?.policy, 'appVersion');

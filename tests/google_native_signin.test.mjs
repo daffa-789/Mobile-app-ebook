@@ -15,12 +15,12 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (relative) => fs.readFileSync(path.join(ROOT, relative), 'utf8');
 
-test('rilis 0.1.6 memakai SDK Google Sign-In native (wajib APK baru)', () => {
+test('SDK Google Sign-In native tetap terdaftar pada rilis 0.1.7', () => {
   const appJson = JSON.parse(read('app.json'));
   const pkg = JSON.parse(read('package.json'));
 
-  assert.equal(appJson.expo.version, '0.1.6');
-  assert.equal(appJson.expo.android.versionCode, 8);
+  assert.equal(appJson.expo.version, '0.1.7');
+  assert.equal(appJson.expo.android.versionCode, 9);
   assert.deepEqual(appJson.expo.runtimeVersion, { policy: 'appVersion' });
   assert.ok(pkg.dependencies['@react-native-google-signin/google-signin']);
   const plugins = appJson.expo.plugins.map((entry) => (Array.isArray(entry) ? entry[0] : entry));

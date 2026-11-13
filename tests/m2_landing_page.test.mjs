@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
-const EXPECTED_APK_URL = '/unduh/wahidiyah-v0.1.6-hermes-32bit.apk';
+const EXPECTED_APK_URL = '/unduh/wahidiyah-v0.1.7-hermes-32bit.apk';
 
 test('M2-1: Node.js 24 and Monorepo Environment Configuration', async (t) => {
   await t.test('package.json specifies "engines": { "node": "24.x" }', () => {

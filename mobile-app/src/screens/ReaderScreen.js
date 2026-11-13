@@ -177,9 +177,7 @@ export const ReaderScreen = ({ book, onBack }) => {
   if (isPdf) {
     const handlePdfError = (error) => {
       const message =
-        typeof error === 'string'
-          ? error
-          : error?.message || 'Berkas PDF tidak dapat ditampilkan.';
+        typeof error === 'string' ? error : error?.message || 'Berkas PDF tidak dapat ditampilkan.';
       setPdfError(message);
       setPdfStatus('error');
     };

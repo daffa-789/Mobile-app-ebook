@@ -152,7 +152,7 @@ describe('CHALLENGER 2 — Integrated Monorepo, Build & Admin Auth Stress Harnes
   });
 
   describe('Stress Vector 3: Landing Page APK Delivery & Static Independence', () => {
-    const OFFICIAL_APK_URL = '/unduh/wahidiyah-v0.1.6-hermes-32bit.apk';
+    const OFFICIAL_APK_URL = '/unduh/wahidiyah-v0.1.7-hermes-32bit.apk';
 
     test('Direct APK URL is strictly matching official artifact across all landing components', () => {
       const heroPath = path.join(rootDir, 'landing-page/src/components/sections/HeroSection.jsx');

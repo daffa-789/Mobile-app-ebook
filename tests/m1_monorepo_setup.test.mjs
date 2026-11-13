@@ -122,8 +122,9 @@ describe('Milestone 1: Monorepo Architecture & Workspace Setup', () => {
     assert.equal(buildProperties?.[1].android.usesCleartextTraffic, true);
     assert.deepEqual(buildProperties?.[1].android.buildArchs, ['armeabi-v7a', 'arm64-v8a']);
     assert.ok(
-      appJson.expo.extra?.eas?.projectId === 'ef5df259-9b15-4288-80de-5fdff2510d5a' ||
-        appJson.expo.extra?.eas?.projectId === 'ef5df259-9b15-4288-80de-5fdff2510d5a',
+      ['ef5df259-9b15-4288-80de-5fdff2510d5a', '504e9a89-a47e-4146-8731-8e31eb35c744'].includes(
+        appJson.expo.extra?.eas?.projectId,
+      ),
       `Unexpected EAS project ID: ${appJson.expo.extra?.eas?.projectId}`,
     );
   });

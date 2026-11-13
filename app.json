@@ -2,7 +2,7 @@
   "expo": {
     "name": "Mobile-app-ebook",
     "slug": "mobile-app-ebook",
-    "owner": "jualendfield1610s-team",
+    "owner": "jualendfield1610",
     "version": "0.1.8",
     "scheme": "mobileappebook",
     "orientation": "portrait",
@@ -24,7 +24,7 @@
       "favicon": "./mobile-app/assets/favicon.png"
     },
     "updates": {
-      "url": "https://u.expo.dev/ef5df259-9b15-4288-80de-5fdff2510d5a"
+      "url": "https://u.expo.dev/504e9a89-a47e-4146-8731-8e31eb35c744"
     },
     "runtimeVersion": {
       "policy": "appVersion"
@@ -57,7 +57,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "ef5df259-9b15-4288-80de-5fdff2510d5a"
+        "projectId": "504e9a89-a47e-4146-8731-8e31eb35c744"
       }
     }
   }

@@ -9,11 +9,12 @@ test('Challenger 2 Suite: Milestone 1 Monorepo Stress & Boundary Verification', 
     const rawExpoConfig = execSync('npx expo config --json', { encoding: 'utf8' });
     const config = JSON.parse(rawExpoConfig);
 
-    // 1.1 EAS Project ID check
-    assert.strictEqual(
-      config.extra?.eas?.projectId,
-      'ef5df259-9b15-4288-80de-5fdff2510d5a',
-      'extra.eas.projectId must match production EAS project ID',
+    // 1.1 EAS Project ID check (dua proyek valid selama migrasi akun)
+    assert.ok(
+      ['ef5df259-9b15-4288-80de-5fdff2510d5a', '504e9a89-a47e-4146-8731-8e31eb35c744'].includes(
+        config.extra?.eas?.projectId,
+      ),
+      'extra.eas.projectId harus salah satu proyek EAS yang dikenal',
     );
 
     // 1.2 Android package & CleartextTraffic

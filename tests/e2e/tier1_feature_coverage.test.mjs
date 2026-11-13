@@ -524,10 +524,17 @@ suite.test('F32: Mobile Expo & EAS Configuration in app.json', async () => {
   assert.ok(fs.existsSync(appJsonPath), 'Root app.json must exist');
 
   const appJson = JSON.parse(fs.readFileSync(appJsonPath, 'utf-8'));
+  const projectId = appJson.expo.extra?.eas?.projectId;
+  assert.ok(
+    ['ef5df259-9b15-4288-80de-5fdff2510d5a', '504e9a89-a47e-4146-8731-8e31eb35c744'].includes(
+      projectId,
+    ),
+    `EAS Project ID tidak dikenal: ${projectId}`,
+  );
   assert.equal(
-    appJson.expo.extra?.eas?.projectId,
-    'ef5df259-9b15-4288-80de-5fdff2510d5a',
-    'EAS Project ID must be ef5df259-9b15-4288-80de-5fdff2510d5a',
+    appJson.expo.updates?.url,
+    `https://u.expo.dev/${projectId}`,
+    'updates.url harus menunjuk projectId yang sama',
   );
   assert.ok(
     ['Mobile-app-ebook', 'wahidiyah-book'].includes(appJson.expo.name),

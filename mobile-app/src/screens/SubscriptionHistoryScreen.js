@@ -110,7 +110,9 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    /* Header + tombol Kembali diturunkan dari tepi atas HP; isi yang
+     * digulir pun tidak langsung menempel ke status bar. */
+    paddingTop: 28,
     paddingBottom: 96,
   },
   header: {

@@ -33,10 +33,12 @@ export const ReaderTopBar = ({
   onToggleFullscreen,
   onBack,
 }) => {
+  /* Tinggi + padding atas ditambah sedikit supaya tombol Kembali turun dari
+   * tepi atas layar HP, sejajar dengan bilah atas aplikasi lainnya. */
   return (
     <header
       aria-label={title}
-      className="h-12 shrink-0 z-30 bg-ui-card/95 backdrop-blur-md border-b border-ink-200/70 px-4 sm:px-6 flex items-center justify-between shadow-xs"
+      className="h-14 pt-2 shrink-0 z-30 bg-ui-card/95 backdrop-blur-md border-b border-ink-200/70 px-4 sm:px-6 flex items-center justify-between shadow-xs"
     >
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <button

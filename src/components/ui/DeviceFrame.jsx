@@ -72,9 +72,11 @@ const DeviceFrameBase = ({ children }) => {
           sidebarCollapsed ? 'md:ml-[68px]' : 'md:ml-[218px]'
         }`}
       >
-        {/* Header Subpage dengan Tombol Kembali (Mobile, Tablet, & Desktop) */}
+        {/* Header Subpage dengan Tombol Kembali (Mobile, Tablet, & Desktop).
+            Padding atas sengaja lebih besar agar tombol tidak menempel pada
+            tepi/status bar HP dan isi halaman Pengaturan tidak terlalu ke atas. */}
         {SUBPAGE_TITLES[currentScreen] && (
-          <header className="sticky top-0 z-40 flex items-center justify-between border-b border-cream-300 bg-cream-50/95 px-4 sm:px-6 py-2.5 sm:py-3.5 backdrop-blur-md">
+          <header className="sticky top-0 z-40 flex items-center justify-between border-b border-cream-300 bg-cream-50/95 px-4 sm:px-6 pt-6 pb-2.5 sm:pt-5 sm:pb-3.5 backdrop-blur-md">
             <button
               type="button"
               onClick={() => {

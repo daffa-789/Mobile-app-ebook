@@ -391,7 +391,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    /* Ruang ekstra di atas supaya tombol Kembali tidak menempel pada status
+     * bar / poni HP; bilah bawah tetap 12 agar jarak ke kanvas tidak berubah. */
+    paddingTop: 24,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E4D9C6',
     backgroundColor: '#FFFDF9',
@@ -435,7 +438,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    /* Sama seperti pdfTopBar: tombol Kembali turun sedikit dari tepi atas HP. */
+    paddingTop: 24,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#E4D9C6',
     backgroundColor: '#FFFDF9',

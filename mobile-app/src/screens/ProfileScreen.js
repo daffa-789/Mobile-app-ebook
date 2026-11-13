@@ -501,7 +501,9 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    /* Layar Pengaturan/Profil diberi ruang atas ekstra supaya saat digulir
+     * isinya tidak terlalu mepet ke bagian atas HP. */
+    paddingTop: 28,
     paddingBottom: 96,
   },
   header: {

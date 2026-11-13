@@ -57,9 +57,12 @@ healthRouter.get('/health', async (req, res) => {
 // sehingga pengguna malah melihat halaman GitHub. Arsip rilis kanonik tetap di
 // GitHub Release v0.1.5. Build JSC v0.1.2 sudah dihapus (force close 32-bit).
 // APK v0.1.8 menyematkan reader PDF native + splash bersih tanpa logo bawaan.
-// Sertifikat penandatanganan v2 IDENTIK di semua build EAS (0.1.1 s.d. 0.1.8),
-// jadi upgrade in-place ke 0.1.8 (versionCode 10) diperbolehkan. Uninstall hanya
-// disarankan bila ada sisa cache OTA runtime lama.
+// PERHATIAN: build ini dibuat di proyek EAS personal dengan keystore BARU
+// (SHA-1 E6:89:5B:E7:CC:70:D2:5E:80:96:28:C5:49:81:8A:32:26:1D:8E:29), berbeda
+// dengan sertifikat 0.1.1–0.1.7
+// (5F:F7:BC:CA:03:8F:EC:84:64:6E:EB:53:B5:43:13:62:51:C0:B3:B6).
+// Upgrade in-place DITOLAK Android (INSTALL_FAILED_UPDATE_INCOMPATIBLE):
+// pengguna yang sudah memasang 0.1.7 wajib uninstall dulu, data lokal ikut hilang.
 healthRouter.get('/download/apk', (req, res) => {
   res.redirect(302, '/unduh/wahidiyah-v0.1.8-hermes-32bit.apk');
 });

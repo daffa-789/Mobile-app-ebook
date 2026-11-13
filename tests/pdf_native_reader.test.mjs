@@ -75,6 +75,19 @@ test('buku digulir vertikal dan bisa dicubit untuk zoom', () => {
   assert.match(branch, /source=\{\{ uri: pdfUrl \}\}/, 'sumber harus PDF asli dari content-url');
 });
 
+test('trustAllCerts dimatikan agar unduhan PDF tidak memakai trust manager kosong', () => {
+  /* react-native-pdf 7.0.5 membawa `trustAllCerts: true` sebagai default dan
+   * meneruskannya ke react-native-blob-util sebagai `trusty: true`. blob-util
+   * 1.1.1 mewajibkan aplikasi mendefinisikan sharedTrustManager; tanpanya
+   * unduhan gagal: "Use of own trust manager but none defined". Sertifikat
+   * Supabase valid, jadi trust store sistem sudah cukup. */
+  const branch = pdfBranch();
+  assert.match(branch, /trustAllCerts=\{false\}/, 'trustAllCerts wajib false pada <Pdf>');
+  const pkg = JSON.parse(read('package.json'));
+  assert.equal(pkg.dependencies['react-native-pdf'], '7.0.5');
+  assert.equal(pkg.dependencies['react-native-blob-util'], '1.1.1');
+});
+
 test('konten PDF tetap diambil dari endpoint terproteksi /content-url', () => {
   const src = readerSrc();
   assert.match(src, /\/api\/books\/\$\{encodeURIComponent\(book\.id\)\}\/content-url/);

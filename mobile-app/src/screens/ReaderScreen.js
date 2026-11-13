@@ -182,6 +182,11 @@ export const ReaderScreen = ({ book, onBack }) => {
       setPdfStatus('error');
     };
 
+    /* react-native-pdf memakai `trustAllCerts: true` sebagai bawaan, yang
+     * diteruskan ke react-native-blob-util sebagai `trusty: true`. blob-util
+     * 1.1.1 tidak lagi menyediakan trust manager sendiri, sehingga unduhan
+     * gagal dengan "Use of own trust manager but none defined". URL Supabase
+     * bersertifikat CA tepercaya → cukup pakai trust store sistem. */
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.pdfTopBar}>
@@ -211,6 +216,7 @@ export const ReaderScreen = ({ book, onBack }) => {
         ) : pdfUrl ? (
           <Pdf
             source={{ uri: pdfUrl }}
+            trustAllCerts={false}
             style={styles.pdfCanvas}
             horizontal={false}
             enablePaging={false}

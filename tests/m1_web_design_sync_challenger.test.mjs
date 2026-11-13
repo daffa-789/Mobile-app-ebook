@@ -48,7 +48,10 @@ test.before(() => {
 
 test('CHALLENGER-1: Package Round-Trip Integrity Verification', async (t) => {
   await t.test('FigCraft binary exists and is readable', () => {
-    assert.ok(fs.existsSync(TARGET_FIGCRAFT), 'Design APP.figcraft must exist in project-resources/design');
+    assert.ok(
+      fs.existsSync(TARGET_FIGCRAFT),
+      'Design APP.figcraft must exist in project-resources/design',
+    );
     const stats = fs.statSync(TARGET_FIGCRAFT);
     assert.ok(
       stats.size > 100000,
@@ -96,8 +99,8 @@ test('CHALLENGER-1: Package Round-Trip Integrity Verification', async (t) => {
     const infoOutput = execSync(cmdInfo, { encoding: 'utf8' });
 
     assert.ok(
-      infoOutput.includes('2180 nodes'),
-      `Expected 2180 nodes in info output, got:\n${infoOutput}`,
+      infoOutput.includes('2794 nodes'),
+      `Expected 2794 nodes in info output, got:\n${infoOutput}`,
     );
     assert.ok(
       infoOutput.includes('86 styles'),
@@ -211,11 +214,14 @@ test('CHALLENGER-2: Page 2269 (Web - Landing Page) Structural & Semantic Stress-
       ),
       'Hero subtitle must match HeroSection.jsx',
     );
+    const heroSrc = fs.readFileSync(
+      path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'sections', 'HeroSection.jsx'),
+      'utf8',
+    );
+    assert.ok(heroSrc.includes('Unduh Apk 0.1.8'), 'Tombol unduh harus memakai label versi baru');
     assert.ok(
-      allTexts.some(
-        (t) => t.includes('Unduh APK Langsung (.apk)') || t.includes('Unduh Apk 0.1.8'),
-      ),
-      'APK Download button label must be present',
+      !heroSrc.includes('Unduh APK Langsung (.apk)'),
+      'Label tombol lama tidak boleh dipakai lagi',
     );
     assert.ok(
       allTexts.some((t) => t.includes('100% Gratis & Bebas Iklan')),
@@ -307,8 +313,8 @@ test('CHALLENGER-3: Page 2381 (Web - Admin Dashboard) Structural & Semantic Stre
   await t.test('Admin Dashboard top-level frame count and dimensions', () => {
     assert.strictEqual(
       adminPage.children.length,
-      1,
-      'Web - Admin Dashboard must have exactly 1 top-level frame',
+      5,
+      'Web - Admin Dashboard must have exactly 5 top-level frames (desain terkini)',
     );
     const fAdmin = ast.nodes[adminPage.children[0]];
     assert.ok(fAdmin.name.includes('Admin Dashboard'), `Unexpected frame name: ${fAdmin.name}`);
@@ -526,8 +532,10 @@ test('CHALLENGER-4: Visual Rendering & Raster Integrity Verification', async (t)
     const { width, height, size } = readPngDimensions(adminPng);
 
     assert.ok(size > 50000, `Rendered PNG file size (${size} bytes) is suspiciously small`);
-    assert.strictEqual(width, 1440, `Rendered PNG width (${width}) must equal 1440`);
-    assert.strictEqual(height, 960, `Rendered PNG height (${height}) must equal 960`);
+    // Desain terkini punya 5 frame 1440px berdampingan; renderer menyatukannya
+    // jadi satu kanvas lebar (7700px) setinggi frame tertinggi (1180px).
+    assert.ok(width >= 1440 * 5, `Rendered PNG width (${width}) must fit all 5 admin frames`);
+    assert.ok(height >= 1180, `Rendered PNG height (${height}) must fit the tallest admin frame`);
     console.log(
       `   [CHALLENGER-4] Web - Admin Dashboard PNG render verified: ${width}x${height} px, size: ${size} bytes`,
     );

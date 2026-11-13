@@ -94,8 +94,12 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
 
     const { expo } = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'app.json'), 'utf8'));
     assert.ok(
-      content.includes(`v${expo.version} (Alpha)`) || content.includes(`Unduh Apk ${expo.version}`),
-      'Versi unduhan harus sesuai app.json',
+      content.includes(`Unduh Apk ${expo.version}`),
+      'Label tombol unduh harus memuat versi terbaru sesuai app.json',
+    );
+    assert.ok(
+      !content.includes('Unduh APK Langsung (.apk)'),
+      'Label tombol lama tidak boleh dipakai lagi',
     );
     assert.ok(
       content.includes('APK_DOWNLOAD_URL') || content.includes(EXPECTED_APK_URL),

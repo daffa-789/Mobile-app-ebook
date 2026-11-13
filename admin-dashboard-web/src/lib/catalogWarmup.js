@@ -21,4 +21,7 @@
 import { apiJson } from '@lib/api';
 import { createCatalogWarmup } from '@shared/catalogWarmup.js';
 
-export const { takeWarmCatalogResponse } = createCatalogWarmup(apiJson, ['/api/books', '/api/events']);
+export const { takeWarmCatalogResponse } = createCatalogWarmup(apiJson, [
+  '/api/books',
+  '/api/events',
+]);

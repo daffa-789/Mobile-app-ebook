@@ -33,7 +33,9 @@ const configureE2eEnvironment = () => {
 
   const productionRef = new URL(DEFAULT_SUPABASE_URL).hostname.split('.')[0];
   if (projectRef === productionRef || parsedUrl.hostname === `${productionRef}.supabase.co`) {
-    throw new Error('[E2E] Supabase project produksi ditolak. E2E wajib memakai project test terpisah.');
+    throw new Error(
+      '[E2E] Supabase project produksi ditolak. E2E wajib memakai project test terpisah.',
+    );
   }
 
   if (

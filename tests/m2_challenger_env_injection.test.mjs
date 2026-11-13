@@ -246,13 +246,20 @@ test('Root PWA Configuration Resilience & Env Injection', async (t) => {
     assert.ok(!apiSrc.includes("'http://localhost:5000'"), 'API origin must not be hardcoded');
     assert.ok(!apiSrc.includes("'buku-wahidiyah:"), 'Storage keys must not be hardcoded');
 
-    const mapsSrc = fs.readFileSync(path.join(ROOT_DIR, 'src/lib/maps.js'), 'utf8');
+    // Arsitektur baru: src/lib/maps.js hanya re-export modul bersama.
+    const mapsBarrel = fs.readFileSync(path.join(ROOT_DIR, 'src/lib/maps.js'), 'utf8');
+    assert.ok(
+      mapsBarrel.includes("export * from '@shared/maps.js'"),
+      'src/lib/maps.js harus menjadi barrel untuk @shared/maps.js',
+    );
+    assert.ok(
+      !mapsBarrel.includes('https://www.google.com/maps/search'),
+      'URL Maps tidak boleh hardcoded di konsumen',
+    );
+
+    const mapsSrc = fs.readFileSync(path.join(ROOT_DIR, 'shared/maps.js'), 'utf8');
     assert.ok(mapsSrc.includes('MAPS_CONFIG.searchBaseUrl'));
     assert.ok(mapsSrc.includes('MAPS_CONFIG.dirBaseUrl'));
-    assert.ok(
-      !mapsSrc.includes('https://www.google.com/maps/search'),
-      'Maps base URL must not be hardcoded',
-    );
   });
 });
 

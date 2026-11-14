@@ -45,7 +45,7 @@
 | SHA-256 APK | `94363e1f426aa24d20c871aed2902cc5406ce4c6dc96c99139e9ebfcf1221dcb` |
 | SHA-1 penandatangan | `E6:89:5B:E7:CC:70:D2:5E:80:96:28:C5:49:81:8A:32:26:1D:8E:29` (personal, keystore `Z7jJbQPNw0`) — **sama dengan 0.1.8** |
 | Proyek EAS | personal `jualendfield1610` / `504e9a89-a47e-4146-8731-8e31eb35c744` |
-| OTA aktif | channel/branch `preview`, runtime **0.1.9**; update 0.1.8 (`01a1d5f8-…`) tetap mengawasi APK 0.1.8 |
+| OTA aktif | channel/branch `preview`, runtime **0.1.9**, grup `54b5a276-fb3e-4462-99c3-5b18c3fd4782`, update Android `01a1d841-966f-7a30-b400-ba0aa4398705`, commit `704acd3`. Update runtime 0.1.8 (`01a1d5f8-…`) tetap melayani APK 0.1.8 — keduanya hidup berdampingan karena EAS memfilter per runtime |
 | Upgrade dari 0.1.8 | **In-place, TANPA uninstall**, data lokal aman (SHA-1 identik) |
 | Upgrade dari 0.1.7 | **WAJIB uninstall dulu** — SHA-1 berbeda (tim `5F:F7:BC:…:B3:B6`), tanda tangan tidak bisa menimpa |
 
@@ -1238,7 +1238,7 @@ E:/Wahidiyah Book Mobile app/
 ├── public/
 │   ├── unduh/*-hermes-32bit.apk # Arsip APK 0.1.3–0.1.9 (0.1.9 = unduhan resmi)
 │   ├── payments/qris*.svg, sw.js, sw-cleanup.js, manifest.webmanifest, icon-*.png
-├── tests/                       # 36 berkas *.mjs (suite penuh 387 tes)
+├── tests/                       # 36 berkas *.mjs (suite penuh 393 tes)
 │   ├── e2e/                     # run_all.mjs + tier1..tier4 (67 tes E2E)
 │   └── helpers/                 # rn_loader, rn_mock, async_storage_mock
 ├── scripts/                     # dev, start, health-check, clean-ports, check-ports,
@@ -1274,7 +1274,7 @@ Dokumen versi lama menyimpan uraian panjang rounds **R40–R91** (sampai 4 Novem
 | 11 Nov | Login Google mobile tidak lagi nyangkut (handoff `intent://`), OTA dimodularisasi, kartu QRIS minimal, `AuthScreen` tanpa teks tunggu, rilis 0.1.6 + hardening keamanan. |
 | 12 Nov | **Nonce OIDC 128-bit + CSP enforced** untuk ketiga target statis; skrip inline admin dipindah ke `sw-cleanup.js`; harness probe Chrome headless (`scripts/csp-browser-check.mjs`). |
 | 13 Nov | 0.1.7 (PDF native in-app + `trustAllCerts={false}`), ruang atas bilah Kembali, migrasi ke proyek EAS personal, dan **rilis 0.1.8 / versionCode 10** dengan SHA-1 baru (uninstall wajib bagi pengguna 0.1.7). Modernisasi dependensi 2026: Express 5, Vite 8, Router 8, pdfjs 6, `write-excel-file`, `npm audit` 0 temuan (`b5107ba`). |
-| 14 Nov | Drive E: dibersihkan (junction `dist/` dilepas), OTA 0.1.8 disinkronkan ke `b5107ba`, **seluruh kegagalan tes baseline dituntaskan → 387/387**, commit `48bd013` di-push. Siang harinya fitur **anti-screenshot reader** diterapkan di kode (`expo-screen-capture ~58.0.6`, versi 0.1.9/vC 11), build EAS `e28e040a-…` selesai, APK 44.582.581 B diunduh, tautan/landing/server/tes dinaikkan ke 0.1.9, lalu commit+push, deploy Vercel, dan **OTA runtime 0.1.9**. Modul native ⇒ 0.1.8 tidak bisa menerima fitur ini lewat OTA, tetapi sertifikat identik memungkinkan upgrade in-place tanpa uninstall. |
+| 14 Nov | Drive E: dibersihkan (junction `dist/` dilepas), OTA 0.1.8 disinkronkan ke `b5107ba`, **seluruh kegagalan tes baseline dituntaskan → 387/387**, commit `48bd013` di-push. Siang harinya fitur **anti-screenshot reader** diterapkan di kode (`expo-screen-capture ~58.0.6`, versi 0.1.9/vC 11), build EAS `e28e040a-…` selesai, APK 44.582.581 B diunduh, tautan/landing/server/tes dinaikkan ke 0.1.9, lalu commit `704acd3` + push, deploy Vercel, dan **OTA runtime 0.1.9** (`01a1d841-…`). Modul native ⇒ 0.1.8 tidak bisa menerima fitur ini lewat OTA, tetapi sertifikat identik memungkinkan upgrade in-place tanpa uninstall. |
 
 ### 15.1 Yang sudah tidak ada lagi — jangan dihidupkan kembali
 
@@ -1308,7 +1308,7 @@ Dokumen versi lama menyimpan uraian panjang rounds **R40–R91** (sampai 4 Novem
 |---|---|
 | Aplikasi mobile | **0.1.9 / versionCode 11 sudah jadi unduhan live** (anti-screenshot & rekam layar di `ReaderScreen`), build EAS `e28e040a-…` selesai, OTA runtime 0.1.9 diterbitkan |
 | Web | Landing, PWA, dan dashboard admin ter-deploy di Vercel; `/api/health` 200 |
-| Kualitas | `build:all` hijau, `npm run check` 7/7, `npm test` 67/67, suite penuh **387/387**, `npm audit` 0, `expo-doctor` 20/20 |
+| Kualitas | `build:all` hijau, `npm run check` 7/7, `npm test` 67/67, suite penuh **393/393**, `npm audit` 0, `expo-doctor` 20/20 |
 | Pembayaran | Midtrans **Sandbox** — produksi sengaja tidak didaftarkan (lihat §11.4) |
 | Yang belum | Uji nyata `FLAG_SECURE` di atas `react-native-pdf` pada perangkat fisik; rotasi password admin yang lemah; keputusan tanda air/blokir klik kanan; UAT & naskah skripsi (masih draft) |
 

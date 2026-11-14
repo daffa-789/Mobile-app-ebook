@@ -92,10 +92,23 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
     assert.ok(fs.existsSync(heroPath), 'HeroSection.jsx must exist');
     const content = fs.readFileSync(heroPath, 'utf8');
 
-    const { expo } = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'app.json'), 'utf8'));
+    // Label tombol mengikuti APK yang BENAR-BENAR disajikan, bukan `app.json`.
+    // Saat pengembangan, kode boleh lebih baru (0.1.9 menunggu build EAS)
+    // sementara unduhan live masih 0.1.8; mengikuti app.json justru membuat
+    // tombol mengiklankan berkas yang belum ada.
+    const servedVersion = EXPECTED_APK_URL.match(/v(\d+\.\d+\.\d+)-/)?.[1];
+    assert.ok(servedVersion, 'URL APK wajib memuat nomor versi');
     assert.ok(
-      content.includes(`Unduh Apk ${expo.version}`),
-      'Label tombol unduh harus memuat versi terbaru sesuai app.json',
+      content.includes(`Unduh Apk ${servedVersion}`),
+      'Label tombol unduh harus memuat versi APK yang benar-benar diunduh',
+    );
+
+    const { expo } = JSON.parse(fs.readFileSync(path.join(ROOT_DIR, 'app.json'), 'utf8'));
+    const numericVersion = (value) =>
+      value.split('.').reduce((total, part) => total * 1000 + Number(part), 0);
+    assert.ok(
+      numericVersion(expo.version) >= numericVersion(servedVersion),
+      'app.json tidak boleh lebih tua dari APK yang disajikan',
     );
     assert.ok(
       !content.includes('Unduh APK Langsung (.apk)'),

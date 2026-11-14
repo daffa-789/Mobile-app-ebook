@@ -12,7 +12,7 @@
 [![Payment](https://img.shields.io/badge/Payment-Midtrans%20Core%20API%20(QRIS)-0052cc.svg)](https://midtrans.com/)
 [![Deploy](https://img.shields.io/badge/Deploy-Vercel%20%2B%20EAS%20Update-black.svg)](https://vercel.com/)
 
-> **Terakhir diperbarui:** 14 November 2026, 01:15 WIB. Acuan kode: `main` = `b5107ba` (modernisasi dependensi 2026) ditambah perubahan working tree sesi ini (penuntasan seluruh kegagalan tes baseline). **Rilis aktif: 0.1.8 / versionCode 10.**
+> **Terakhir diperbarui:** 14 November 2026, 09:25 WIB. Acuan kode: `main` = `48bd013` (penuntasan tes + penyelarasan dokumen) ditambah perubahan working tree sesi ini. **Unduhan live masih 0.1.8 / versionCode 10**, sementara kode sudah disiapkan untuk **0.1.9 / versionCode 11** (proteksi screenshot reader) yang APK-nya belum dibangun.
 
 > 🎯 **FUNGSI UTAMA BERKAS INI:** satu-satunya sumber kebenaran teknis untuk arsitektur monorepo (PWA pembaca, landing page, dashboard admin, aplikasi mobile Expo, backend Express), spesifikasi REST API, alur QRIS Midtrans, gateway WhatsApp/Fonnte, skema Supabase, standar keamanan & CSP, prosedur rilis APK + EAS Update, quality gate, dan konteks akademik skripsi.
 >
@@ -74,6 +74,7 @@ Unduhan **wajib same-origin**: `DIRECT_APK_URL = /unduh/wahidiyah-v0.1.8-hermes-
 | **Kuota & identitas EAS** | Tim `jualendfield1610s-team` 15/15 habis (reset 1 Des 2026); personal 0/15. **Proyek tim JANGAN dihapus** — OTA 0.1.6/0.1.7 dan keystore `1sKJ2EOd3u` ikut hilang. `eas init --id` mengubah owner + projectId tetapi membiarkan `updates.url` lama ⇒ samakan manual. Google native butuh SHA-1 terdaftar untuk `id.wahidiyah.book`; tanpa itu `DEVELOPER_ERROR` dan fallback browser yang aman. | `tests/jsc_engine_plugin.test.mjs`, `tests/hardening_ota_016.test.mjs` |
 | **Dependensi 2026** | Ekspor Excel **`write-excel-file/browser`** (bukan `exceljs`); Express 5 wildcard `'/{*splat}'` (path-to-regexp v8, tanpa spasi); Vite 8 + plugin-react 6; `react-router` 8; `pdfjs-dist` 6; override `@expo/fingerprint → minimatch ^11.0.1` ⇒ `npm audit` 0 temuan. Jangan naikkan `react`/`react-dom` (kunci SDK 58) atau `@react-native-async-storage` 3 (native ⇒ APK baru). | `npm audit`, `expo-doctor` 20/20 |
 | **Midtrans QRIS** | QRIS butuh **URL gambar** dari `actions[]` (`qr-code` / `qr-code-v2`), bukan sekadar `qr_string`; `qrMidtransUrl` hanya dikirim di mode sandbox. | `tests/qris_simulator_link.test.mjs` |
+| **Proteksi isi buku (0.1.9)** | `usePreventScreenCapture('wahidiyah-reader')` dipanggil di **level `ReaderScreen`** sebelum cabang `isPdf`, jadi PDF maupun DOCX/TXT kelak terlindungi. Hook resmi melepas `FLAG_SECURE` otomatis saat unmount. Layar lain (Auth, OAuth, QRIS, Profil) **tidak boleh** dipasang guard. Hanya memblokir — tanpa config plugin, tanpa `READ_MEDIA_IMAGES`, tanpa `addScreenshotListener`. Modul native ⇒ APK + runtime baru, tidak boleh OTA. | `tests/reader_screen_capture_guard.test.mjs` |
 
 ---
 
@@ -128,6 +129,7 @@ Unduhan **wajib same-origin**: `DIRECT_APK_URL = /unduh/wahidiyah-v0.1.8-hermes-
 - **Katalog:** desain e-reader editorial, sampul dominan, pencarian instan, badge akses *free* / *Pro*. Tiga naskah PDF ada di bucket `buku/naskah/<folder>/<file>.pdf` (3 / 20 / 62 halaman); yang pertama adalah PDF pindai sehingga ekstraksi teksnya memang kosong — bukan salah unggah.
 - **Pembaca web (PWA):** PDF.js viewer resmi (`PdfDocumentViewer.jsx` + `pdfWorkerSetup.js`) dengan virtualisasi halaman, gulir vertikal, dan zoom peramban alami; DOCX dirender ke lembar A4 terpaginasi via `docx-preview`; TXT/HTML lewat `TextDocViewer.jsx`. Top bar minimalis, posisi baca tersimpan di `localStorage`, tiga mode latar (Terang / Sepia / Malam) **khusus reader**. Proteksi berupa `select-none` + konten terotorisasi JWT; tanda air dinamis dan blokir klik kanan **memang tidak ada di kode** — keputusan terbuka untuk Bab IV.
 - **Pembaca mobile (0.1.7+):** PDF dibuka **di dalam aplikasi** memakai `react-native-pdf` dengan `source={{ uri }}` dari endpoint terproteksi `/api/books/:id/content-url` (signed URL Supabase TTL 300 detik). DILARANG memakai `expo-web-browser` / Chrome Custom Tab. `trustAllCerts={false}` wajib. Tidak ada judul, tombol unduh, atau kontrol A−/A+ pada cabang PDF; teks DOCX/TXT tetap memakai `setFontSize`.
+- **Proteksi screenshot (0.1.9, kode siap / APK menyusul):** `expo-screen-capture ~58.0.6` memasang `FLAG_SECURE` selama `ReaderScreen` terbuka, untuk semua format naskah. Preview *recent apps* ikut kosong di Android. Batas jujur untuk Bab IV: ini menaikkan biaya menyalin santai, **tidak** menahan kamera kedua, perangkat root, atau APK yang di-patch; perlindungan isi tetap dari paywall server + signed URL 300 detik.
 
 ### 2.2. Autentikasi: Tamu, Soft Gate, dan Google
 
@@ -162,6 +164,7 @@ Panel admin **bukan lagi** `src/features/admin` (dihapus saat pembersihan M1); i
 - **Navigasi 4 tab:** Beranda, Kalender, Pro, Profil — plus `AuthModal`, `AuthScreen`, `VerificationScreen`, `ReaderScreen`, `SubscriptionHistoryScreen`. `DownloadsScreen.js` sudah dihapus (tidak pernah dirujuk).
 - **OTA:** `mobile-app/src/lib/ota.js` (murni) → `hooks/useOtaUpdate.js` → `components/OtaUpdatePrompt.js`; `App.js` hanya memasang prompt. Dialog memberi dua pilihan eksplisit (perbarui / tidak); Profil tamu menyediakan **Cek Pembaruan OTA** manual. Perubahan modul native tidak bisa lewat OTA.
 - **Bilah atas:** semua header bertombol Kembali diberi ruang ekstra ≈ +12 px agar tidak menempel status bar/poni.
+- **Anti-screenshot:** guard dipasang sekali di `ReaderScreen` (bukan per cabang PDF), sehingga format buku baru otomatis terlindungi.
 - **Tanda tangan & rilis:** lihat Aturan Keras 0/1. Pengguna 0.1.7 wajib uninstall sebelum memasang 0.1.8.
 
 ---
@@ -926,6 +929,7 @@ Sistem telah diaudit dan mengimplementasikan **30 Indikator Standar Kualitas Per
 | Halaman statis | CSP enforced untuk `dist/`, `dist/landing`, `dist/admin`; skrip inline nol; `img-src` mengizinkan `https://*.supabase.co` | `csp_enforced_and_oauth_nonce.test.mjs` + `scripts/csp-browser-check.mjs` |
 | Gerbang tamu | 401 tanpa token tidak memicu logout; endpoint terproteksi tetap tertutup | `auth_gate_and_logout.test.mjs` |
 | APK | `libhermesvm.so` di dua ABI, tanpa `libjsc.so`, HBC `c61fbc03` | `jsc_engine_plugin.test.mjs` |
+| Isi buku | `FLAG_SECURE` hanya saat reader terbuka; tanpa izin galeri, tanpa deteksi screenshot | `reader_screen_capture_guard.test.mjs` |
 | Dependensi | `npm audit` 0 temuan berkat override `@expo/fingerprint → minimatch ^11.0.1`; 2 paket deprecated tersisa (`crypto-js`, `node-domexception`) berasal dari library induk | `npm audit`, `expo-doctor` 20/20 |
 
 **Status quality gate 14 November 2026:** `build:all` exit 0 · `npm run check` (Prettier + health 7/7) hijau · `npm test` E2E **67/67** · suite penuh Node 24 `--test-concurrency=1 tests/*.mjs` **387/387, 0 gagal**. Baseline lama "27 tes gagal" sudah dituntaskan; jangan melonggarkan tes regresi untuk menaikkan angka.
@@ -1269,7 +1273,7 @@ Dokumen versi lama menyimpan uraian panjang rounds **R40–R91** (sampai 4 Novem
 | 11 Nov | Login Google mobile tidak lagi nyangkut (handoff `intent://`), OTA dimodularisasi, kartu QRIS minimal, `AuthScreen` tanpa teks tunggu, rilis 0.1.6 + hardening keamanan. |
 | 12 Nov | **Nonce OIDC 128-bit + CSP enforced** untuk ketiga target statis; skrip inline admin dipindah ke `sw-cleanup.js`; harness probe Chrome headless (`scripts/csp-browser-check.mjs`). |
 | 13 Nov | 0.1.7 (PDF native in-app + `trustAllCerts={false}`), ruang atas bilah Kembali, migrasi ke proyek EAS personal, dan **rilis 0.1.8 / versionCode 10** dengan SHA-1 baru (uninstall wajib bagi pengguna 0.1.7). Modernisasi dependensi 2026: Express 5, Vite 8, Router 8, pdfjs 6, `write-excel-file`, `npm audit` 0 temuan (`b5107ba`). |
-| 14 Nov | Drive E: dibersihkan (junction `dist/` dilepas), OTA 0.1.8 disinkronkan ke `b5107ba`, dan **seluruh kegagalan tes baseline dituntaskan → 387/387**. |
+| 14 Nov | Drive E: dibersihkan (junction `dist/` dilepas), OTA 0.1.8 disinkronkan ke `b5107ba`, **seluruh kegagalan tes baseline dituntaskan → 387/387**, commit `48bd013` di-push. Sore harinya fitur **anti-screenshot reader** diterapkan di kode: `expo-screen-capture ~58.0.6` + versi 0.1.9/vC 11; APK-nya masih menunggu build EAS. |
 
 ### 15.1 Yang sudah tidak ada lagi — jangan dihidupkan kembali
 
@@ -1301,11 +1305,11 @@ Dokumen versi lama menyimpan uraian panjang rounds **R40–R91** (sampai 4 Novem
 
 | Komponen | Status |
 |---|---|
-| Aplikasi mobile | **0.1.8 / versionCode 10 live** — APK same-origin, OTA channel `preview` sinkron ke `b5107ba` |
+| Aplikasi mobile | **0.1.8 / versionCode 10 masih jadi unduhan live**; kode **0.1.9 / versionCode 11** sudah siap (anti-screenshot reader), menunggu build EAS + verifikasi HP |
 | Web | Landing, PWA, dan dashboard admin ter-deploy di Vercel; `/api/health` 200 |
 | Kualitas | `build:all` hijau, `npm run check` 7/7, `npm test` 67/67, suite penuh **387/387**, `npm audit` 0, `expo-doctor` 20/20 |
 | Pembayaran | Midtrans **Sandbox** — produksi sengaja tidak didaftarkan (lihat §11.4) |
-| Yang belum | Rotasi password admin yang lemah sebelum pemakaian publik; keputusan tanda air/blokir klik kanan untuk Bab IV; UAT & naskah skripsi |
+| Yang belum | Build APK 0.1.9 + uji nyata `FLAG_SECURE` di atas `react-native-pdf`; rotasi password admin yang lemah; keputusan tanda air/blokir klik kanan; UAT & naskah skripsi (masih draft) |
 
 ### 16.2. Aplikasi Mobile — SUDAH DIREALISASIKAN
 
@@ -1319,7 +1323,7 @@ Bagian lama berjudul "pengerjaan menunggu izin scaffold", "tiga hal yang harus d
 | OTA | Aktif: `expo-updates` + channel `preview`, update `01a1d5f8…`, runtime 0.1.8. Modul native baru tetap butuh APK. |
 | Pembaca | `react-native-pdf` 7.0.5 + `react-native-blob-util` 1.1.1, `trustAllCerts={false}`, signed URL `/content-url`. |
 | Login Google | SDK native + fallback browser OAuth dengan handoff `intent://`; SHA-1 personal perlu didaftarkan agar tidak `DEVELOPER_ERROR`. |
-| Proteksi | `expo-screen-capture` / `FLAG_SECURE` **tidak dipasang** — jangan mengklaim anti-screenshot di Bab IV. Perlindungan yang nyata adalah paywall server + signed URL berumur pendek + `select-none` di web. |
+| Proteksi | **Sudah diterapkan di kode 0.1.9**: `expo-screen-capture ~58.0.6` + `usePreventScreenCapture('wahidiyah-reader')` di `ReaderScreen`. Berlaku untuk semua format buku; otomatis lepas saat keluar dari reader. **APK belum terbit** — jangan mengklaim fitur ini aktif di perangkat sebelum build + uji HP. Batasnya tetap: tidak menahan kamera kedua / root / APK patch. |
 | CSS web | Tailwind v4 tidak menyapu kode RN: tiga config Vite punya `root` masing-masing; `mobile-app/` tidak masuk content path web. |
 
 **Checklist rilis baru (jangan ada yang terlewat):** salin APK ke `public/unduh/` · `DIRECT_APK_URL` di `landing-page/src/config/constants.js` · redirect + `Content-Disposition` di `vercel.json` · label `HeroSection` + meta landing · `/api/download/apk` di `health_routes.js` · 7 konstanta versi di tes · `APP_VERSION` dan `app.json` (`version` + `versionCode`) · 5 tes `expo.version`/`versionCode` · terbitkan OTA dengan `runtimeVersion` baru bila ada perubahan native.

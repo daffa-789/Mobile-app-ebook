@@ -99,9 +99,9 @@ test('konten PDF tetap diambil dari endpoint terproteksi /content-url', () => {
 
 test('modul native baru menaikkan versi & versionCode (tidak boleh lewat OTA lama)', () => {
   const appJson = JSON.parse(read('app.json'));
-  assert.equal(appJson.expo.version, '0.1.8');
-  assert.equal(appJson.expo.android.versionCode, 10);
+  assert.equal(appJson.expo.version, '0.1.9');
+  assert.equal(appJson.expo.android.versionCode, 11);
   assert.deepEqual(appJson.expo.runtimeVersion, { policy: 'appVersion' });
   assert.equal(appJson.expo.jsEngine, undefined, 'Hermes V1 tidak boleh dimatikan');
-  assert.match(read('mobile-app/src/config/constants.js'), /export const APP_VERSION = '0\.1\.8'/);
+  assert.match(read('mobile-app/src/config/constants.js'), /export const APP_VERSION = '0\.1\.9'/);
 });

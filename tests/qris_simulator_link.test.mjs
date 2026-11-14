@@ -135,7 +135,7 @@ test('server menyusun URL gambar QR bila Midtrans hanya mengirim qr_string', () 
   );
 });
 
-test('tidak ada dependensi native baru yang tidak bisa lewat OTA', () => {
+test('modul native terlarang clipboard/media-library/sharing tetap tidak dipakai', () => {
   const pkg = JSON.parse(read('package.json'));
   const deps = { ...pkg.dependencies, ...pkg.devDependencies };
 

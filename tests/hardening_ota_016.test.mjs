@@ -3,8 +3,9 @@
  *
  * Semua perbaikan di sini SENGAJA berupa JS murni / konfigurasi server,
  * sehingga bisa dikirim lewat OTA + deploy Vercel tanpa build APK baru.
- * Tes terakhir mengunci `app.json` agar tidak ada yang menaikkan versi,
- * mengganti plugin native, atau menyisipkan modul native baru.
+ * Tes terakhir mengunci daftar modul native terlarang. Sejak rilis 0.1.9
+ * proyek sengaja menambah `expo-screen-capture` (modul native sah) dengan
+ * konsekuensi versi/versionCode naik — aturan lama itu tidak berlaku lagi.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -115,10 +116,10 @@ test('komentar versi sudah mengikuti 0.1.8', () => {
   assert.match(landing, /v0\.1\.8/);
 });
 
-test('rilis 0.1.8: modul native terlarang tetap tidak dipakai', () => {
+test('rilis 0.1.9: modul native terlarang tetap tidak dipakai', () => {
   const appJson = JSON.parse(read('app.json'));
-  assert.equal(appJson.expo.version, '0.1.8');
-  assert.equal(appJson.expo.android.versionCode, 10);
+  assert.equal(appJson.expo.version, '0.1.9');
+  assert.equal(appJson.expo.android.versionCode, 11);
   assert.deepEqual(appJson.expo.runtimeVersion, { policy: 'appVersion' });
   assert.equal(appJson.expo.jsEngine, undefined, 'Hermes tidak boleh dimatikan');
 

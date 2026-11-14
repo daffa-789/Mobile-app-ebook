@@ -124,9 +124,9 @@ test('unduh terjadi langsung dari domain sendiri (same-origin), bukan ke GitHub'
   assert.equal(headerMap['Content-Type'], 'application/vnd.android.package-archive');
 });
 
-test('rilis 0.1.8 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => {
-  assert.equal(appJson.expo.version, '0.1.8', 'versi rilisan harus 0.1.8');
-  assert.equal(appJson.expo.android.versionCode, 10, 'versionCode rilis final harus 10');
+test('rilis 0.1.9 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => {
+  assert.equal(appJson.expo.version, '0.1.9', 'versi rilisan harus 0.1.9');
+  assert.equal(appJson.expo.android.versionCode, 11, 'versionCode rilis final harus 11');
   assert.ok(appJson.expo.android.versionCode > 4);
 
   const buildProperties = appJson.expo.plugins.find(
@@ -142,7 +142,7 @@ test('rilis 0.1.8 mempertahankan Hermes V1, minSdk 24, dan plugin fitur', () => 
     'expo-font',
     '@react-native-google-signin/google-signin',
   ]) {
-    assert.ok(plugins.includes(plugin), `${plugin} tidak boleh hilang dari build 0.1.8`);
+    assert.ok(plugins.includes(plugin), `${plugin} tidak boleh hilang dari build 0.1.9`);
   }
   assert.equal(appJson.expo.jsEngine, undefined, 'jsEngine jsc tidak didukung SDK 58');
   assert.equal(appJson.expo.runtimeVersion?.policy, 'appVersion');

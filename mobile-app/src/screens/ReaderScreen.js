@@ -13,6 +13,13 @@ import { Feather } from '@expo/vector-icons';
 /* Reader PDF native: berkas dirender di dalam aplikasi (bukan Chrome Custom
  * Tab), sehingga tidak ada bilah alamat maupun tombol unduh bawaan browser. */
 import Pdf from 'react-native-pdf';
+/* Proteksi isi buku: FLAG_SECURE hanya selama layar pembaca terbuka, untuk
+ * SEMUA format naskah (PDF sekarang, DOCX/TXT kelak). Hook resmi menyalakan
+ * pencegahan saat komponen dipasang dan melepasnya otomatis saat unmount,
+ * jadi AuthScreen, pemilih akun Google, dan layar QRIS tetap bisa difoto.
+ * Kita hanya MEMBLOKIR, tidak memasang deteksi screenshot, sehingga tidak
+ * perlu config plugin maupun izin galeri. */
+import { usePreventScreenCapture } from 'expo-screen-capture';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../theme';
 import { useBooks } from '../context/BookContext';
@@ -20,6 +27,11 @@ import { apiRequest } from '../api/client.js';
 import { htmlToPlainText, paginateText, buildReaderFallback } from '../lib/catalog.js';
 
 export const ReaderScreen = ({ book, onBack }) => {
+  /* Dipanggil sebelum cabang `if (isPdf)`, sehingga buku DOCX/TXT yang kelak
+   * ditambahkan otomatis terlindungi tanpa perubahan kode. Kunci unik mencegah
+   * bentrok bila di kemudian hari ada guard lain di aplikasi. */
+  usePreventScreenCapture('wahidiyah-reader');
+
   const { isDownloaded, downloadBook, deleteDownloadedBook } = useBooks();
 
   const [pdfUrl, setPdfUrl] = useState(null);

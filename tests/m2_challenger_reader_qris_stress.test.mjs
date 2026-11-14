@@ -527,8 +527,14 @@ test('M2 Empirical Challenger: Web Document Reader & QRIS Stress Suite', async (
       pollTriggers++;
     }, 10);
 
-    // Wait 35ms (should poll ~3 times)
-    await new Promise((r) => setTimeout(r, 35));
+    // Tunggu sampai 2 tick benar-benar terjadi. Tidur tetap 35 ms dulu flaky
+    // saat CPU sibuk (timer tertunda → cuma 1 tick), padahal yang diuji adalah
+    // perilaku polling, bukan kecepatan mesin. Batas 500 ms tetap menjaga tes
+    // tidak menggantung bila interval benar-benar mati.
+    const deadline = Date.now() + 500;
+    while (pollTriggers < 2 && Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 5));
+    }
     assert.ok(pollTriggers >= 2, `Should have polled at least 2 times, got ${pollTriggers}`);
 
     // Trigger user cancellation (click data-testid="qris-cancel")

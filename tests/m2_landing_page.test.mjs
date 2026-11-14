@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 
-const EXPECTED_APK_URL = '/unduh/wahidiyah-v0.1.8-hermes-32bit.apk';
+const EXPECTED_APK_URL = '/unduh/wahidiyah-v0.1.9-hermes-32bit.apk';
 
 test('M2-1: Node.js 24 and Monorepo Environment Configuration', async (t) => {
   await t.test('package.json specifies "engines": { "node": "24.x" }', () => {
@@ -93,9 +93,9 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
     const content = fs.readFileSync(heroPath, 'utf8');
 
     // Label tombol mengikuti APK yang BENAR-BENAR disajikan, bukan `app.json`.
-    // Saat pengembangan, kode boleh lebih baru (0.1.9 menunggu build EAS)
-    // sementara unduhan live masih 0.1.8; mengikuti app.json justru membuat
-    // tombol mengiklankan berkas yang belum ada.
+    // Saat pengembangan kode boleh lebih baru sementara unduhan live masih
+    // versi lama; mengikuti app.json justru membuat tombol mengiklankan berkas
+    // yang belum ada. Sejak APK 0.1.9 terbit, label dan app.json selaras lagi.
     const servedVersion = EXPECTED_APK_URL.match(/v(\d+\.\d+\.\d+)-/)?.[1];
     assert.ok(servedVersion, 'URL APK wajib memuat nomor versi');
     assert.ok(

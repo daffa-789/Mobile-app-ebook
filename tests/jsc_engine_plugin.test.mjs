@@ -74,7 +74,7 @@ test('versionCode naik di atas build JSC v0.1.2 yang cacat (4)', () => {
 });
 
 test('unduh terjadi langsung dari domain sendiri (same-origin), bukan ke GitHub', () => {
-  const apkPath = '/unduh/wahidiyah-v0.1.8-hermes-32bit.apk';
+  const apkPath = '/unduh/wahidiyah-v0.1.9-hermes-32bit.apk';
   const sameOriginBase = 'https://mobile-app-ebook.vercel.app';
   const jscArtifact = 'xA4OBPWr4r68oBF-zo0p9olad0QSUX0bR4vsbf7pX-s.apk';
   const sources = {

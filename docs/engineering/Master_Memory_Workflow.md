@@ -12,7 +12,7 @@
 [![Payment](https://img.shields.io/badge/Payment-Midtrans%20Core%20API%20(QRIS)-0052cc.svg)](https://midtrans.com/)
 [![Deploy](https://img.shields.io/badge/Deploy-Vercel%20%2B%20EAS%20Update-black.svg)](https://vercel.com/)
 
-> **Terakhir diperbarui:** 14 November 2026, 09:25 WIB. Acuan kode: `main` = `48bd013` (penuntasan tes + penyelarasan dokumen) ditambah perubahan working tree sesi ini. **Unduhan live masih 0.1.8 / versionCode 10**, sementara kode sudah disiapkan untuk **0.1.9 / versionCode 11** (proteksi screenshot reader) yang APK-nya belum dibangun.
+> **Terakhir diperbarui:** 14 November 2026, 11:00 WIB. Acuan kode: `main` = rilis **0.1.9 / versionCode 11** (proteksi screenshot & rekam layar di `ReaderScreen`). APK EAS sudah selesai dibangun dan disajikan same-origin; **unduhan live 0.1.9**. Sertifikat identik dengan 0.1.8 ⇒ upgrade in-place tanpa uninstall.
 
 > 🎯 **FUNGSI UTAMA BERKAS INI:** satu-satunya sumber kebenaran teknis untuk arsitektur monorepo (PWA pembaca, landing page, dashboard admin, aplikasi mobile Expo, backend Express), spesifikasi REST API, alur QRIS Midtrans, gateway WhatsApp/Fonnte, skema Supabase, standar keamanan & CSP, prosedur rilis APK + EAS Update, quality gate, dan konteks akademik skripsi.
 >
@@ -33,7 +33,7 @@
 
 **Mengapa:** SDK 58 / RN 0.88.1 hanya mendukung **Hermes V1** (`useHermesV1: true`). `jsEngine: "jsc"` diabaikan skema, sedangkan `hermesEnabled=false` benar-benar menghasilkan APK JSC — satu-satunya build yang force close (`versionCode 4`). Anggapan "Hermes crash di kernel 3.18" terbukti keliru; yang memperbaiki crash lama adalah guard `window.location` khusus web (commit `1b83232`), bukan JSC. Semua build sehat memuat `armeabi-v7a` + `arm64-v8a` dengan `minSdk 24`.
 
-**Konfigurasi benar (`expo-build-properties` di `app.json`):** `buildArchs: ["armeabi-v7a","arm64-v8a"]`, `minSdkVersion: 24`, `useHermesV1: true`, `usesCleartextTraffic: true`. Saat ini `version 0.1.8`, `versionCode 10`, `runtimeVersion.policy = "appVersion"`, **tanpa** `jsEngine` dan **tanpa** plugin JSC. Plugin lain: `expo-font`, `expo-splash-screen` (polos, tanpa image), `@react-native-google-signin/google-signin`, `expo-secure-store`, `expo-status-bar`, `expo-web-browser`.
+**Konfigurasi benar (`expo-build-properties` di `app.json`):** `buildArchs: ["armeabi-v7a","arm64-v8a"]`, `minSdkVersion: 24`, `useHermesV1: true`, `usesCleartextTraffic: true`. Saat ini `version 0.1.9`, `versionCode 11`, `runtimeVersion.policy = "appVersion"`, **tanpa** `jsEngine` dan **tanpa** plugin JSC. Plugin lain: `expo-font`, `expo-splash-screen` (polos, tanpa image), `@react-native-google-signin/google-signin`, `expo-secure-store`, `expo-status-bar`, `expo-web-browser`.
 
 **Cek biner wajib sebelum publish:** `libhermesvm.so` ADA di kedua ABI; `libjsc.so` TIDAK BOLEH ADA; magic `assets/index.android.bundle` = `c61fbc03` (HBC); `minSdkVersion` 24; `versionCode` selalu naik. Dikunci otomatis oleh `tests/jsc_engine_plugin.test.mjs` — jangan dilonggarkan.
 
@@ -41,14 +41,15 @@
 
 | Item | Nilai |
 |---|---|
-| APK aktif | `public/unduh/wahidiyah-v0.1.8-hermes-32bit.apk`, 44.576.049 byte |
-| SHA-256 APK | `ac33d95c…e5337c0` |
-| SHA-1 penandatangan | `E6:89:5B:E7:CC:70:D2:5E:80:96:28:C5:49:81:8A:32:26:1D:8E:29` (personal, keystore `Z7jJbQPNw0`) |
+| APK aktif | `public/unduh/wahidiyah-v0.1.9-hermes-32bit.apk`, 44.582.581 byte |
+| SHA-256 APK | `94363e1f426aa24d20c871aed2902cc5406ce4c6dc96c99139e9ebfcf1221dcb` |
+| SHA-1 penandatangan | `E6:89:5B:E7:CC:70:D2:5E:80:96:28:C5:49:81:8A:32:26:1D:8E:29` (personal, keystore `Z7jJbQPNw0`) — **sama dengan 0.1.8** |
 | Proyek EAS | personal `jualendfield1610` / `504e9a89-a47e-4146-8731-8e31eb35c744` |
-| OTA aktif | channel/branch `preview`, runtime 0.1.8, update `01a1d5f8-fd5b-74e1-86fd-a8e731de6e36`, sinkron ke `b5107ba` |
+| OTA aktif | channel/branch `preview`, runtime **0.1.9**; update 0.1.8 (`01a1d5f8-…`) tetap mengawasi APK 0.1.8 |
+| Upgrade dari 0.1.8 | **In-place, TANPA uninstall**, data lokal aman (SHA-1 identik) |
 | Upgrade dari 0.1.7 | **WAJIB uninstall dulu** — SHA-1 berbeda (tim `5F:F7:BC:…:B3:B6`), tanda tangan tidak bisa menimpa |
 
-Unduhan **wajib same-origin**: `DIRECT_APK_URL = /unduh/wahidiyah-v0.1.8-hermes-32bit.apk`, header `Content-Disposition: attachment` di `vercel.json`, `/download` dan `/download/apk` hanya redirect internal, dan `/api/download/apk` ada di `health_routes.js`. Tautan langsung ke `github.com` membuat atribut HTML `download` diabaikan (cross-origin). GitHub Release `v0.1.5` tetap arsip kanonik, bukan tujuan unduh pengguna. Rilis lama 0.1.1/0.1.3/0.1.4/0.1.6/0.1.7 sengaja tidak dikirimi OTA; **jangan publish OTA runtime 0.1.1/0.1.2**. Build EAS #2 `52fe9675…` (doctor 20/20) adalah artefak final; branch `release/0.1.8-splash` @ `0a4454d` hanya cadangan, jangan di-merge.
+Unduhan **wajib same-origin**: `DIRECT_APK_URL = /unduh/wahidiyah-v0.1.9-hermes-32bit.apk`, header `Content-Disposition: attachment` di `vercel.json`, `/download` dan `/download/apk` hanya redirect internal, dan `/api/download/apk` ada di `health_routes.js`. Tautan langsung ke `github.com` membuat atribut HTML `download` diabaikan (cross-origin). GitHub Release `v0.1.5` tetap arsip kanonik, bukan tujuan unduh pengguna. Rilis lama 0.1.1/0.1.3/0.1.4/0.1.6/0.1.7 sengaja tidak dikirimi OTA; **jangan publish OTA runtime 0.1.1/0.1.2**. EAS memfilter update per `runtimeVersion`: APK 0.1.8 (runtime 0.1.8) **tidak akan pernah** menerima update runtime 0.1.9, apalagi modul native `expo-screen-capture` yang tidak ada di biner 0.1.8. Satu-satunya jalan bagi pengguna 0.1.8 adalah memasang APK 0.1.9 sekali (in-place); setelah itu semua perubahan JS murni datang lewat OTA. Build EAS #2 `52fe9675…` (doctor 20/20) adalah artefak final; branch `release/0.1.8-splash` @ `0a4454d` hanya cadangan, jangan di-merge.
 
 **Prefiks kunci Midtrans BUKAN penentu lingkungan** (koreksi 10 November 2026): `SB-Mid-…` pasti sandbox, tetapi kunci tanpa prefiks (`Mid-server-…`) bisa berasal dari akun sandbox lama — terukur: `Mid-server-Ela…` → 201 di sandbox, 401 di produksi. Guard hanya memblokir `SB-Mid-…` + `MIDTRANS_IS_PRODUCTION=true`; selainnya lingkungan mengikuti flag. Jangan kembalikan aturan lama yang menganggap semua kunci non-`SB-` produksi.
 
@@ -56,7 +57,7 @@ Unduhan **wajib same-origin**: `DIRECT_APK_URL = /unduh/wahidiyah-v0.1.8-hermes-
 
 ---
 
-## ⛔ ATURAN KERAS 1 — INVARIAN RILIS 0.1.8 (JANGAN DILANGGAR)
+## ⛔ ATURAN KERAS 1 — INVARIAN RILIS 0.1.9 (JANGAN DILANGGAR)
 
 | Area | Aturan yang mengikat | Penjaga regresi |
 |---|---|---|
@@ -82,7 +83,7 @@ Unduhan **wajib same-origin**: `DIRECT_APK_URL = /unduh/wahidiyah-v0.1.8-hermes-
 
 > ⛔ **Baca dulu "ATURAN KERAS 0" dan "ATURAN KERAS 1" tepat di atas** sebelum mengikuti bagian mana pun di bawah.
 
-0. [Aturan Keras 0 — Hermes V1 / JSC](#-aturan-keras-0--hermes-v1-wajib-jsc-dilarang-selamanya) · [Aturan Keras 1 — Invarian 0.1.8](#-aturan-keras-1--invarian-rilis-018-jangan-dilanggar)
+0. [Aturan Keras 0 — Hermes V1 / JSC](#-aturan-keras-0--hermes-v1-wajib-jsc-dilarang-selamanya) · [Aturan Keras 1 — Invarian 0.1.9](#-aturan-keras-1--invarian-rilis-019-jangan-dilanggar)
 1. [Ringkasan Eksekutif & Tech Stack](#1-ringkasan-eksekutif--tech-stack)
 2. [Fitur Unggulan Sistem](#2-fitur-unggulan-sistem)
 3. [Arsitektur Sistem & Rekayasa Perangkat Lunak](#3-arsitektur-sistem--rekayasa-perangkat-lunak-modular-layered-monolith)
@@ -157,7 +158,7 @@ Panel admin **bukan lagi** `src/features/admin` (dihapus saat pembersihan M1); i
 
 ### 2.5. Landing Page & Distribusi APK
 
-`landing-page/` adalah satu halaman showcase (`LandingNavbar`, `HeroSection`, `FeaturesSection`, `PreviewSection`, `LandingFooter`) dengan satu tombol **"Unduh Apk 0.1.8"** yang menunjuk `DIRECT_APK_URL`. Meta, hero, `vercel.json`, `health_routes.js`, dan konstanta tes semuanya mengikuti versi aktif. Aset APK disajikan same-origin dari `public/unduh/` dengan `Content-Disposition: attachment`.
+`landing-page/` adalah satu halaman showcase (`LandingNavbar`, `HeroSection`, `FeaturesSection`, `PreviewSection`, `LandingFooter`) dengan satu tombol **"Unduh Apk 0.1.9"** yang menunjuk `DIRECT_APK_URL`. Meta, hero, `vercel.json`, `health_routes.js`, dan konstanta tes semuanya mengikuti versi aktif. Aset APK disajikan same-origin dari `public/unduh/` dengan `Content-Disposition: attachment`.
 
 ### 2.6. Aplikasi Mobile (Expo SDK 58)
 
@@ -165,7 +166,7 @@ Panel admin **bukan lagi** `src/features/admin` (dihapus saat pembersihan M1); i
 - **OTA:** `mobile-app/src/lib/ota.js` (murni) → `hooks/useOtaUpdate.js` → `components/OtaUpdatePrompt.js`; `App.js` hanya memasang prompt. Dialog memberi dua pilihan eksplisit (perbarui / tidak); Profil tamu menyediakan **Cek Pembaruan OTA** manual. Perubahan modul native tidak bisa lewat OTA.
 - **Bilah atas:** semua header bertombol Kembali diberi ruang ekstra ≈ +12 px agar tidak menempel status bar/poni.
 - **Anti-screenshot:** guard dipasang sekali di `ReaderScreen` (bukan per cabang PDF), sehingga format buku baru otomatis terlindungi.
-- **Tanda tangan & rilis:** lihat Aturan Keras 0/1. Pengguna 0.1.7 wajib uninstall sebelum memasang 0.1.8.
+- **Tanda tangan & rilis:** lihat Aturan Keras 0/1. Pengguna 0.1.7 wajib uninstall; pengguna 0.1.8 cukup menimpa dengan APK 0.1.9 (in-place, tanpa uninstall).
 
 ---
 
@@ -1235,7 +1236,7 @@ E:/Wahidiyah Book Mobile app/
 │   └── src/screens/             # 9 layar: Home, Calendar, Pro, Profile, Reader, Auth*,
 │                                # SubscriptionHistory, Verification (DownloadsScreen DIHAPUS)
 ├── public/
-│   ├── unduh/*-hermes-32bit.apk # Arsip APK 0.1.3–0.1.8 (0.1.8 = unduhan resmi)
+│   ├── unduh/*-hermes-32bit.apk # Arsip APK 0.1.3–0.1.9 (0.1.9 = unduhan resmi)
 │   ├── payments/qris*.svg, sw.js, sw-cleanup.js, manifest.webmanifest, icon-*.png
 ├── tests/                       # 36 berkas *.mjs (suite penuh 387 tes)
 │   ├── e2e/                     # run_all.mjs + tier1..tier4 (67 tes E2E)
@@ -1273,7 +1274,7 @@ Dokumen versi lama menyimpan uraian panjang rounds **R40–R91** (sampai 4 Novem
 | 11 Nov | Login Google mobile tidak lagi nyangkut (handoff `intent://`), OTA dimodularisasi, kartu QRIS minimal, `AuthScreen` tanpa teks tunggu, rilis 0.1.6 + hardening keamanan. |
 | 12 Nov | **Nonce OIDC 128-bit + CSP enforced** untuk ketiga target statis; skrip inline admin dipindah ke `sw-cleanup.js`; harness probe Chrome headless (`scripts/csp-browser-check.mjs`). |
 | 13 Nov | 0.1.7 (PDF native in-app + `trustAllCerts={false}`), ruang atas bilah Kembali, migrasi ke proyek EAS personal, dan **rilis 0.1.8 / versionCode 10** dengan SHA-1 baru (uninstall wajib bagi pengguna 0.1.7). Modernisasi dependensi 2026: Express 5, Vite 8, Router 8, pdfjs 6, `write-excel-file`, `npm audit` 0 temuan (`b5107ba`). |
-| 14 Nov | Drive E: dibersihkan (junction `dist/` dilepas), OTA 0.1.8 disinkronkan ke `b5107ba`, **seluruh kegagalan tes baseline dituntaskan → 387/387**, commit `48bd013` di-push. Sore harinya fitur **anti-screenshot reader** diterapkan di kode: `expo-screen-capture ~58.0.6` + versi 0.1.9/vC 11; APK-nya masih menunggu build EAS. |
+| 14 Nov | Drive E: dibersihkan (junction `dist/` dilepas), OTA 0.1.8 disinkronkan ke `b5107ba`, **seluruh kegagalan tes baseline dituntaskan → 387/387**, commit `48bd013` di-push. Siang harinya fitur **anti-screenshot reader** diterapkan di kode (`expo-screen-capture ~58.0.6`, versi 0.1.9/vC 11), build EAS `e28e040a-…` selesai, APK 44.582.581 B diunduh, tautan/landing/server/tes dinaikkan ke 0.1.9, lalu commit+push, deploy Vercel, dan **OTA runtime 0.1.9**. Modul native ⇒ 0.1.8 tidak bisa menerima fitur ini lewat OTA, tetapi sertifikat identik memungkinkan upgrade in-place tanpa uninstall. |
 
 ### 15.1 Yang sudah tidak ada lagi — jangan dihidupkan kembali
 
@@ -1305,11 +1306,11 @@ Dokumen versi lama menyimpan uraian panjang rounds **R40–R91** (sampai 4 Novem
 
 | Komponen | Status |
 |---|---|
-| Aplikasi mobile | **0.1.8 / versionCode 10 masih jadi unduhan live**; kode **0.1.9 / versionCode 11** sudah siap (anti-screenshot reader), menunggu build EAS + verifikasi HP |
+| Aplikasi mobile | **0.1.9 / versionCode 11 sudah jadi unduhan live** (anti-screenshot & rekam layar di `ReaderScreen`), build EAS `e28e040a-…` selesai, OTA runtime 0.1.9 diterbitkan |
 | Web | Landing, PWA, dan dashboard admin ter-deploy di Vercel; `/api/health` 200 |
 | Kualitas | `build:all` hijau, `npm run check` 7/7, `npm test` 67/67, suite penuh **387/387**, `npm audit` 0, `expo-doctor` 20/20 |
 | Pembayaran | Midtrans **Sandbox** — produksi sengaja tidak didaftarkan (lihat §11.4) |
-| Yang belum | Build APK 0.1.9 + uji nyata `FLAG_SECURE` di atas `react-native-pdf`; rotasi password admin yang lemah; keputusan tanda air/blokir klik kanan; UAT & naskah skripsi (masih draft) |
+| Yang belum | Uji nyata `FLAG_SECURE` di atas `react-native-pdf` pada perangkat fisik; rotasi password admin yang lemah; keputusan tanda air/blokir klik kanan; UAT & naskah skripsi (masih draft) |
 
 ### 16.2. Aplikasi Mobile — SUDAH DIREALISASIKAN
 

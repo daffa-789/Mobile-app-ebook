@@ -106,14 +106,20 @@ test('server: idToken dibatasi umurnya, endpoint native dibatasi lajunya', () =>
   assert.match(read('server/config.js'), /process\.env\.VERCEL \? 1/, 'trust proxy di Vercel');
 });
 
-test('komentar versi sudah mengikuti 0.1.8', () => {
+test('komentar versi sudah mengikuti 0.1.9', () => {
   const health = read('server/routes/health_routes.js');
   assert.ok(!health.includes('APK v0.1.5 menyematkan'), 'komentar APK lama dibuang');
   assert.ok(!health.includes('versionCode 7'), 'versionCode lama dibuang');
-  assert.match(health, /v0\.1\.8/);
+  assert.match(health, /v0\.1\.9/);
+  assert.match(health, /IDENTIK dengan 0\.1\.8/, 'upgrade in-place 0.1.8 wajib didokumentasikan');
+  assert.match(
+    health,
+    /TIDAK bisa dikirim lewat EAS Update/,
+    'batas OTA native wajib didokumentasikan',
+  );
   const landing = read('landing-page/src/config/constants.js');
   assert.ok(!landing.includes('Rilis v0.1.5 memakai Hermes'), 'komentar landing diperbarui');
-  assert.match(landing, /v0\.1\.8/);
+  assert.match(landing, /v0\.1\.9/);
 });
 
 test('rilis 0.1.9: modul native terlarang tetap tidak dipakai', () => {

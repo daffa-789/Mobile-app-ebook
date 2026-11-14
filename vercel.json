@@ -6,12 +6,12 @@
   "redirects": [
     {
       "source": "/download",
-      "destination": "https://mobile-app-ebook.vercel.app/unduh/wahidiyah-v0.1.8-hermes-32bit.apk",
+      "destination": "https://mobile-app-ebook.vercel.app/unduh/wahidiyah-v0.1.9-hermes-32bit.apk",
       "permanent": false
     },
     {
       "source": "/download/apk",
-      "destination": "https://mobile-app-ebook.vercel.app/unduh/wahidiyah-v0.1.8-hermes-32bit.apk",
+      "destination": "https://mobile-app-ebook.vercel.app/unduh/wahidiyah-v0.1.9-hermes-32bit.apk",
       "permanent": false
     }
   ],
@@ -38,7 +38,7 @@
         },
         {
           "key": "Content-Disposition",
-          "value": "attachment; filename=\"wahidiyah-v0.1.8-hermes-32bit.apk\""
+          "value": "attachment; filename=\"wahidiyah-v0.1.9-hermes-32bit.apk\""
         },
         {
           "key": "X-Content-Type-Options",

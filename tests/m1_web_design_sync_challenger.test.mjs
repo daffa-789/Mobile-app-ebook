@@ -218,7 +218,7 @@ test('CHALLENGER-2: Page 2269 (Web - Landing Page) Structural & Semantic Stress-
       path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'sections', 'HeroSection.jsx'),
       'utf8',
     );
-    assert.ok(heroSrc.includes('Unduh Apk 0.1.8'), 'Tombol unduh harus memakai label versi baru');
+    assert.ok(heroSrc.includes('Unduh Apk 0.1.9'), 'Tombol unduh harus memakai label versi baru');
     assert.ok(
       !heroSrc.includes('Unduh APK Langsung (.apk)'),
       'Label tombol lama tidak boleh dipakai lagi',

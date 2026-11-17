@@ -98,7 +98,7 @@ export const PATH_TO_SCREEN = {
 };
 
 /** Tab default saat membuka dashboard admin. */
-export const ADMIN_DEFAULT_TAB = 'overview';
+const ADMIN_DEFAULT_TAB = 'overview';
 
 const ADMIN_PATH_TO_TAB = {
   '/admin': ADMIN_DEFAULT_TAB,
@@ -110,33 +110,6 @@ const ADMIN_PATH_TO_TAB = {
   '/admin/agenda': 'events',
   '/admin/log': 'logs',
 };
-
-/**
- * Dapatkan ID tab admin berdasarkan path URL browser.
- *
- * @param {string} pathname - Path URL browser saat ini
- * @returns {string} ID tab admin ('overview', 'books', 'users', 'events', 'logs')
- */
-export const tabIdFromPath = (pathname) =>
-  ADMIN_PATH_TO_TAB[normalizePath(pathname)] || ADMIN_DEFAULT_TAB;
-
-/**
- * Dapatkan path URL kanonikal untuk tab admin tertentu.
- *
- * @param {string} tabId - ID tab admin
- * @returns {string} Path URL admin
- */
-export const adminPathForTab = (tabId) =>
-  Object.keys(ADMIN_PATH_TO_TAB).find(
-    (path) => path.startsWith('/admin/') && ADMIN_PATH_TO_TAB[path] === tabId,
-  ) || '/admin';
-
-/** Himpunan slug sub-halaman dashboard admin. */
-export const ADMIN_TAB_SLUGS = new Set(
-  Object.keys(ADMIN_PATH_TO_TAB)
-    .filter((path) => path.startsWith('/admin/'))
-    .map((path) => path.slice('/admin/'.length)),
-);
 
 /** Himpunan layar yang hanya relevan untuk alur autentikasi tanpa navbar utama. */
 export const AUTH_ONLY_SCREENS = new Set([

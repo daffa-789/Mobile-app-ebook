@@ -11,14 +11,6 @@ import { createApiTransport, readableError } from '@shared/apiTransport.js';
 
 export const API_FALLBACK_ORIGIN = API_CONFIG.fallbackOrigin;
 
-const canUseApiFallback = (path) =>
-  import.meta.env?.DEV === true &&
-  typeof window !== 'undefined' &&
-  DEV_HOSTNAMES.includes(window.location.hostname) &&
-  typeof path === 'string' &&
-  path.startsWith('/') &&
-  !path.startsWith('//');
-
 const transport = createApiTransport({
   fallbackOrigin: API_FALLBACK_ORIGIN,
   timeoutMs: API_CONFIG.timeoutMs,

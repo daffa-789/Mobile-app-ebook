@@ -51,6 +51,17 @@ function MainNavigator() {
   /* Status & aksi OTA hidup di hook terpisah; App.js hanya memasang dialognya. */
   const ota = useOtaUpdate();
 
+  React.useEffect(() => {
+    if (!activeBook?.is_locked || isPro) return;
+
+    setActiveBook(null);
+    setActiveTab('pro');
+    Alert.alert(
+      'Masa Pro Berakhir',
+      'Akses ke buku Pro sudah berakhir. Sambungkan ke internet untuk memeriksa atau memperpanjang membership.',
+    );
+  }, [activeBook, isPro]);
+
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isDesktopWeb = Platform.OS === 'web' && windowWidth > 500;
 

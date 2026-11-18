@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { AppState } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest, setUnauthorizedHandler } from '../api/client';
@@ -7,10 +8,33 @@ import { safeDecodeUriComponent } from '../lib/authUrl';
 
 const AuthContext = createContext(null);
 
+const MAX_TIMEOUT_MS = 2_147_483_647;
+
+export const hasActiveProEntitlement = (user, now = Date.now()) => {
+  const hasProFlag =
+    user?.is_pro === true ||
+    user?.is_pro === 1 ||
+    user?.is_pro === '1' ||
+    user?.is_pro === 'true' ||
+    user?.isPro === true ||
+    user?.role === 'pro';
+
+  if (!hasProFlag) return false;
+
+  const expiresAt = user?.subscription_expires_at ?? user?.subscriptionExpiresAt ?? null;
+  // Pro tanpa tanggal kedaluwarsa adalah akses manual admin, sama seperti backend.
+  if (expiresAt === null || expiresAt === undefined || expiresAt === '') return true;
+
+  const expiresAtMs = expiresAt instanceof Date ? expiresAt.getTime() : Date.parse(expiresAt);
+  const nowMs = now instanceof Date ? now.getTime() : Number(now);
+  return Number.isFinite(expiresAtMs) && Number.isFinite(nowMs) && expiresAtMs > nowMs;
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [sessionToken, setSessionToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [entitlementNow, setEntitlementNow] = useState(() => Date.now());
   /* Kode sesi Google sekali pakai bisa datang dua kali: dari hasil
    * openAuthSessionAsync dan dari deep link App.js. Set ini memastikan
    * penukaran hanya dilakukan sekali untuk kode yang sama. */
@@ -19,6 +43,40 @@ export const AuthProvider = ({ children }) => {
    * 120 dtk UI boleh pulang, tetapi sesi lama masih bisa hidup; ref ini
    * mencegah tab kedua dibuka sebelum sesi pertama benar-benar selesai. */
   const browserSessionRef = useRef(null);
+
+  const rawProExpiry = user?.subscription_expires_at ?? user?.subscriptionExpiresAt ?? null;
+  const proExpiryMs =
+    rawProExpiry === null || rawProExpiry === undefined || rawProExpiry === ''
+      ? null
+      : rawProExpiry instanceof Date
+        ? rawProExpiry.getTime()
+        : Date.parse(rawProExpiry);
+
+  useEffect(() => {
+    const refreshEntitlementClock = () => setEntitlementNow(Date.now());
+    const appStateSubscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') refreshEntitlementClock();
+    });
+
+    let expiryTimer;
+    if (Number.isFinite(proExpiryMs)) {
+      const refreshAtExpiry = () => {
+        const remainingMs = proExpiryMs - Date.now();
+        if (remainingMs <= 0) {
+          refreshEntitlementClock();
+          return;
+        }
+        // setTimeout tidak aman untuk jeda di atas batas timer 32-bit.
+        expiryTimer = setTimeout(refreshAtExpiry, Math.min(remainingMs + 1, MAX_TIMEOUT_MS));
+      };
+      refreshAtExpiry();
+    }
+
+    return () => {
+      if (expiryTimer) clearTimeout(expiryTimer);
+      appStateSubscription?.remove?.();
+    };
+  }, [proExpiryMs]);
 
   /* SDK native hanya dikonfigurasi di Android; di web/platform lain helper
    * langsung mengembalikan null sehingga tidak ada kode native yang dievaluasi.
@@ -492,7 +550,7 @@ export const AuthProvider = ({ children }) => {
         sessionToken,
         loading,
         isAuthenticated: !!user,
-        isPro: Boolean(user?.is_pro || user?.isPro || user?.role === 'pro'),
+        isPro: hasActiveProEntitlement(user, entitlementNow),
         login,
         register,
         verifyRegistration,

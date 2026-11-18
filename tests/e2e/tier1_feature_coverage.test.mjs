@@ -482,7 +482,7 @@ suite.test('F27: Mobile Native Reader Screen Controls & Font Scaling Bounds', as
 suite.test('F28: Mobile Anti-Screenshot Guard Specification', async () => {
   // Mobile app specification requires anti-screenshot protection during reader view.
   const docPrompt = fs.readFileSync(
-    path.resolve(rootDir, 'docs/specifications/MOBILE_APP_SPEC.md'),
+    path.resolve(rootDir, 'project-resources/specifications/MOBILE_APP_SPEC.md'),
     'utf-8',
   );
   assert.ok(

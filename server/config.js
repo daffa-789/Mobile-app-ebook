@@ -33,7 +33,7 @@ export const SERVE_STATIC =
     .trim()
     .toLowerCase() !== 'false';
 
-export const STATIC_DIR = path.resolve(ROOT_DIR, 'dist');
+export const STATIC_DIR = path.resolve(ROOT_DIR, 'dist/landing');
 export const STATIC_INDEX_FILE = path.join(STATIC_DIR, 'index.html');
 
 /* Polling status QRIS berjalan tiap 3 detik (≈20 permintaan/menit) sampai

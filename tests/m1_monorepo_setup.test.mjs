@@ -78,8 +78,8 @@ describe('Milestone 1: Monorepo Architecture & Workspace Setup', () => {
     );
   });
 
-  test('vite.config.js contains @shared alias', () => {
-    const config = fs.readFileSync(path.join(rootDir, 'vite.config.js'), 'utf8');
+  test('vite.config.admin.js contains @shared alias', () => {
+    const config = fs.readFileSync(path.join(rootDir, 'vite.config.admin.js'), 'utf8');
     assert.ok(config.includes("'@shared'"), 'Must include @shared alias');
   });
 

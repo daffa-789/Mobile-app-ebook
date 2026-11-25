@@ -154,14 +154,11 @@ describe('CHALLENGER 2 — Integrated Monorepo, Build & Admin Auth Stress Harnes
   describe('Stress Vector 3: Landing Page APK Delivery & Static Independence', () => {
     const OFFICIAL_APK_URL = '/unduh/wahidiyah-v0.1.9-hermes-32bit.apk';
 
-    test('Direct APK URL is strictly matching official artifact across all landing components', () => {
+    test('Direct APK URL is strictly matching official artifact on the download CTA', () => {
       const heroPath = path.join(rootDir, 'landing-page/src/components/sections/HeroSection.jsx');
-      const navPath = path.join(rootDir, 'landing-page/src/components/layout/LandingNavbar.jsx');
-
       const heroSrc = fs.readFileSync(heroPath, 'utf8');
-      const navSrc = fs.readFileSync(navPath, 'utf8');
 
-      // M2 memusatkan URL APK ke satu konstanta; komponen wajib memakainya.
+      // M2 memusatkan URL APK ke satu konstanta; CTA unduh wajib memakainya.
       const constantsSrc = fs.readFileSync(
         path.join(rootDir, 'landing-page/src/config/constants.js'),
         'utf8',
@@ -170,15 +167,10 @@ describe('CHALLENGER 2 — Integrated Monorepo, Build & Admin Auth Stress Harnes
         constantsSrc.includes(OFFICIAL_APK_URL),
         'Centralized constants.js must expose the official APK URL',
       );
-      for (const [name, src] of [
-        ['HeroSection', heroSrc],
-        ['LandingNavbar', navSrc],
-      ]) {
-        assert.ok(
-          src.includes('APK_DOWNLOAD_URL') && src.includes('@/config/constants'),
-          `${name} must consume the centralized APK_DOWNLOAD_URL constant`,
-        );
-      }
+      assert.ok(
+        heroSrc.includes('APK_DOWNLOAD_URL') && heroSrc.includes('@/config/constants'),
+        'HeroSection must consume the centralized APK_DOWNLOAD_URL constant',
+      );
     });
 
     test('Landing App.jsx is completely static without API polling or auth context bloat', () => {

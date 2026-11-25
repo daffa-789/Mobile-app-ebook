@@ -574,7 +574,10 @@ suite.test('F35: Bundler & Tooling Alignment (Tailwind, Vite, JSConfig)', async 
     fs.existsSync(path.resolve(rootDir, 'tailwind.config.js')),
     'tailwind.config.js must exist',
   );
-  assert.ok(fs.existsSync(path.resolve(rootDir, 'vite.config.js')), 'vite.config.js must exist');
+  assert.ok(
+    fs.existsSync(path.resolve(rootDir, 'vite.config.landing.js')),
+    'vite.config.landing.js must exist',
+  );
   assert.ok(fs.existsSync(path.resolve(rootDir, 'jsconfig.json')), 'jsconfig.json must exist');
 });
 

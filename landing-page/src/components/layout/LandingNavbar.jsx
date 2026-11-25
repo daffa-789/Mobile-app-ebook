@@ -1,8 +1,6 @@
 import { BookOpen } from 'lucide-react';
-import { APK_DOWNLOAD_URL } from '@/config/constants';
 
 export const LandingNavbar = () => {
-  // APK_DOWNLOAD_URL referenced for centralized config compliance
   return (
     <header className="sticky top-0 z-50 w-full bg-cream-50 border-b border-cream-200 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -101,10 +101,10 @@ test('Landing Page Configuration Resilience & Env Injection', async (t) => {
     });
 
     assert.strictEqual(config.APK_DOWNLOAD_URL, DEFAULT_APK, 'Fallback to same-origin APK path');
-    assert.strictEqual(config.API_CONFIG.baseUrl, '', 'Default baseUrl is empty string');
-    assert.strictEqual(config.API_CONFIG.fallbackOrigin, 'http://localhost:5000');
-    assert.strictEqual(config.API_CONFIG.timeoutMs, 20000, 'Default timeout is 20000ms');
-    assert.ok(config.STORAGE_KEYS.session, 'Storage key session exists');
+    // Landing sekarang murni statis: konfigurasi API/OAuth/Storage hanya hidup
+    // di admin dashboard dan aplikasi mobile (dulu diduplikasi di Web PWA).
+    assert.strictEqual(config.API_CONFIG, undefined);
+    assert.strictEqual(config.STORAGE_KEYS, undefined);
   });
 
   await t.test('2. Custom valid environment variables injected', async () => {
@@ -123,10 +123,8 @@ test('Landing Page Configuration Resilience & Env Injection', async (t) => {
     });
 
     assert.strictEqual(config.APK_DOWNLOAD_URL, customApk);
-    assert.strictEqual(config.API_CONFIG.baseUrl, customApi);
-    assert.strictEqual(config.API_CONFIG.fallbackOrigin, customOrigin);
-    assert.strictEqual(config.API_CONFIG.timeoutMs, 35000);
-    assert.strictEqual(config.OAUTH_CONFIG.googleClientId, customGoogleClientId);
+    assert.strictEqual(config.API_CONFIG, undefined);
+    assert.strictEqual(config.OAUTH_CONFIG, undefined);
   });
 
   await t.test('3. Edge cases: empty string and NaN timeout', async () => {
@@ -140,7 +138,8 @@ test('Landing Page Configuration Resilience & Env Injection', async (t) => {
       DEFAULT_APK,
       'Empty string falls back to default APK',
     );
-    assert.strictEqual(config.API_CONFIG.timeoutMs, 20000, 'NaN timeout falls back to 20000ms');
+    assert.strictEqual(config.APK_DOWNLOAD_URL, DEFAULT_APK);
+    assert.strictEqual(config.API_CONFIG, undefined);
   });
 });
 
@@ -190,77 +189,28 @@ test('Admin Dashboard Configuration Resilience & Env Injection', async (t) => {
   });
 });
 
-test('Root PWA Configuration Resilience & Env Injection', async (t) => {
-  await t.test('1. Default environment without custom env vars', async () => {
-    const config = await runInSubprocess('./src/config/constants.js', {
-      VITE_API_URL: '',
-      VITE_API_FALLBACK_ORIGIN: '',
-      VITE_API_TIMEOUT_MS: '',
-      VITE_GOOGLE_CLIENT_ID: '',
-    });
-
-    assert.strictEqual(config.API_CONFIG.baseUrl, '', 'Default baseUrl is empty string');
-    assert.strictEqual(config.API_CONFIG.fallbackOrigin, 'http://localhost:5000');
-    assert.strictEqual(config.API_CONFIG.timeoutMs, 20000);
-    assert.strictEqual(config.STORAGE_KEYS.session, 'buku-wahidiyah:auth-session');
-    assert.strictEqual(config.STORAGE_KEYS.intendedLocation, 'buku-wahidiyah:intended-location');
-    assert.ok(config.MAPS_CONFIG.searchBaseUrl.includes('google.com/maps/search'));
-    assert.ok(config.MAPS_CONFIG.dirBaseUrl.includes('google.com/maps/dir'));
-    assert.strictEqual(config.OAUTH_CONFIG.callbackPath, '/api/auth/google/callback');
-    assert.deepStrictEqual(config.DEV_HOSTNAMES, ['localhost', '127.0.0.1', '::1', '[::1]']);
-  });
-
-  await t.test('2. Custom valid environment variables injected', async () => {
-    const customApi = 'https://api.wahidiyah.org';
-    const customOrigin = 'https://backend.wahidiyah.org';
-    const customTimeout = '45000';
-    const customClientId = 'pwa-client-4433.apps.googleusercontent.com';
-
-    const config = await runInSubprocess('./src/config/constants.js', {
-      VITE_API_URL: customApi,
-      VITE_API_FALLBACK_ORIGIN: customOrigin,
-      VITE_API_TIMEOUT_MS: customTimeout,
-      VITE_GOOGLE_CLIENT_ID: customClientId,
-    });
-
-    assert.strictEqual(config.API_CONFIG.baseUrl, customApi);
-    assert.strictEqual(config.API_CONFIG.fallbackOrigin, customOrigin);
-    assert.strictEqual(config.API_CONFIG.timeoutMs, 45000);
-    assert.strictEqual(config.OAUTH_CONFIG.googleClientId, customClientId);
-  });
-
-  await t.test('3. Edge case: non-numeric timeout falls back safely', async () => {
-    const config = await runInSubprocess('./src/config/constants.js', {
-      VITE_API_TIMEOUT_MS: 'not_a_number',
-    });
-
-    assert.strictEqual(config.API_CONFIG.timeoutMs, 20000);
-  });
-
-  await t.test('4. Sumber PWA tidak menduplikasi literal konfigurasi', () => {
-    const apiSrc = fs.readFileSync(path.join(ROOT_DIR, 'src/lib/api.js'), 'utf8');
-    assert.ok(
-      apiSrc.includes("from '@/config/constants'"),
-      'src/lib/api.js must read config from @/config/constants',
+test('Root Web PWA sudah dihapus; konfigurasi tidak diduplikasi', () => {
+  for (const relPath of [
+    'src/config/constants.js',
+    'src/lib/api.js',
+    'src/lib/maps.js',
+    'vite.config.js',
+  ]) {
+    assert.equal(
+      fs.existsSync(path.join(ROOT_DIR, relPath)),
+      false,
+      `${relPath} tidak boleh hidup lagi`,
     );
-    assert.ok(!apiSrc.includes("'http://localhost:5000'"), 'API origin must not be hardcoded');
-    assert.ok(!apiSrc.includes("'buku-wahidiyah:"), 'Storage keys must not be hardcoded');
+  }
 
-    // Arsitektur baru: src/lib/maps.js hanya re-export modul bersama.
-    const mapsBarrel = fs.readFileSync(path.join(ROOT_DIR, 'src/lib/maps.js'), 'utf8');
-    assert.ok(
-      mapsBarrel.includes("export * from '@shared/maps.js'"),
-      'src/lib/maps.js harus menjadi barrel untuk @shared/maps.js',
-    );
-    assert.ok(
-      !mapsBarrel.includes('https://www.google.com/maps/search'),
-      'URL Maps tidak boleh hardcoded di konsumen',
-    );
+  // Modul bersama tetap menjadi satu-satunya sumber MAPS_CONFIG.
+  const mapsSrc = fs.readFileSync(path.join(ROOT_DIR, 'shared/maps.js'), 'utf8');
+  assert.ok(mapsSrc.includes('MAPS_CONFIG.searchBaseUrl'));
+  assert.ok(mapsSrc.includes('MAPS_CONFIG.dirBaseUrl'));
 
-    const mapsSrc = fs.readFileSync(path.join(ROOT_DIR, 'shared/maps.js'), 'utf8');
-    assert.ok(mapsSrc.includes('MAPS_CONFIG.searchBaseUrl'));
-    assert.ok(mapsSrc.includes('MAPS_CONFIG.dirBaseUrl'));
-  });
+  // Rute root dilayani landing page, bukan PWA lama.
+  const staticConfig = fs.readFileSync(path.join(ROOT_DIR, 'server/config.js'), 'utf8');
+  assert.ok(staticConfig.includes("path.resolve(ROOT_DIR, 'dist/landing')"));
 });
 
 test('Mobile App Configuration Resilience & Env Injection', async (t) => {

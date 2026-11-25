@@ -1,12 +1,12 @@
 /**
  * @file scripts/start.js
  * @description Runner mode produksi terpadu (npm start) untuk Wahidiyah Book.
- * Memeriksa ketersediaan direktori dist/, mengompilasi aset Vite otomatis bila belum ada,
+ * Memeriksa ketersediaan direktori dist/landing/, mengompilasi aset Vite otomatis bila belum ada,
  * mendeteksi ketersediaan port, dan menjalankan server Express produksi dengan SERVE_STATIC=true.
  *
  * Mendukung opsi flag CLI:
- *  - `--rebuild` : Memaksa kompilasi ulang dist/ sebelum server menyala
- *  - `--no-build` : Melewatkan pemeriksaan kompilasi (wajib sudah ada dist/)
+ *  - `--rebuild` : Memaksa kompilasi ulang dist/landing/ sebelum server menyala
+ *  - `--no-build` : Melewatkan pemeriksaan kompilasi (wajib sudah ada dist/landing/)
  */
 
 import { spawn } from 'child_process';
@@ -40,7 +40,7 @@ if (process.platform === 'win32') {
 const nodeExec = process.execPath;
 const viteBin = path.resolve(rootDir, 'node_modules', 'vite', 'bin', 'vite.js');
 const serverScript = path.resolve(rootDir, 'server', 'server.js');
-const distDir = path.resolve(rootDir, 'dist');
+const distDir = path.resolve(rootDir, 'dist', 'landing');
 const distIndex = path.join(distDir, 'index.html');
 
 async function freePort(port) {
@@ -84,8 +84,12 @@ async function freePort(port) {
 
 function runBuild() {
   return new Promise((resolve, reject) => {
-    log(C.cyan, '[START] Membangun frontend (vite build)...');
-    const proc = spawn(nodeExec, [viteBin, 'build'], { cwd: rootDir, env, stdio: 'inherit' });
+    log(C.cyan, '[START] Membangun landing page (vite build --config vite.config.landing.js)...');
+    const proc = spawn(nodeExec, [viteBin, 'build', '--config', 'vite.config.landing.js'], {
+      cwd: rootDir,
+      env,
+      stdio: 'inherit',
+    });
     proc.on('close', (code) =>
       code === 0 ? resolve() : reject(new Error(`vite build gagal (kode ${code})`)),
     );
@@ -96,7 +100,10 @@ function runBuild() {
 async function main() {
   const hasBuild = fs.existsSync(distIndex);
   if (skipBuild && !hasBuild) {
-    log(C.red, '[START] --no-build diminta tapi folder dist/ belum ada. Jalankan tanpa flag itu.');
+    log(
+      C.red,
+      '[START] --no-build diminta tapi folder dist/landing/ belum ada. Jalankan tanpa flag itu.',
+    );
     process.exit(1);
   }
   if (!skipBuild && (!hasBuild || forceRebuild)) {

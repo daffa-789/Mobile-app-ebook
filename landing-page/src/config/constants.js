@@ -20,22 +20,3 @@ const DIRECT_APK_URL = '/unduh/wahidiyah-v0.1.9-hermes-32bit.apk';
 
 export const APK_DOWNLOAD_URL =
   metaEnv.VITE_APK_DOWNLOAD_URL || procEnv.VITE_APK_DOWNLOAD_URL || DIRECT_APK_URL;
-
-export const API_CONFIG = {
-  baseUrl: metaEnv.VITE_API_URL || procEnv.VITE_API_URL || '',
-  fallbackOrigin:
-    metaEnv.VITE_API_FALLBACK_ORIGIN || procEnv.VITE_API_FALLBACK_ORIGIN || 'http://localhost:5000',
-  timeoutMs: Number(metaEnv.VITE_API_TIMEOUT_MS || procEnv.VITE_API_TIMEOUT_MS) || 20000,
-};
-
-export const OAUTH_CONFIG = {
-  googleClientId: metaEnv.VITE_GOOGLE_CLIENT_ID || procEnv.VITE_GOOGLE_CLIENT_ID || '',
-  googleAuthUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-};
-
-export const STORAGE_KEYS = {
-  session: 'buku-wahidiyah:auth-session',
-  lastPayment: 'buku-wahidiyah:last-payment',
-  pendingVerification: 'buku-wahidiyah:pending-verification',
-  intendedLocation: 'buku-wahidiyah:intended-location',
-};

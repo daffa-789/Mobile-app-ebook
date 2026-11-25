@@ -305,13 +305,11 @@ test('Challenger Suite 3: Deep Secret Leakage Scan in Client Bundles (dist/)', a
 // =========================================================================
 test('Challenger Suite 4: Dynamic APK Download URL Propagation Across Landing UI', async (t) => {
   const landingComponentsDir = path.join(ROOT_DIR, 'landing-page', 'src', 'components');
-  const targetUiFiles = [
-    path.join(landingComponentsDir, 'layout', 'LandingNavbar.jsx'),
-    path.join(landingComponentsDir, 'sections', 'HeroSection.jsx'),
-    path.join(landingComponentsDir, 'sections', 'PreviewSection.jsx'),
-  ];
+  // CTA unduh hanya ada di HeroSection. Navbar/Preview tidak memakai URL APK,
+  // sehingga import lama yang tidak terpakai sengaja dibuang.
+  const targetUiFiles = [path.join(landingComponentsDir, 'sections', 'HeroSection.jsx')];
 
-  await t.test('4.1 All 3 target UI components import APK_DOWNLOAD_URL from constants', () => {
+  await t.test('4.1 Download CTA reads APK_DOWNLOAD_URL from constants', () => {
     for (const filePath of targetUiFiles) {
       assert.ok(fs.existsSync(filePath), `File must exist: ${filePath}`);
       const content = fs.readFileSync(filePath, 'utf8');

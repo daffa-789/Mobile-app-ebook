@@ -69,7 +69,7 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
   });
 
   await t.test(
-    'LandingNavbar has official branding and direct APK CTA without hash anchors',
+    'LandingNavbar has official branding without hash anchors or dead APK import',
     () => {
       const navbarPath = path.join(landingSrc, 'components', 'layout', 'LandingNavbar.jsx');
       assert.ok(fs.existsSync(navbarPath), 'LandingNavbar.jsx must exist');
@@ -81,8 +81,8 @@ test('M2-2: Landing Page Single-Page Layout Architecture', async (t) => {
       assert.ok(!content.includes('#faq'), 'LandingNavbar must not have #faq anchor');
       assert.ok(!content.includes('href="#"'), 'LandingNavbar must not have href="#" link');
       assert.ok(
-        content.includes('APK_DOWNLOAD_URL') || content.includes(EXPECTED_APK_URL),
-        'LandingNavbar must link directly to APK URL or centralized constant',
+        !content.includes('APK_DOWNLOAD_URL') && !content.includes(EXPECTED_APK_URL),
+        'LandingNavbar must not keep an unused APK import',
       );
     },
   );
@@ -294,28 +294,19 @@ test('M2-5: Centralized Landing Configuration & Constants', async (t) => {
         'Default APK_DOWNLOAD_URL must equal same-origin direct APK path',
       );
 
-      assert.ok(constants.API_CONFIG, 'API_CONFIG must be exported');
-      assert.strictEqual(constants.API_CONFIG.fallbackOrigin, 'http://localhost:5000');
-      assert.strictEqual(constants.API_CONFIG.timeoutMs, 20000);
-
-      assert.ok(constants.OAUTH_CONFIG, 'OAUTH_CONFIG must be exported');
-      assert.strictEqual(
-        constants.OAUTH_CONFIG.googleAuthUrl,
-        'https://accounts.google.com/o/oauth2/v2/auth',
-      );
-
-      assert.ok(constants.STORAGE_KEYS, 'STORAGE_KEYS must be exported');
-      assert.ok(constants.STORAGE_KEYS.session, 'STORAGE_KEYS.session must be defined');
+      // Web PWA sudah dihapus; konfigurasi API/OAuth/Storage kini hanya ada
+      // di admin dashboard dan mobile-app, bukan di landing statis.
+      assert.strictEqual(constants.API_CONFIG, undefined);
+      assert.strictEqual(constants.OAUTH_CONFIG, undefined);
+      assert.strictEqual(constants.STORAGE_KEYS, undefined);
     },
   );
 
   await t.test(
-    'All landing components use centralized APK_DOWNLOAD_URL and have no inline APK_URL',
+    'Landing download CTA uses centralized APK_DOWNLOAD_URL and has no inline APK_URL',
     () => {
       const componentPaths = [
-        path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'layout', 'LandingNavbar.jsx'),
         path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'sections', 'HeroSection.jsx'),
-        path.join(ROOT_DIR, 'landing-page', 'src', 'components', 'sections', 'PreviewSection.jsx'),
       ];
 
       for (const compPath of componentPaths) {

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { BookOpen, FileText, Calendar, User, Smartphone } from 'lucide-react';
-import { APK_DOWNLOAD_URL } from '@/config/constants';
 
 export const PreviewSection = () => {
   const [activeTab, setActiveTab] = useState(0);

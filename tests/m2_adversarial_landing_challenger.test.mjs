@@ -86,7 +86,10 @@ test('Adversarial Suite 1: APK Download URL Network Validity & Uniformity', asyn
     const landingSrc = path.join(ROOT_DIR, 'landing-page', 'src');
     const jsxFiles = getFilesRecursively(landingSrc, (name) => name.endsWith('.jsx'));
 
-    const componentsWithApk = ['LandingNavbar.jsx', 'HeroSection.jsx', 'PreviewSection.jsx'];
+    // Hanya HeroSection yang memuat CTA unduh. Navbar murni branding dan
+    // PreviewSection hanya menampilkan tangkapan layar, jadi keduanya tidak
+    // perlu mengimpor konstanta APK (dead import dihapus saat cleanup PWA).
+    const componentsWithApk = ['HeroSection.jsx'];
 
     // M2: URL APK disentralisasi ke src/config/constants.js. Komponen tidak boleh
     // lagi menyimpan URL hardcoded, melainkan mengimpor konstanta terpusat.
@@ -324,7 +327,7 @@ test('Adversarial Suite 6: HTML Metadata & Mobile Responsiveness', async (t) => 
     );
   });
 
-  await t.test('6.2 LandingNavbar provides clean responsive navigation and APK CTA', () => {
+  await t.test('6.2 LandingNavbar provides clean branding without dead APK link', () => {
     const navPath = path.join(
       ROOT_DIR,
       'landing-page',
@@ -335,7 +338,8 @@ test('Adversarial Suite 6: HTML Metadata & Mobile Responsiveness', async (t) => 
     );
     const content = fs.readFileSync(navPath, 'utf8');
 
-    assert.ok(content.includes('APK_DOWNLOAD_URL'), 'Navbar must link to APK_DOWNLOAD_URL');
+    assert.ok(!content.includes('APK_DOWNLOAD_URL'), 'Navbar tidak boleh menyimpan import mati');
+    assert.ok(!content.includes('#fitur') && !content.includes('#preview'), 'Tanpa anchor mati');
     assert.ok(
       content.includes('Mobile-app-ebook') || content.includes('Wahidiyah Book'),
       'Navbar must display brand title',

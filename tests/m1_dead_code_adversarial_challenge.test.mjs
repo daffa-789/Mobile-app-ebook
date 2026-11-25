@@ -86,8 +86,6 @@ describe('Empirical Adversarial Challenge — Milestone 1 Dead Code Cleanup', ()
       'landing-page/src/main.jsx',
       'admin-dashboard-web/src/App.jsx',
       'admin-dashboard-web/src/main.jsx',
-      'src/App.jsx',
-      'src/main.jsx',
       'mobile-app/App.js',
       'server/server.js',
     ];

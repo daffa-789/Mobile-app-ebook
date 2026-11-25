@@ -75,16 +75,18 @@ test('CHALLENGER-1: Package Round-Trip Integrity Verification', async (t) => {
       'AST must have nodes dictionary',
     );
     assert.ok(Array.isArray(originalAst.pages), 'AST must have pages array');
+    // Halaman "Mobile - Autentikasi" sengaja dihapus dari desain karena
+    // aplikasi memakai sheet login, bukan layar auth terpisah.
     assert.ok(
-      originalAst.pages.length >= 6,
-      `Expected at least 6 pages, got ${originalAst.pages.length}`,
+      originalAst.pages.length >= 5,
+      `Expected at least 5 pages, got ${originalAst.pages.length}`,
     );
 
     // Verify expected pages exist
     const pageNames = originalAst.pages.map((pid) => originalAst.nodes[pid]?.name);
     assert.ok(pageNames.includes('00 · Sistem Desain'), 'Missing page: 00 · Sistem Desain');
     assert.ok(pageNames.includes('Mobile - Komponen'), 'Missing page: Mobile - Komponen');
-    assert.ok(pageNames.includes('Mobile - Autentikasi'), 'Missing page: Mobile - Autentikasi');
+    assert.ok(!pageNames.includes('Mobile - Autentikasi'), 'Auth page must stay removed');
     assert.ok(pageNames.includes('Mobile - Aplikasi'), 'Missing page: Mobile - Aplikasi');
     assert.ok(pageNames.includes('Web - Landing Page'), 'Missing page: Web - Landing Page');
     assert.ok(pageNames.includes('Web - Admin Dashboard'), 'Missing page: Web - Admin Dashboard');
@@ -99,8 +101,8 @@ test('CHALLENGER-1: Package Round-Trip Integrity Verification', async (t) => {
     const infoOutput = execSync(cmdInfo, { encoding: 'utf8' });
 
     assert.ok(
-      infoOutput.includes('2794 nodes'),
-      `Expected 2794 nodes in info output, got:\n${infoOutput}`,
+      infoOutput.includes('2615 nodes'),
+      `Expected 2615 nodes in info output, got:\n${infoOutput}`,
     );
     assert.ok(
       infoOutput.includes('86 styles'),

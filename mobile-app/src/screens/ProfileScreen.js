@@ -8,11 +8,11 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
-  ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { HelpInfoSection } from '../components/HelpInfoSection';
 import { useAuth } from '../context/AuthContext';
-import { APP_CONFIG, APP_VERSION } from '../config/constants';
+import { APP_VERSION } from '../config/constants';
 import {
   isOtaSupported,
   checkForOtaUpdate,
@@ -157,74 +157,11 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.sectionWrap}>
-          <Text style={styles.sectionCaption}>BANTUAN & INFO</Text>
-          <View style={styles.menuCard}>
-            <TouchableOpacity
-              style={[styles.menuRow, styles.menuRowBorder]}
-              onPress={handleCheckUpdate}
-              disabled={isCheckingUpdate}
-              activeOpacity={0.7}
-            >
-              <View style={styles.menuRowLeft}>
-                <View style={styles.menuIconBoxBrand}>
-                  {isCheckingUpdate ? (
-                    <ActivityIndicator size="small" color="#14523A" />
-                  ) : (
-                    <Feather name="refresh-cw" size={18} color="#14523A" />
-                  )}
-                </View>
-                <View>
-                  <Text style={styles.menuLabel}>Pembaruan Aplikasi</Text>
-                  <Text style={styles.menuSubLabel}>
-                    {isCheckingUpdate
-                      ? 'Memeriksa pembaruan...'
-                      : `v${APP_VERSION} (Alpha) • Ketuk untuk cek versi baru`}
-                  </Text>
-                </View>
-              </View>
-              <Feather name="chevron-right" size={18} color="#CFCAC2" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.menuRow, styles.menuRowBorder]}
-              onPress={() =>
-                Alert.alert(
-                  'Pusat Bantuan',
-                  `Untuk bantuan, pertanyaan seputar Sholawat Wahidiyah, atau transaksi, silakan hubungi tim sekretariat kami di ${APP_CONFIG.supportEmail}.`,
-                )
-              }
-              activeOpacity={0.7}
-            >
-              <View style={styles.menuRowLeft}>
-                <View style={styles.menuIconBoxMuted}>
-                  <Feather name="help-circle" size={18} color="#5A544C" />
-                </View>
-                <Text style={styles.menuLabel}>Pusat Bantuan</Text>
-              </View>
-              <Feather name="chevron-right" size={18} color="#CFCAC2" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuRow}
-              onPress={() =>
-                Alert.alert(
-                  'Tentang Aplikasi',
-                  `E-Book Wahidiyah v${APP_VERSION} (Alpha) — Perpustakaan Digital Sholawat Wahidiyah resmi untuk membaca lembaran Sholawat dan khazanah literatur Islam.`,
-                )
-              }
-              activeOpacity={0.7}
-            >
-              <View style={styles.menuRowLeft}>
-                <View style={styles.menuIconBoxMuted}>
-                  <Feather name="info" size={18} color="#5A544C" />
-                </View>
-                <Text style={styles.menuLabel}>Tentang</Text>
-              </View>
-              <Feather name="chevron-right" size={18} color="#CFCAC2" />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <HelpInfoSection
+          guest
+          onCheckUpdate={handleCheckUpdate}
+          isCheckingUpdate={isCheckingUpdate}
+        />
 
         <Text style={styles.guestFooter}>Wahidiyah Book • v{APP_VERSION} (Alpha)</Text>
       </ScrollView>
@@ -362,75 +299,7 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
         </View>
 
         {/* 1:1 SECTION: BANTUAN & INFO */}
-        <View style={styles.sectionWrap}>
-          <Text style={styles.sectionCaption}>BANTUAN & INFO</Text>
-
-          <View style={styles.menuCard}>
-            <TouchableOpacity
-              style={[styles.menuRow, styles.menuRowBorder]}
-              onPress={() =>
-                Alert.alert(
-                  'Pusat Bantuan',
-                  `Untuk bantuan, pertanyaan seputar Sholawat Wahidiyah, atau transaksi, silakan hubungi tim sekretariat kami di ${APP_CONFIG.supportEmail}.`,
-                )
-              }
-              activeOpacity={0.7}
-            >
-              <View style={styles.menuRowLeft}>
-                <View style={styles.menuIconBoxMuted}>
-                  <Feather name="help-circle" size={18} color="#5A544C" />
-                </View>
-                <Text style={styles.menuLabel}>Pusat Bantuan</Text>
-              </View>
-              <Feather name="chevron-right" size={18} color="#CFCAC2" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.menuRow, styles.menuRowBorder]}
-              onPress={handleCheckUpdate}
-              disabled={isCheckingUpdate}
-              activeOpacity={0.7}
-            >
-              <View style={styles.menuRowLeft}>
-                <View style={styles.menuIconBoxBrand}>
-                  {isCheckingUpdate ? (
-                    <ActivityIndicator size="small" color="#14523A" />
-                  ) : (
-                    <Feather name="refresh-cw" size={18} color="#14523A" />
-                  )}
-                </View>
-                <View>
-                  <Text style={styles.menuLabel}>Pembaruan Aplikasi</Text>
-                  <Text style={styles.menuSubLabel}>
-                    {isCheckingUpdate
-                      ? 'Memeriksa pembaruan...'
-                      : `v${APP_VERSION} (Alpha) • Ketuk untuk cek versi baru`}
-                  </Text>
-                </View>
-              </View>
-              <Feather name="chevron-right" size={18} color="#CFCAC2" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuRow}
-              onPress={() =>
-                Alert.alert(
-                  'Tentang Aplikasi',
-                  `E-Book Wahidiyah v${APP_VERSION} (Alpha) — Perpustakaan Digital Sholawat Wahidiyah resmi untuk membaca lembaran Sholawat dan khazanah literatur Islam.`,
-                )
-              }
-              activeOpacity={0.7}
-            >
-              <View style={styles.menuRowLeft}>
-                <View style={styles.menuIconBoxMuted}>
-                  <Feather name="info" size={18} color="#5A544C" />
-                </View>
-                <Text style={styles.menuLabel}>Tentang</Text>
-              </View>
-              <Feather name="chevron-right" size={18} color="#CFCAC2" />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <HelpInfoSection onCheckUpdate={handleCheckUpdate} isCheckingUpdate={isCheckingUpdate} />
 
         {/* 1:1 SECTION: PENGATURAN & SESI (Fungsi Keluar / Logout) */}
         <View style={styles.sectionWrap}>
@@ -679,14 +548,6 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 12,
     backgroundColor: '#DCEDE4',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  menuIconBoxMuted: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: '#F0E8DA',
     alignItems: 'center',
     justifyContent: 'center',
   },

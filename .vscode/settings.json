@@ -44,7 +44,7 @@
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
     "package.json": "package-lock.json, jsconfig.json, .prettierrc*",
-    "vite.config.js": "tailwind.config.js, component.json",
+    "vite.config.landing.js": "vite.config.admin.js, tailwind.config.js, component.json",
     ".env": ".env.*"
   }
 }

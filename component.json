@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "name": "Buku Wahidiyah Design Tokens & Component System",
   "version": "2.0.0",
-  "description": "Token desain Wahidiyah Book — arah 'editorial elegan': zamrud tua + krem hangat + emas. Setiap nilai di sini disuntikkan ke CSS variables oleh src/theme/themeInjector.js dan dipakai Tailwind, sehingga mengubah satu angka di sini langsung mengubah seluruh tampilan aplikasi.",
+  "description": "Token desain Wahidiyah Book — arah 'editorial elegan': zamrud tua + krem hangat + emas. Dipakai oleh Tailwind (tailwind.config.js), mobile-app/src/theme.js, dan diselaraskan dengan CSS variables di shared/styles/global.css.",
   "direction": {
     "name": "Editorial Elegan",
     "tone": "Berwibawa, tenang, premium — seperti katalog perpustakaan cetak, bukan dashboard SaaS generik.",

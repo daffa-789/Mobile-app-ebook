@@ -4,6 +4,7 @@ import express from 'express';
 import fs from 'fs';
 import http from 'http';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 import {
   SERVE_STATIC,
@@ -44,7 +45,7 @@ const app = createApiApp();
 
 function mountStatic(app) {
   if (USE_VITE_MIDDLEWARE) {
-    logger.info('STATIC', 'UI dilayani Vite (middleware) — penyajian dist/ dilewati.');
+    logger.info('STATIC', 'UI dilayani Vite (middleware) — penyajian dist/landing/ dilewati.');
     return;
   }
 
@@ -95,6 +96,7 @@ if (USE_VITE_MIDDLEWARE) {
   devHttpServer = http.createServer(app);
 
   const vite = await createViteServer({
+    configFile: fileURLToPath(new URL('../vite.config.landing.js', import.meta.url)),
     server: { middlewareMode: true, hmr: { server: devHttpServer } },
 
     appType: 'spa',

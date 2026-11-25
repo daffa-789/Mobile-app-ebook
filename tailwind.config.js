@@ -16,9 +16,9 @@ const controlHeights = {
    (mis. `--cream-50: 251 248 243`) alih-alih hex statis. `<alpha-value>` menjaga
    modifier opasitas seperti `bg-cream-50/95` tetap bekerja.
 
-   Nilainya disuntikkan oleh `src/theme/themeInjector.js` (bersumber dari
-   component.json) dan punya fallback statis di `shared/styles/global.css` agar render
-   pertama tidak berkedip. Satu tema terang, jadi hanya satu set nilai. */
+   Nilainya bersumber dari `component.json` dan punya fallback statis di
+   `shared/styles/global.css` agar render pertama tidak berkedip. Satu tema
+   terang, jadi hanya satu set nilai. */
 const v = (name) => `rgb(var(--${name}) / <alpha-value>)`;
 
 const scale = (prefix, shades) =>
@@ -26,8 +26,6 @@ const scale = (prefix, shades) =>
 
 export default {
   content: [
-    './index.html',
-    './src/**/*.{js,ts,jsx,tsx}',
     './landing-page/**/*.{js,ts,jsx,tsx,html}',
     './admin-dashboard-web/**/*.{js,ts,jsx,tsx,html}',
     './shared/**/*.{js,ts,jsx,tsx}',

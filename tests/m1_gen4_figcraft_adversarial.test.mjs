@@ -198,93 +198,71 @@ test('Challenger M1.1: Empirical Stress-Test & Boundary Verification of Design A
     );
   });
 
-  await t.test(
-    '3. Mobile - Autentikasi (9 Frames) Dimensions, Spacing, and Non-Empty Children Test',
-    () => {
-      const pageId = doc.pages.find((id) => doc.nodes[id]?.name === 'Mobile - Autentikasi');
-      assert.ok(pageId, 'Page "Mobile - Autentikasi" must exist');
+  await t.test('3. Mobile - Autentikasi Removal & Authentication Flow Parity Verification', () => {
+    // 1. Verify "Mobile - Autentikasi" page is completely removed
+    const authPageId = doc.pages.find((id) => doc.nodes[id]?.name === 'Mobile - Autentikasi');
+    assert.strictEqual(
+      authPageId,
+      undefined,
+      'Page "Mobile - Autentikasi" must be completely removed from doc.pages',
+    );
 
-      const page = doc.nodes[pageId];
-      assert.strictEqual(
-        page.children.length,
-        9,
-        `Expected exactly 9 frames on Mobile - Autentikasi, found ${page.children.length}`,
+    // 2. Verify complete authentication flow is present on "Mobile - Aplikasi"
+    const appPageId = doc.pages.find((id) => doc.nodes[id]?.name === 'Mobile - Aplikasi');
+    assert.ok(appPageId, 'Page "Mobile - Aplikasi" must exist');
+
+    const appPage = doc.nodes[appPageId];
+    const appChildNames = appPage.children.map((cid) => doc.nodes[cid]?.name);
+
+    const expectedAuthFrames = [
+      'Login',
+      'Login error validasi',
+      'Daftar akun',
+      'Lupa kata sandi',
+      'OTP pendaftaran',
+      'OTP error',
+      'OTP reset sandi',
+    ];
+
+    for (const authName of expectedAuthFrames) {
+      assert.ok(
+        appChildNames.includes(authName),
+        `Auth frame "${authName}" must exist on "Mobile - Aplikasi"`,
       );
+    }
 
-      const frames = [];
-      for (const childId of page.children) {
-        const node = doc.nodes[childId];
-        assert.ok(node, `Frame node ${childId} must exist`);
-        assert.strictEqual(node.type.toLowerCase(), 'frame', `Node ${childId} must be frame`);
-        assert.strictEqual(node.width, 390, `Frame ${childId} ("${node.name}") width must be 390`);
-        assert.ok(
-          node.height >= 844,
-          `Frame ${childId} ("${node.name}") height must be >= 844 (found ${node.height})`,
-        );
-
-        assert.ok(
-          node.name && node.name.trim().length > 0,
-          `Frame ${childId} must have a non-empty name`,
-        );
-        assert.ok(
-          Array.isArray(node.children) && node.children.length > 0,
-          `Frame ${childId} ("${node.name}") MUST have non-empty children (found ${node.children?.length})`,
-        );
-
-        const x = node.transform ? node.transform[4] : 0;
-        const y = node.transform ? node.transform[5] : 0;
-
-        frames.push({
-          id: childId,
-          name: node.name,
-          x,
-          y,
-          w: node.width,
-          h: node.height,
-          x2: x + node.width,
-          y2: y + node.height,
-          childrenCount: node.children.length,
-        });
-      }
-
-      // Check pairwise AABB collision between the 9 frames (they should not overlap each other)
-      const frameOverlaps = [];
-      for (let i = 0; i < frames.length; i++) {
-        for (let j = i + 1; j < frames.length; j++) {
-          const a = frames[i];
-          const b = frames[j];
-
-          const interW = Math.max(0, Math.min(a.x2, b.x2) - Math.max(a.x, b.x));
-          const interH = Math.max(0, Math.min(a.y2, b.y2) - Math.max(a.y, b.y));
-          if (interW * interH > 0) {
-            frameOverlaps.push({
-              frameA: `${a.id}:${a.name}`,
-              frameB: `${b.id}:${b.name}`,
-              overlapArea: interW * interH,
-            });
-          }
-        }
-      }
-      assert.strictEqual(
-        frameOverlaps.length,
-        0,
-        `Autentikasi frames overlap: ${JSON.stringify(frameOverlaps)}`,
+    // 3. Verify redundant auth sheet frames are removed
+    const redundantModalFrames = ['Auth sheet login', 'Auth sheet register'];
+    for (const modalName of redundantModalFrames) {
+      assert.ok(
+        !appChildNames.includes(modalName),
+        `Redundant modal frame "${modalName}" must be removed from canvas`,
       );
+    }
 
-      // Verify reasonable spacing: horizontal progression
-      frames.sort((a, b) => a.x - b.x);
-      for (let i = 0; i < frames.length - 1; i++) {
-        const gap = frames[i + 1].x - frames[i].x2;
-        assert.ok(
-          gap >= 20,
-          `Gap between Auth frame ${frames[i].name} and ${frames[i + 1].name} is too small (${gap}px < 20px)`,
-        );
-      }
-    },
-  );
+    // 4. Proximity / Connectivity check to Profile / Guest Mode
+    const profileId = appPage.children.find((cid) => doc.nodes[cid]?.name === 'Profil');
+    assert.ok(profileId, 'Profil frame must exist on "Mobile - Aplikasi"');
+    const profileNode = doc.nodes[profileId];
+    const profX = profileNode.transform ? profileNode.transform[4] : 0;
+    const profY = profileNode.transform ? profileNode.transform[5] : 0;
+
+    const authEntryId = appPage.children.find((cid) => doc.nodes[cid]?.name === 'Login');
+    assert.ok(authEntryId, 'Login frame must exist on "Mobile - Aplikasi"');
+    const authEntryNode = doc.nodes[authEntryId];
+    const authX = authEntryNode.transform ? authEntryNode.transform[4] : 0;
+    const authY = authEntryNode.transform ? authEntryNode.transform[5] : 0;
+
+    const dx = Math.abs(authX - profX);
+    const dy = Math.abs(authY - profY);
+    assert.ok(
+      dx <= 430 && dy === 0,
+      `Login frame must be connected immediately adjacent to Profile / Guest Mode (dx: ${dx}px, dy: ${dy}px)`,
+    );
+  });
 
   await t.test(
-    '4. Mobile - Aplikasi (17 Frames) Dimensions, Spacing, and Non-Empty Children Test',
+    '4. Mobile - Aplikasi (24 Frames) Dimensions, Spacing, and Non-Empty Children Test',
     () => {
       const pageId = doc.pages.find((id) => doc.nodes[id]?.name === 'Mobile - Aplikasi');
       assert.ok(pageId, 'Page "Mobile - Aplikasi" must exist');
@@ -292,8 +270,8 @@ test('Challenger M1.1: Empirical Stress-Test & Boundary Verification of Design A
       const page = doc.nodes[pageId];
       assert.strictEqual(
         page.children.length,
-        17,
-        `Expected exactly 17 frames on Mobile - Aplikasi, found ${page.children.length}`,
+        24,
+        `Expected exactly 24 frames on Mobile - Aplikasi, found ${page.children.length}`,
       );
 
       const frames = [];
@@ -332,7 +310,7 @@ test('Challenger M1.1: Empirical Stress-Test & Boundary Verification of Design A
         });
       }
 
-      // Check pairwise AABB collision between the 17 frames
+      // Check pairwise AABB collision between the 24 frames
       const frameOverlaps = [];
       for (let i = 0; i < frames.length; i++) {
         for (let j = i + 1; j < frames.length; j++) {
@@ -356,14 +334,30 @@ test('Challenger M1.1: Empirical Stress-Test & Boundary Verification of Design A
         `Aplikasi frames overlap: ${JSON.stringify(frameOverlaps)}`,
       );
 
-      // Verify reasonable spacing: horizontal progression
-      frames.sort((a, b) => a.x - b.x);
-      for (let i = 0; i < frames.length - 1; i++) {
-        const gap = frames[i + 1].x - frames[i].x2;
-        assert.ok(
-          gap >= 20,
-          `Gap between App frame ${frames[i].name} and ${frames[i + 1].name} is too small (${gap}px < 20px)`,
-        );
+      // Verify 2D projected clearance check (>= 20px)
+      for (let i = 0; i < frames.length; i++) {
+        for (let j = i + 1; j < frames.length; j++) {
+          const a = frames[i];
+          const b = frames[j];
+
+          const yOverlap = Math.max(0, Math.min(a.y2, b.y2) - Math.max(a.y, b.y));
+          if (yOverlap > 0) {
+            const hDist = a.x < b.x ? b.x - a.x2 : a.x - b.x2;
+            assert.ok(
+              hDist >= 20,
+              `Horizontal clearance between ${a.name} and ${b.name} must be >= 20px (got ${hDist}px)`,
+            );
+          }
+
+          const xOverlap = Math.max(0, Math.min(a.x2, b.x2) - Math.max(a.x, b.x));
+          if (xOverlap > 0) {
+            const vDist = a.y < b.y ? b.y - a.y2 : a.y - b.y2;
+            assert.ok(
+              vDist >= 20,
+              `Vertical clearance between ${a.name} and ${b.name} must be >= 20px (got ${vDist}px)`,
+            );
+          }
+        }
       }
     },
   );
@@ -501,18 +495,6 @@ test('Challenger M1.1: Empirical Stress-Test & Boundary Verification of Design A
     assert.ok(fs.existsSync(outKomponen), 'Rendered test_challenger_komponen.png must exist');
     const statK = fs.statSync(outKomponen);
     assert.ok(statK.size > 10000, `Rendered file size must be > 10KB, got ${statK.size}`);
-
-    // Render Mobile - Autentikasi
-    const outAuth = path.join(ROOT_DIR, 'dist/test_challenger_auth.png');
-    execSync(
-      `"${FIGCRAFT_CLI}" render --page "Mobile - Autentikasi" --out "${outAuth}" "${TARGET_FIGCRAFT}"`,
-      {
-        stdio: 'pipe',
-      },
-    );
-    assert.ok(fs.existsSync(outAuth), 'Rendered test_challenger_auth.png must exist');
-    const statA = fs.statSync(outAuth);
-    assert.ok(statA.size > 10000, `Rendered file size must be > 10KB, got ${statA.size}`);
 
     // Render Mobile - Aplikasi
     const outApp = path.join(ROOT_DIR, 'dist/test_challenger_app.png');

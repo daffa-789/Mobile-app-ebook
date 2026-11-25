@@ -91,7 +91,7 @@ function runTailwindCompilationCheck() {
     'text-brand-900',
     'rounded-btn',
     'rounded-card',
-    'bg-gold-500',
+    'bg-gold-400',
     'text-ink-900',
   ];
 

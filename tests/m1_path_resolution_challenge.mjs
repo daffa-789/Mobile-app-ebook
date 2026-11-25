@@ -34,9 +34,12 @@ function runPathResolutionAudit() {
   // Test actual resolution against existing project files
   const testCases = [
     { importPath: '@shared/sanitizeHtml.js', expected: 'shared/sanitizeHtml.js' },
-    { importPath: '@/App.jsx', expected: 'src/App.jsx' },
-    { importPath: '@context/AppContext.jsx', expected: 'src/context/AppContext.jsx' },
-    { importPath: '@theme/themeInjector.js', expected: 'src/theme/themeInjector.js' },
+    { importPath: '@/App.jsx', expected: 'landing-page/src/App.jsx' },
+    {
+      importPath: '@context/AppContext.jsx',
+      expected: 'admin-dashboard-web/src/context/AppContext.jsx',
+    },
+    { importPath: '@ui/Field.jsx', expected: 'admin-dashboard-web/src/components/ui/Field.jsx' },
   ];
 
   // Resolver simulation following TS path mapping algorithm
@@ -68,13 +71,6 @@ function runPathResolutionAudit() {
   // boleh membawa alias yang benar-benar dipakai workspace itu — alias mati
   // menyembunyikan import yang sudah dihapus (lihat dead-code cleanup M1).
   const viteConfigs = [
-    {
-      name: 'Root vite.config.js',
-      file: 'vite.config.js',
-      expectedRoot: './src',
-      expected: ['@', '@features', '@ui', '@lib', '@data', '@context', '@theme', '@shared'],
-      forbidden: [],
-    },
     {
       name: 'Landing vite.config.landing.js',
       file: 'vite.config.landing.js',

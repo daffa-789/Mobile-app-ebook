@@ -14,7 +14,13 @@ import { generateId, hasActivePro } from '../auth.js';
 import { safeContentMime } from '../lib/http.js';
 import { createServiceError } from '../lib/errors.js';
 import { toDataUrl, toWebp } from '../lib/images.js';
-import { matchesContentExtension, sniffImageMime } from '../lib/sniff.js';
+import { matchesContentExtension } from '../lib/sniff.js';
+import {
+  THUMBNAIL_FORMAT_MESSAGE,
+  safeContentName,
+  toBookResponse,
+  requireThumbnailMime,
+} from '../lib/bookFormat.js';
 import { PDF_PAGE_PROBE_MAX_BYTES, countPdfPages } from '../lib/pdfPages.js';
 import { BOOK_FIELDS, CONTENT_EXTENSIONS } from '../lib/constants.js';
 import { bookInputSchema, parseBooleanFlag } from '../lib/validate.js';
@@ -38,20 +44,6 @@ const MAX_CONTENT_MB = Math.round(CONTENT_MAX_BYTES / 1048576);
 
 const CONTENT_FORMAT_MESSAGE =
   'Konten mendukung PDF, TXT, DOC/DOCX, RTF, ODT, EPUB, Markdown, atau CSV.';
-
-const THUMBNAIL_FORMAT_MESSAGE = 'Thumbnail harus berupa gambar PNG, JPG, WebP, atau GIF.';
-
-/* Nama objek di penyimpanan dibuat aman; nama asli tetap disimpan terpisah
- * untuk tampilan, karena ekstensi berkas menentukan cara naskah disajikan.
- */
-const safeContentName = (filename, extension) => {
-  const base = String(filename || '')
-    .replace(/\.[^.]*$/, '')
-    .replace(/[^A-Za-z0-9._-]+/g, '-')
-    .replace(/^[-.]+|[-.]+$/g, '')
-    .slice(0, 80);
-  return `${base || 'naskah'}.${extension}`;
-};
 
 /** Berkasnya sudah ada di penyimpanan; diperiksa ukuran dan isi aslinya. */
 const storedContentFields = async (contentPath, originalName) => {
@@ -98,20 +90,6 @@ const storedContentFields = async (contentPath, originalName) => {
   }
 
   return fields;
-};
-
-const toBookResponse = (book) => ({
-  ...book,
-  pages: Number(book.pages || 1),
-  is_locked: Boolean(book.is_locked),
-  has_thumbnail: Boolean(book.cover_url || book.thumbnail_url),
-  has_content: Number(book.content_size) > 0,
-});
-
-const requireThumbnailMime = async (buffer) => {
-  const detected = await sniffImageMime(buffer);
-  if (!detected) throw createServiceError(THUMBNAIL_FORMAT_MESSAGE, { statusCode: 415 });
-  return detected;
 };
 
 /** Aturan akses naskah: buku terkunci hanya untuk Pro aktif atau admin. */

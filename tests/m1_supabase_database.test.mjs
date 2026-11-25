@@ -35,11 +35,7 @@ test('Milestone 1 — Supabase Database & Configuration Verification', async (t)
     const sharedPath = path.join(rootDir, 'shared/supabaseConfig.js');
     assert.ok(fs.existsSync(sharedPath), 'shared/supabaseConfig.js harus menjadi sumber tunggal');
 
-    const consumers = [
-      'server/db.js',
-      'src/lib/supabaseConfig.js',
-      'admin-dashboard-web/src/lib/supabaseConfig.js',
-    ];
+    const consumers = ['server/db.js', 'admin-dashboard-web/src/lib/supabaseConfig.js'];
 
     for (const relPath of [...consumers, 'shared/supabaseConfig.js']) {
       const content = fs.readFileSync(path.join(rootDir, relPath), 'utf8');

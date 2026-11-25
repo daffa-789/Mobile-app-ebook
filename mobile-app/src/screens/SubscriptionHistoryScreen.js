@@ -1,24 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { theme } from '../theme';
 import { useBooks } from '../context/BookContext';
 import { formatRupiah, formatPurchaseDate } from '../lib/catalog';
 
 export const SubscriptionHistoryScreen = ({ onBack }) => {
   const { subscriptions } = useBooks();
-
-  const handleDownloadPdf = (sub) => {
-    const ref = sub.id || sub.ref || 'TRX-PRO';
-    const plan = sub.plan_name || sub.planName || 'Paket Bulanan';
-    const amount =
-      sub.formattedAmount || sub.price || (sub.amount ? formatRupiah(sub.amount) : 'Rp 25.000');
-
-    Alert.alert(
-      'Unduh Kwitansi PDF',
-      `Kwitansi transaksi ${ref} untuk ${plan} (${amount}) berhasil disiapkan.`,
-    );
-  };
 
   return (
     <ScrollView
@@ -84,15 +71,6 @@ export const SubscriptionHistoryScreen = ({ onBack }) => {
                     <Text style={styles.refText}>{refNo}</Text>
                     <Text style={styles.dateText}>Dibeli: {dateStr}</Text>
                   </View>
-
-                  <TouchableOpacity
-                    style={styles.downloadButton}
-                    onPress={() => handleDownloadPdf(sub)}
-                    activeOpacity={0.75}
-                  >
-                    <Feather name="download" size={14} color="#14523A" />
-                    <Text style={styles.downloadButtonText}>Unduh PDF</Text>
-                  </TouchableOpacity>
                 </View>
               </View>
             );
@@ -208,20 +186,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#8C857B',
     marginTop: 2,
-  },
-  downloadButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: '#DCEDE4',
-  },
-  downloadButtonText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#14523A',
   },
   emptyCard: {
     backgroundColor: '#FFFDF9',

@@ -491,14 +491,16 @@ test('Challenger Suite 3: PaywallModal Lock Interaction & Dialog Focus Trap', as
 
   await t.test('3.3 Dialog Focus Trap logic verification (useDialogFocusTrap.js)', () => {
     // Sejak sentralisasi utilitas bersama, implementasi kanonik hidup di
-    // shared/useDialogFocusTrap.js; src/lib/useDialogFocusTrap.js hanya barrel
-    // re-export yang dipakai BookModal pada admin dashboard. Uji logikanya pada
-    // sumber kanonik, dan pastikan barrel-nya tetap menunjuk ke sana.
+    // shared/useDialogFocusTrap.js; barrel-nya ada di admin dashboard.
+    // Root Web PWA sudah dihapus, jadi barrel lama src/lib tidak diuji lagi.
     const focusTrapContent = fs.readFileSync('shared/useDialogFocusTrap.js', 'utf8');
-    const barrelContent = fs.readFileSync('src/lib/useDialogFocusTrap.js', 'utf8');
+    const barrelContent = fs.readFileSync(
+      'admin-dashboard-web/src/lib/useDialogFocusTrap.js',
+      'utf8',
+    );
     assert.ok(
       /shared\/useDialogFocusTrap\.js/.test(barrelContent),
-      'src/lib/useDialogFocusTrap.js harus menjadi barrel untuk modul bersama',
+      'admin barrel harus tetap menunjuk ke modul bersama',
     );
 
     // Checks key requirements:
@@ -613,7 +615,8 @@ test('Challenger Suite 4: Tailwind v4 Class Compilation Audit Across Landing Wor
     'text-ink-900',
     'text-gold-400',
     'rounded-3xl',
-    'aspect-[1/1.42]',
+    // aspect-[1/1.42] dulu dipakai kartu buku Web PWA yang sudah dihapus.
+    'bg-brand-100',
     'font-serif',
   ];
 

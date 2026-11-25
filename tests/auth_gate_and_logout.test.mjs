@@ -328,12 +328,19 @@ describe('Auth Gate & Logout Behavior Verification', () => {
       'utf-8',
     );
 
+    const helpSrc = fs.readFileSync(
+      path.resolve(rootDir, 'mobile-app/src/components/HelpInfoSection.js'),
+      'utf-8',
+    );
+
     assert.ok(src.includes('if (!user)'), 'ada cabang khusus tamu');
     assert.ok(src.includes('Mode Tamu'), 'tab Profil bukan halaman kosong');
     assert.ok(src.includes('Masuk / Daftar'), 'kartu login tersedia');
     assert.ok(src.includes('onPress={onOpenAuth}'), 'kartu login membuka sheet');
-    assert.ok(src.includes('Pembaruan Aplikasi'), 'tombol update OTA tetap bisa dijangkau tamu');
-    assert.ok(src.includes('handleCheckUpdate'), 'tombol update memanggil pengecekan OTA');
+    assert.ok(src.includes('<HelpInfoSection'), 'bagian bantuan dipakai ulang, bukan duplikat');
+    assert.ok(src.includes('onCheckUpdate={handleCheckUpdate}'), 'tombol update memanggil OTA');
+    assert.ok(helpSrc.includes('Pembaruan Aplikasi'), 'tombol update tetap bisa dijangkau tamu');
+    assert.ok(helpSrc.includes('guest ?'), 'urutan menu tamu dan pengguna tetap berbeda');
   });
 
   it('9. api/client.js: 401 tanpa token tidak memicu auto-logout tamu', () => {

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_CONFIG } from '../config/constants.js';
+import { getSessionToken } from '../lib/sessionToken.js';
 
 export const API_BASE_URL = API_CONFIG.baseUrl;
 export const API_TIMEOUT_MS = API_CONFIG.timeoutMs;
@@ -55,8 +56,9 @@ export function buildApiUrl(baseUrl, endpoint) {
 
 /**
  * Ambil token otentikasi dari SecureStore (jika tersedia) atau fallback ke AsyncStorage.
+ * Implementasi terpusat & migrasi aman dikelola oleh getSessionToken() di sessionToken.js.
  */
-async function getStoredToken() {
+export async function getStoredToken() {
   try {
     const SecureStore = await import('expo-secure-store');
     if (SecureStore && typeof SecureStore.getItemAsync === 'function') {
@@ -78,7 +80,7 @@ async function getStoredToken() {
  * Dapatkan objek headers dengan Authorization Bearer token jika tersedia.
  */
 export async function getAuthHeaders(extraToken) {
-  const token = extraToken || (await getStoredToken());
+  const token = extraToken || (await getSessionToken());
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -90,7 +92,7 @@ export async function getAuthHeaders(extraToken) {
  * penanganan 401 terpusat, & amplop standar { success, message, data }.
  */
 export async function apiRequest(endpoint, options = {}) {
-  const token = await getStoredToken();
+  const token = await getSessionToken();
   const url = buildApiUrl(API_BASE_URL, endpoint);
   const timeoutMs = Number(options.timeoutMs || API_TIMEOUT_MS);
 

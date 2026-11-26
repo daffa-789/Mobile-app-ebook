@@ -115,7 +115,7 @@ export const TRUST_PROXY = (() => {
     .toLowerCase();
   /* Vercel selalu menaruh proxy di depan fungsi serverless. Tanpa ini `req.ip`
    * adalah IP edge yang sama untuk semua pengguna, sehingga rate limiter
-   * (pembayaran & login Google) bisa mengunci seluruh aplikasi sekaligus. */
+   * (pembayaran & autentikasi) bisa mengunci seluruh aplikasi sekaligus. */
   if (!raw) return process.env.VERCEL ? 1 : USE_VITE_MIDDLEWARE ? 1 : false;
   if (raw === 'true') return true;
   if (raw === 'false') return false;

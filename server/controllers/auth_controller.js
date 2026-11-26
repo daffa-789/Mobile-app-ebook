@@ -74,6 +74,16 @@ const replySession = (res, result, message, status = 200) =>
 
 /** POST /api/auth/login */
 export async function login(req, res) {
+  const releaseRateLimit = async () => {
+    try {
+      await res.locals.releaseLoginRateLimit?.();
+    } catch (error) {
+      logger.warn('RATE_LIMIT', 'Gagal mengembalikan hit login non-gagal', {
+        code: error?.code,
+      });
+    }
+  };
+
   try {
     const result = await authenticateWithPassword({
       email: req.body?.email,
@@ -81,10 +91,15 @@ export async function login(req, res) {
       password: req.body?.password,
     });
 
-    if (!result.ok) return rejectOutcome(res, result);
+    if (!result.ok) {
+      if (result.status !== 401) await releaseRateLimit();
+      return rejectOutcome(res, result);
+    }
 
+    await releaseRateLimit();
     return replySession(res, result, 'Login berhasil');
   } catch (error) {
+    await releaseRateLimit();
     return replyAuthFailure(res, error);
   }
 }

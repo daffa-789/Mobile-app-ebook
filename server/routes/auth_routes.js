@@ -2,8 +2,8 @@
  * Route Layer — Modul Otentikasi (Fase 3 roadmap arsitektur).
  *
  * Berkas ini sengaja tipis: hanya pemetaan URL → middleware → method
- * controller. Endpoint auth tidak dibatasi rate limit — perlindungan
- * brute-force ada di sisi verifikasi OTP dan kredensial.
+ * controller. Login memakai pembatas terdistribusi berbasis IP dan akun;
+ * verifikasi OTP juga memiliki batas percobaan dan cooldown pengiriman ulang.
  * Seluruh logika bisnis ada di paket `server/services/auth/`;
  * pemformatan HTTP ada di `server/controllers/auth_controller.js`.
  */
@@ -11,6 +11,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../auth.js';
 import { wrap } from '../lib/http.js';
+import { loginRateLimiter } from '../middleware/loginRateLimit.js';
 import {
   exchange,
   googleCallback,
@@ -28,7 +29,7 @@ import {
 
 export const authRouter = Router();
 
-authRouter.post('/login', wrap(login));
+authRouter.post('/login', loginRateLimiter, wrap(login));
 
 authRouter.post('/register', wrap(register));
 

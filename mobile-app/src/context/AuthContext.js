@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest, setUnauthorizedHandler } from '../api/client';
+import { clearSessionToken, getSessionToken, storeSessionToken } from '../lib/sessionToken';
 import { configureGoogleNative, signInWithGoogleNative } from '../lib/googleNative';
 import { safeDecodeUriComponent } from '../lib/authUrl';
 
@@ -92,18 +93,17 @@ export const AuthProvider = ({ children }) => {
   const persistSession = useCallback(async (token, profile) => {
     try {
       if (token) {
-        await AsyncStorage.setItem('@session_token', token);
+        await storeSessionToken(token);
+        try {
+          const SecureStore = await import('expo-secure-store');
+          if (SecureStore && typeof SecureStore.setItemAsync === 'function') {
+            await SecureStore.setItemAsync('auth_token', token);
+          }
+        } catch (_) {}
       }
       if (profile) {
         await AsyncStorage.setItem('@user_profile', JSON.stringify(profile));
       }
-
-      try {
-        const SecureStore = await import('expo-secure-store');
-        if (SecureStore && typeof SecureStore.setItemAsync === 'function' && token) {
-          await SecureStore.setItemAsync('auth_token', token);
-        }
-      } catch (_) {}
     } catch (err) {
       console.warn('Gagal menyimpan sesi lokal:', err);
     }
@@ -115,6 +115,7 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.removeItem('@session_token');
       await AsyncStorage.removeItem('@user_profile');
       await AsyncStorage.removeItem('auth_token');
+      await clearSessionToken();
       try {
         const SecureStore = await import('expo-secure-store');
         if (SecureStore && typeof SecureStore.deleteItemAsync === 'function') {
@@ -143,7 +144,7 @@ export const AuthProvider = ({ children }) => {
 
     const loadAndVerifySession = async () => {
       try {
-        const storedToken = await AsyncStorage.getItem('@session_token');
+        const storedToken = await getSessionToken();
         const storedUser = await AsyncStorage.getItem('@user_profile');
 
         if (!storedToken) {

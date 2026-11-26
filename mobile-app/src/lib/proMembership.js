@@ -55,7 +55,7 @@ export function getProDurationSummary({ isPro, user, now = Date.now() } = {}) {
 
   return {
     badgeLabel: `${remainingDays} hari lagi`,
-    detailTitle: `Sisa masa aktif: ${remainingDays} hari lagi (paket ${PRO_PLAN_DURATION_DAYS} hari)`,
+    detailTitle: null,
     durationDays: PRO_PLAN_DURATION_DAYS,
     remainingDays,
     expiresAtIso,

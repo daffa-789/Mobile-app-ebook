@@ -195,9 +195,7 @@ export const ProScreen = ({ onOpenAuth }) => {
     user,
     now: entitlementNow,
   });
-  const expiryText = durationSummary.expiresAtIso
-    ? `Berlaku hingga ${formatPurchaseDate(durationSummary.expiresAtIso)}`
-    : null;
+  const expiryText = null;
   /* Satu-satunya aksi di kartu QRIS: salin tautan gambar, lalu popup
    * "berhasil di salin". Detailnya ada di lib/clipboard.js supaya layar
    * ini tetap fokus pada tampilan. */

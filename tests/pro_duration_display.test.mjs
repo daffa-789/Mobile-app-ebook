@@ -45,7 +45,7 @@ test('Durasi masa langganan Pro mobile (sebelah Paket Bulanan)', async (t) => {
       });
       assert.equal(summary30.badgeLabel, '30 hari lagi');
       assert.equal(summary30.remainingDays, 30);
-      assert.equal(summary30.detailTitle, 'Sisa masa aktif: 30 hari lagi (paket 30 hari)');
+      assert.equal(summary30.detailTitle, null);
       assert.equal(summary30.expiresAtIso, thirtyDaysLater);
 
       // Contoh 20 hari lagi sesuai spesifikasi pengguna

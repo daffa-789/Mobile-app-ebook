@@ -94,7 +94,7 @@ export const ProfileAccountCard = ({ user, onUpdateUser }) => {
             </View>
           </View>
           <Text style={styles.helperText}>
-            Nomor WhatsApp digunakan untuk pemulihan akun dan notifikasi resmi.
+            Nomor WhatsApp hanya dipakai untuk pemulihan akun (lupa kata sandi).
           </Text>
         </View>
 

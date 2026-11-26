@@ -15,6 +15,7 @@ import { canExposeDevOtp, issueOtp, resendCooldownRemaining } from '../../lib/ot
 import { findLatestOtp } from '../../otpStore.js';
 import { logger } from '../../logger.js';
 import { normalizePhone } from '../../whatsapp.js';
+import { resolveOtpChannel } from '../../lib/otpChannel.js';
 import { OTP_VALIDITY_LABEL } from './messages.js';
 
 /**
@@ -28,8 +29,12 @@ export async function resendVerificationOtp({
   purpose: rawPurpose,
   clientIp,
 }) {
-  const target = method === 'whatsapp' ? normalizePhone(rawTarget) : normalizeEmail(rawTarget);
   const purpose = rawPurpose === 'reset' || rawPurpose === 'password_reset' ? 'reset' : 'register';
+  /* WhatsApp hanya untuk pemulihan kata sandi. Kode pendaftaran selalu lewat
+   * email apa pun `method` yang dikirim klien (lihat lib/otpChannel.js). */
+  const deliveryMethod = resolveOtpChannel({ method, purpose });
+  const target =
+    deliveryMethod === 'whatsapp' ? normalizePhone(rawTarget) : normalizeEmail(rawTarget);
 
   if (!target) {
     return { ok: false, status: 400, message: 'Identitas tujuan verifikasi tidak valid.' };
@@ -64,7 +69,9 @@ export async function resendVerificationOtp({
   if (purpose === 'reset') {
     let checkLookup = supabaseServer.from('users').select('login_method');
     checkLookup =
-      method === 'whatsapp' ? checkLookup.eq('phone', target) : checkLookup.eq('email', target);
+      deliveryMethod === 'whatsapp'
+        ? checkLookup.eq('phone', target)
+        : checkLookup.eq('email', target);
     const { data: account } = await checkLookup.maybeSingle();
     if (!account || account.login_method === 'google') {
       return { ok: true, kind: 'silent-success' };
@@ -73,17 +80,22 @@ export async function resendVerificationOtp({
 
   const { code, deliveredBy } = await issueOtp({
     identifier: target,
-    phone: method === 'whatsapp' ? target : null,
-    email: method === 'email' ? target : null,
-    deliveryMethod: method,
+    phone: deliveryMethod === 'whatsapp' ? target : null,
+    email: deliveryMethod === 'email' ? target : null,
+    deliveryMethod,
     purpose,
     payload: existing.payload ?? null,
   });
   const exposeDevOtp = deliveredBy === 'demo' && canExposeDevOtp(process.env, clientIp);
 
-  logger.info('OTP', 'Kode dikirim ulang', { identifier: target, method, purpose, deliveredBy });
+  logger.info('OTP', 'Kode dikirim ulang', {
+    identifier: target,
+    method: deliveryMethod,
+    purpose,
+    deliveredBy,
+  });
 
-  const destinationLabel = method === 'whatsapp' ? 'WhatsApp' : 'email';
+  const destinationLabel = deliveryMethod === 'whatsapp' ? 'WhatsApp' : 'email';
   const deliveryFailed = deliveredBy === 'demo';
 
   return {
@@ -91,7 +103,7 @@ export async function resendVerificationOtp({
     kind: 'sent',
     body: {
       identifier: target,
-      method,
+      method: deliveryMethod,
       deliveredBy,
       message: deliveryFailed
         ? `Kode baru dibuat, tetapi pengiriman ke ${destinationLabel} gagal. Coba lagi atau gunakan metode lain.`

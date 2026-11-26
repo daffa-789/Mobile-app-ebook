@@ -1,16 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  Alert,
-  Modal,
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { HelpInfoSection } from '../components/HelpInfoSection';
+import { ProfileAccountCard } from '../components/ProfileAccountCard';
 import { useAuth } from '../context/AuthContext';
 import { APP_VERSION } from '../config/constants';
 import {
@@ -22,9 +14,6 @@ import {
 
 export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
   const { user, isPro, updateUser, logout } = useAuth();
-  const [fullName, setFullName] = useState(user?.name || user?.fullName || '');
-  const [phone, setPhone] = useState(user?.phone || '');
-  const [isSaving, setIsSaving] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
@@ -90,22 +79,6 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
     } finally {
       setIsCheckingUpdate(false);
     }
-  };
-
-  useEffect(() => {
-    if (user) {
-      setFullName(user.name || user.fullName || '');
-      setPhone(user.phone || '');
-    }
-  }, [user]);
-
-  const email = user?.email || '-';
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    await updateUser({ name: fullName, fullName, phone });
-    setIsSaving(false);
-    Alert.alert('Sukses', 'Data profil Anda berhasil diperbarui!');
   };
 
   const handleLogoutPress = () => {
@@ -189,78 +162,7 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
         </View>
 
         {/* 1:1 SECTION: DATA AKUN */}
-        <View style={styles.sectionWrap}>
-          <Text style={styles.sectionCaption}>DATA AKUN</Text>
-
-          <View style={styles.card}>
-            {/* Field: Nama Lengkap */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>NAMA LENGKAP</Text>
-              <View style={styles.inputWrap}>
-                <Feather name="user" size={16} color="#7C756C" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.textInput}
-                  value={fullName}
-                  onChangeText={setFullName}
-                  placeholder="Nama Lengkap"
-                  placeholderTextColor="#A8A199"
-                />
-              </View>
-            </View>
-
-            {/* Field: Email Akun (Terproteksi + Badge Terverifikasi) */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>EMAIL AKUN</Text>
-              <View style={styles.inputWrapDisabled}>
-                <Feather name="mail" size={16} color="#7C756C" style={styles.inputIcon} />
-                <TextInput
-                  style={[styles.textInput, styles.textInputDisabled]}
-                  value={email}
-                  editable={false}
-                  placeholder="nama@email.com"
-                />
-                <View style={styles.verifiedBadge}>
-                  <Text style={styles.verifiedBadgeText}>Terverifikasi</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Field: Nomor WhatsApp */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>NOMOR WHATSAPP</Text>
-              <View style={styles.inputWrap}>
-                <Feather name="phone" size={16} color="#7C756C" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.textInput}
-                  value={phone}
-                  onChangeText={setPhone}
-                  placeholder="-"
-                  placeholderTextColor="#A8A199"
-                  keyboardType="phone-pad"
-                />
-                <View style={styles.linkedBadge}>
-                  <Text style={styles.linkedBadgeText}>Terkait</Text>
-                </View>
-              </View>
-              <Text style={styles.helperText}>
-                Nomor WhatsApp digunakan untuk pemulihan akun dan notifikasi resmi.
-              </Text>
-            </View>
-
-            {/* Tombol Simpan Perubahan */}
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={handleSave}
-              disabled={isSaving}
-              activeOpacity={0.85}
-            >
-              <Feather name="save" size={15} color="#FFFFFF" />
-              <Text style={styles.saveButtonText}>
-                {isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <ProfileAccountCard user={user} onUpdateUser={updateUser} />
 
         {/* 1:1 SECTION: LAYANAN & LANGGANAN */}
         <View style={styles.sectionWrap}>
@@ -415,103 +317,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginBottom: 8,
     paddingLeft: 4,
-  },
-  card: {
-    backgroundColor: '#FFFDF9',
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#E4D9C6',
-    padding: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-    gap: 14,
-  },
-  fieldGroup: {
-    gap: 6,
-  },
-  fieldLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#5A544C',
-    letterSpacing: 0.6,
-  },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FBF8F3',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E4D9C6',
-    paddingHorizontal: 12,
-    height: 46,
-  },
-  inputWrapDisabled: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0E8DA',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E4D9C6',
-    paddingHorizontal: 12,
-    height: 46,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  textInput: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1D1B17',
-  },
-  textInputDisabled: {
-    color: '#5A544C',
-  },
-  verifiedBadge: {
-    backgroundColor: '#DCEDE4',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  verifiedBadgeText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#14523A',
-  },
-  linkedBadge: {
-    backgroundColor: '#F0E8DA',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  linkedBadgeText: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#5A544C',
-  },
-  helperText: {
-    fontSize: 11,
-    color: '#8C857B',
-    lineHeight: 15,
-    marginTop: 2,
-  },
-  saveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#1E6B4A', // Brand Green
-    borderRadius: 14,
-    paddingVertical: 13,
-    marginTop: 4,
-  },
-  saveButtonText: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
   },
 
   // Menu List Cards

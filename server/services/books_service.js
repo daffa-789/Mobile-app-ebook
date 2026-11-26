@@ -15,12 +15,7 @@ import { safeContentMime } from '../lib/http.js';
 import { createServiceError } from '../lib/errors.js';
 import { toDataUrl, toWebp } from '../lib/images.js';
 import { matchesContentExtension } from '../lib/sniff.js';
-import {
-  THUMBNAIL_FORMAT_MESSAGE,
-  safeContentName,
-  toBookResponse,
-  requireThumbnailMime,
-} from '../lib/bookFormat.js';
+import { safeContentName, toBookResponse, requireThumbnailMime } from '../lib/bookFormat.js';
 import { PDF_PAGE_PROBE_MAX_BYTES, countPdfPages } from '../lib/pdfPages.js';
 import { BOOK_FIELDS, CONTENT_EXTENSIONS } from '../lib/constants.js';
 import { bookInputSchema, parseBooleanFlag } from '../lib/validate.js';

@@ -7,27 +7,13 @@ import {
   useRef,
   useState,
 } from 'react';
-import {
-  apiJson,
-  authHeaders,
-  clearIntendedLocation,
-  clearPendingVerification,
-  clearSession,
-  getPendingVerification,
-  getStoredSession,
-  savePendingVerification,
-  saveSession,
-} from '@lib/api';
+import { apiJson, authHeaders, clearSession, getStoredSession, saveSession } from '@lib/api';
 import { EMPTY_USER, normalizeUser, userSignature } from '@lib/normalizers';
 import { useCatalogSlice } from './slices/useCatalogSlice';
-import { usePaymentSlice, isQrisPaymentMethod } from './slices/usePaymentSlice';
-import { useNavigationSlice } from './slices/useNavigationSlice';
 
 const AppContext = createContext(null);
 
-export { isQrisPaymentMethod };
-
-export const AppProvider = ({ children, initialScreen }) => {
+export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
       const stored = getStoredSession();
@@ -41,33 +27,8 @@ export const AppProvider = ({ children, initialScreen }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [authReady, setAuthReady] = useState(false);
   const [sessionToken, setSessionToken] = useState(() => getStoredSession()?.token || null);
-  const [verificationState, setVerificationState] = useState(() => getPendingVerification());
 
-  const patchUser = useCallback((fields) => {
-    setUser((current) =>
-      normalizeUser(
-        typeof fields === 'function'
-          ? { ...current, ...fields(current) }
-          : { ...current, ...fields },
-      ),
-    );
-  }, []);
-
-  const nav = useNavigationSlice({ initialScreen, userRole: user.role });
-  const catalog = useCatalogSlice({ navigateTo: nav.navigateTo });
-  const payment = usePaymentSlice({ patchUser });
-
-  const setVerification = useCallback((nextValue) => {
-    setVerificationState(nextValue);
-    if (nextValue) {
-      const { devOtp: _devOnly, ...persisted } = nextValue;
-      savePendingVerification(persisted);
-    } else {
-      clearPendingVerification();
-    }
-  }, []);
-
-  const clearVerification = useCallback(() => setVerification(null), [setVerification]);
+  const catalog = useCatalogSlice();
 
   // Sesi & Pemulihan saat aplikasi dibuka
   useEffect(() => {
@@ -88,10 +49,6 @@ export const AppProvider = ({ children, initialScreen }) => {
         setSessionToken(storedSession.token);
         setUser(restoredUser);
         setIsLoggedIn(true);
-
-        try {
-          await payment.refreshSubscriptions();
-        } catch {}
       } catch (restoreError) {
         const rejected = restoreError?.status === 401 || restoreError?.status === 403;
         if (rejected) {
@@ -145,24 +102,6 @@ export const AppProvider = ({ children, initialScreen }) => {
   useEffect(() => {
     if (!isLoggedIn || !sessionToken) return;
 
-    const reconcile = async () => {
-      const hasil = await payment.reconcilePendingPayments();
-      if (hasil?.settled) await syncUserFromBackend({ silent: true });
-    };
-
-    reconcile();
-
-    const handleReconcile = () => {
-      if (typeof document === 'undefined' || !document.hidden) reconcile();
-    };
-    window.addEventListener('focus', handleReconcile);
-
-    return () => window.removeEventListener('focus', handleReconcile);
-  }, [isLoggedIn, sessionToken, payment.reconcilePendingPayments, syncUserFromBackend]);
-
-  useEffect(() => {
-    if (!isLoggedIn || !sessionToken) return;
-
     const handleFocus = () => syncUserFromBackend({ silent: true });
     const handleVisibility = () => {
       if (typeof document !== 'undefined' && !document.hidden) {
@@ -192,96 +131,50 @@ export const AppProvider = ({ children, initialScreen }) => {
     }
   }, [isLoggedIn, sessionToken, user]);
 
-  const login = useCallback(
-    (apiUser, token) => {
-      const loggedInUser = normalizeUser(apiUser);
-      if (!token) {
-        throw new Error('Token sesi tidak ditemukan dari server.');
-      }
-      setSessionToken(token);
-      saveSession({ token, user: loggedInUser });
-      setUser(loggedInUser);
-      setIsLoggedIn(true);
-      setAuthReady(true);
-
-      const destScreen = nav.consumeIntendedScreen();
-      nav.navigateTo(destScreen, { replace: true });
-    },
-    [nav],
-  );
+  const login = useCallback((apiUser, token) => {
+    const loggedInUser = normalizeUser(apiUser);
+    if (!token) {
+      throw new Error('Token sesi tidak ditemukan dari server.');
+    }
+    setSessionToken(token);
+    saveSession({ token, user: loggedInUser });
+    setUser(loggedInUser);
+    setIsLoggedIn(true);
+    setAuthReady(true);
+  }, []);
 
   const logout = useCallback(() => {
     clearSession();
-    clearVerification();
-    clearIntendedLocation();
     setSessionToken(null);
     setUser(EMPTY_USER);
     setIsLoggedIn(false);
-    nav.navigateTo('home', { replace: true });
-  }, [clearVerification, nav]);
+  }, []);
+
+  const updateUserRole = useCallback((userId, role) => {
+    if (userRef.current?.id !== userId) return;
+    userRef.current = { ...userRef.current, role };
+    setUser((current) => ({ ...current, role }));
+  }, []);
 
   const value = useMemo(
     () => ({
-      currentScreen: nav.currentScreen,
-      currentPath: nav.currentPath,
-      navigateTo: nav.navigateTo,
       user,
-      patchUser,
       isLoggedIn,
       authReady,
       sessionToken,
       login,
       logout,
-      verification: verificationState,
-      setVerification,
-      clearVerification,
-      rememberIntendedLocation: nav.rememberIntendedLocation,
-      setRouterNavigator: nav.setRouterNavigator,
-      syncScreenFromPath: nav.syncScreenFromPath,
+      updateUserRole,
       books: catalog.books,
       loadingCatalog: catalog.loadingCatalog,
       catalogError: catalog.catalogError,
       refreshBooks: catalog.refreshBooks,
-      activeBook: catalog.activeBook,
-      openReader: catalog.openReader,
-      selectedPlan: payment.selectedPlan,
-      setSelectedPlan: payment.setSelectedPlan,
-      selectedPaymentMethod: payment.selectedPaymentMethod,
-      setSelectedPaymentMethod: payment.setSelectedPaymentMethod,
-      paymentPhone: payment.paymentPhone,
-      setPaymentPhone: payment.setPaymentPhone,
-      paymentAgreed: payment.paymentAgreed,
-      setPaymentAgreed: payment.setPaymentAgreed,
-      lastPaymentResult: payment.lastPaymentResult,
-      clearLastPaymentResult: payment.clearLastPaymentResult,
-      completePayment: payment.completePayment,
-      subscriptions: payment.subscriptions,
-      refreshSubscriptions: payment.refreshSubscriptions,
-      role: user.role,
       events: catalog.events,
       loadingAgenda: catalog.loadingAgenda,
       agendaError: catalog.agendaError,
-      setEvents: catalog.setEvents,
       refreshEvents: catalog.refreshEvents,
-      carouselSlides: catalog.carouselSlides,
-      refreshCarousel: catalog.refreshCarousel,
-      isSubscriptionActive: payment.isSubscriptionActive,
     }),
-    [
-      nav,
-      user,
-      patchUser,
-      isLoggedIn,
-      authReady,
-      sessionToken,
-      login,
-      logout,
-      verificationState,
-      setVerification,
-      clearVerification,
-      catalog,
-      payment,
-    ],
+    [user, isLoggedIn, authReady, sessionToken, login, logout, updateUserRole, catalog],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

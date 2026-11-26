@@ -21,7 +21,6 @@ import Pdf from 'react-native-pdf';
  * perlu config plugin maupun izin galeri. */
 import { usePreventScreenCapture } from 'expo-screen-capture';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { theme } from '../theme';
 import { useBooks } from '../context/BookContext';
 import { apiRequest } from '../api/client.js';
 import { htmlToPlainText, paginateText, buildReaderFallback } from '../lib/catalog.js';
@@ -303,22 +302,6 @@ export const ReaderScreen = ({ book, onBack }) => {
         <View style={styles.pageCard}>
           <View style={styles.ornamentLine} />
 
-          {/* Banner Informasi Format PDF jika berlaku */}
-          {isPdf ? (
-            <View style={styles.pdfNoticeCard}>
-              <Feather name="file-text" size={20} color="#14523A" />
-              <View style={styles.pdfNoticeTextWrap}>
-                <Text style={styles.pdfNoticeTitle}>
-                  Naskah Format PDF ({book.pages_count} Hal)
-                </Text>
-                <Text style={styles.pdfNoticeDesc}>
-                  Naskah digital lengkap dapat dibuka melalui viewer web atau diunduh untuk dibaca
-                  secara offline. Pratinjau teks tersedia di bawah.
-                </Text>
-              </View>
-            </View>
-          ) : null}
-
           {/* Notifikasi Status Galat Koneksi */}
           {contentError ? (
             <View style={styles.errorNotice}>
@@ -540,31 +523,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 16,
-  },
-  pdfNoticeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: '#DCEDE4',
-    borderColor: '#A7D4BF',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
-  },
-  pdfNoticeTextWrap: {
-    flex: 1,
-  },
-  pdfNoticeTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#14523A',
-  },
-  pdfNoticeDesc: {
-    fontSize: 11,
-    color: '#284E3F',
-    marginTop: 2,
-    lineHeight: 15,
   },
   errorNotice: {
     flexDirection: 'row',

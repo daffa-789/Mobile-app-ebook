@@ -8,7 +8,7 @@
 import { createServiceError } from './errors.js';
 import { sniffImageMime } from './sniff.js';
 
-export const THUMBNAIL_FORMAT_MESSAGE = 'Thumbnail harus berupa gambar PNG, JPG, WebP, atau GIF.';
+const THUMBNAIL_FORMAT_MESSAGE = 'Thumbnail harus berupa gambar PNG, JPG, WebP, atau GIF.';
 
 /** Nama objek penyimpanan dibuat aman; nama asli tetap disimpan terpisah. */
 export function safeContentName(filename, extension) {

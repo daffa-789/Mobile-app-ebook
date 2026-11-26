@@ -1,8 +1,8 @@
 /**
  * Hook kustom untuk memuat dan mengelola data analitik dan tabel dashboard admin.
- * Memuat ringkasan statistik, daftar pengguna, transaksi, agenda, dan banner carousel secara paralel.
+ * Memuat ringkasan statistik, daftar pengguna, transaksi, dan agenda secara paralel.
  *
- * @module src/features/admin/hooks/useAdminDashboardData
+ * @module admin-dashboard-web/src/features/admin/hooks/useAdminDashboardData
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -16,7 +16,6 @@ import { normalizeEvent, normalizeTransaction, normalizeUser } from '@lib/normal
  * @param {string|null} params.sessionToken - Token sesi otentikasi admin
  * @param {() => Promise<void>} params.refreshBooks - Callback penyegaran data buku
  * @param {() => Promise<void>} params.refreshEvents - Callback penyegaran data agenda
- * @param {() => Promise<void>} params.refreshCarousel - Callback penyegaran data carousel
  * @returns {{
  *   stats: object|null,
  *   loadingDashboard: boolean,
@@ -24,24 +23,17 @@ import { normalizeEvent, normalizeTransaction, normalizeUser } from '@lib/normal
  *   transactions: Array<object>,
  *   events: Array<object>,
  *   error: string,
- *   carouselReady: boolean,
  *   headers: object,
  *   loadDashboard: () => Promise<void>
  * }} Objek state dan fungsi reload dashboard
  */
-export const useAdminDashboardData = ({
-  sessionToken,
-  refreshBooks,
-  refreshEvents,
-  refreshCarousel,
-}) => {
+export const useAdminDashboardData = ({ sessionToken, refreshBooks, refreshEvents }) => {
   const [stats, setStats] = useState(null);
   const [loadingDashboard, setLoadingDashboard] = useState(true);
   const [users, setUsers] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [events, setEvents] = useState([]);
   const [error, setError] = useState('');
-  const [carouselReady, setCarouselReady] = useState(true);
 
   const headers = useMemo(() => authHeaders(sessionToken), [sessionToken]);
 
@@ -60,14 +52,13 @@ export const useAdminDashboardData = ({
       setUsers((userPayload.users || []).map(normalizeUser));
       setTransactions((transactionPayload.transactions || []).map(normalizeTransaction));
       setEvents((eventPayload.events || []).map(normalizeEvent));
-      setCarouselReady(false);
       await Promise.all([refreshBooks(), refreshEvents()]);
     } catch (loadError) {
       setError(loadError.message || 'Dashboard tidak dapat dimuat.');
     } finally {
       setLoadingDashboard(false);
     }
-  }, [headers, refreshBooks, refreshEvents, refreshCarousel, sessionToken]);
+  }, [headers, refreshBooks, refreshEvents, sessionToken]);
 
   useEffect(() => {
     loadDashboard();
@@ -80,7 +71,6 @@ export const useAdminDashboardData = ({
     transactions,
     events,
     error,
-    carouselReady,
     headers,
     loadDashboard,
   };

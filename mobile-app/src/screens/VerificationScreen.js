@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   Alert,
   ScrollView,
@@ -13,6 +12,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
+import { AuthField } from '../components/AuthField';
 
 export const VerificationScreen = ({
   mode = 'register', // 'register' | 'reset-password'
@@ -27,8 +27,6 @@ export const VerificationScreen = ({
   const [code, setCode] = useState(initialDevOtp || '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -207,73 +205,47 @@ export const VerificationScreen = ({
           ) : null}
 
           {/* Input Kode OTP 6 Digit */}
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>KODE VERIFIKASI (6 DIGIT)</Text>
-            <View style={styles.inputWrap}>
-              <Feather name="lock" size={18} color="#7C756C" style={styles.inputIcon} />
-              <TextInput
-                style={[styles.textInput, styles.codeInput]}
-                value={code}
-                onChangeText={(val) => setCode(val.replace(/[^0-9]/g, '').slice(0, 6))}
-                placeholder="000000"
-                placeholderTextColor="#A8A199"
-                keyboardType="number-pad"
-                maxLength={6}
-                autoFocus
-              />
-            </View>
-          </View>
+          <AuthField
+            compact={false}
+            label="KODE VERIFIKASI (6 DIGIT)"
+            icon="lock"
+            iconSize={18}
+            value={code}
+            onChangeText={(val) => setCode(val.replace(/[^0-9]/g, '').slice(0, 6))}
+            placeholder="000000"
+            keyboardType="number-pad"
+            maxLength={6}
+            autoFocus
+            editable={!isSubmitting}
+            inputStyle={styles.codeInput}
+          />
 
           {/* Field Tambahan Khusus Reset Password */}
           {mode === 'reset-password' ? (
             <>
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>KATA SANDI BARU</Text>
-                <View style={styles.inputWrap}>
-                  <Feather name="lock" size={18} color="#7C756C" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.textInput}
-                    value={newPassword}
-                    onChangeText={setNewPassword}
-                    placeholder="Minimal 8 karakter"
-                    placeholderTextColor="#A8A199"
-                    secureTextEntry={!showNewPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowNewPassword(!showNewPassword)}
-                    style={styles.eyeBtn}
-                    activeOpacity={0.7}
-                  >
-                    <Feather name={showNewPassword ? 'eye-off' : 'eye'} size={18} color="#7C756C" />
-                  </TouchableOpacity>
-                </View>
-              </View>
+              <AuthField
+                compact={false}
+                label="KATA SANDI BARU"
+                icon="lock"
+                iconSize={18}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="Minimal 8 karakter"
+                secureToggle
+                editable={!isSubmitting}
+              />
 
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>KONFIRMASI KATA SANDI BARU</Text>
-                <View style={styles.inputWrap}>
-                  <Feather name="lock" size={18} color="#7C756C" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.textInput}
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    placeholder="Ulangi kata sandi baru"
-                    placeholderTextColor="#A8A199"
-                    secureTextEntry={!showConfirmPassword}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={styles.eyeBtn}
-                    activeOpacity={0.7}
-                  >
-                    <Feather
-                      name={showConfirmPassword ? 'eye-off' : 'eye'}
-                      size={18}
-                      color="#7C756C"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
+              <AuthField
+                compact={false}
+                label="KONFIRMASI KATA SANDI BARU"
+                icon="lock"
+                iconSize={18}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="Ulangi kata sandi baru"
+                secureToggle
+                editable={!isSubmitting}
+              />
             </>
           ) : null}
 
@@ -439,43 +411,11 @@ const styles = StyleSheet.create({
     color: '#14523A',
     fontWeight: '600',
   },
-  fieldGroup: {
-    marginBottom: 18,
-  },
-  fieldLabel: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#7C756C',
-    letterSpacing: 0.8,
-    marginBottom: 6,
-  },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E4D9C6',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    height: 50,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  textInput: {
-    flex: 1,
-    fontSize: 14,
-    color: '#1D1B17',
-    height: '100%',
-  },
   codeInput: {
     fontSize: 20,
     fontWeight: '800',
     letterSpacing: 8,
     textAlign: 'center',
-  },
-  eyeBtn: {
-    padding: 6,
   },
   primaryButton: {
     flexDirection: 'row',

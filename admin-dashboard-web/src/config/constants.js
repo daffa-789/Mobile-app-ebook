@@ -15,7 +15,6 @@ export const API_CONFIG = {
 
 export const STORAGE_KEYS = {
   session: 'buku-wahidiyah:auth-session',
-  intendedLocation: 'buku-wahidiyah:intended-location',
 };
 
 export const MAPS_CONFIG = {

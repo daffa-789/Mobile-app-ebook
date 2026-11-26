@@ -1,15 +1,15 @@
 /**
- * Modul klien API dan manajemen sesi peramban untuk Wahidiyah Book.
+ * Modul klien API dan manajemen sesi peramban untuk Admin Dashboard Wahidiyah Book.
  * Mengatur pembungkusan fetch (`apiJson`), fallback origin saat mode pengembangan,
  * penanganan galat jaringan, dan persistensi token sesi di `localStorage`.
  *
- * @module src/lib/api
+ * @module admin-dashboard-web/src/lib/api
  */
 
 import { API_CONFIG, STORAGE_KEYS } from '@/config/constants';
 import { createApiTransport, readableError } from '@shared/apiTransport.js';
 
-export const API_FALLBACK_ORIGIN = API_CONFIG.fallbackOrigin;
+const API_FALLBACK_ORIGIN = API_CONFIG.fallbackOrigin;
 
 const transport = createApiTransport({
   fallbackOrigin: API_FALLBACK_ORIGIN,
@@ -26,8 +26,6 @@ const transport = createApiTransport({
 export const { apiRequest, apiJson, apiJsonSend } = transport;
 
 const SESSION_STORAGE_KEY = STORAGE_KEYS.session;
-
-const INTENDED_LOCATION_STORAGE_KEY = STORAGE_KEYS.intendedLocation;
 
 export const getStoredSession = () => {
   try {
@@ -47,70 +45,6 @@ export const saveSession = (session) => {
 
 export const clearSession = () => {
   window.localStorage.removeItem(SESSION_STORAGE_KEY);
-};
-
-const LAST_PAYMENT_STORAGE_KEY = 'buku-wahidiyah:last-payment';
-
-export const getStoredLastPayment = () => {
-  try {
-    const value = window.sessionStorage.getItem(LAST_PAYMENT_STORAGE_KEY);
-    return value ? JSON.parse(value) : null;
-  } catch {
-    return null;
-  }
-};
-
-export const saveLastPayment = (result) => {
-  try {
-    if (!result) {
-      window.sessionStorage.removeItem(LAST_PAYMENT_STORAGE_KEY);
-      return;
-    }
-    window.sessionStorage.setItem(LAST_PAYMENT_STORAGE_KEY, JSON.stringify(result));
-  } catch {}
-};
-
-export const clearLastPayment = () => {
-  window.sessionStorage.removeItem(LAST_PAYMENT_STORAGE_KEY);
-};
-
-const PENDING_VERIFICATION_STORAGE_KEY = 'buku-wahidiyah:pending-verification';
-
-export const getPendingVerification = () => {
-  try {
-    const value = window.sessionStorage.getItem(PENDING_VERIFICATION_STORAGE_KEY);
-    return value ? JSON.parse(value) : null;
-  } catch {
-    return null;
-  }
-};
-
-export const savePendingVerification = (context) => {
-  window.sessionStorage.setItem(PENDING_VERIFICATION_STORAGE_KEY, JSON.stringify(context));
-};
-
-export const clearPendingVerification = () => {
-  window.sessionStorage.removeItem(PENDING_VERIFICATION_STORAGE_KEY);
-};
-
-export const saveIntendedLocation = (path) => {
-  try {
-    window.sessionStorage.setItem(INTENDED_LOCATION_STORAGE_KEY, String(path));
-  } catch {}
-};
-
-export const peekIntendedLocation = () => {
-  try {
-    return window.sessionStorage.getItem(INTENDED_LOCATION_STORAGE_KEY) || null;
-  } catch {
-    return null;
-  }
-};
-
-export const clearIntendedLocation = () => {
-  try {
-    window.sessionStorage.removeItem(INTENDED_LOCATION_STORAGE_KEY);
-  } catch {}
 };
 
 export const authHeaders = (token = getStoredSession()?.token) =>

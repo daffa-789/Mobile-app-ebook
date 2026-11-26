@@ -2,12 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiRequest } from '../api/client.js';
 import { useAuth } from './AuthContext.js';
-import {
-  normalizeBook,
-  normalizeEvent,
-  normalizeSlide,
-  normalizeSubscription,
-} from '../lib/catalog.js';
+import { normalizeBook, normalizeEvent, normalizeSubscription } from '../lib/catalog.js';
 
 const BookContext = createContext(null);
 
@@ -18,7 +13,6 @@ export const BookProvider = ({ children }) => {
   const { sessionToken } = useAuth();
 
   const [books, setBooks] = useState([]);
-  const [carouselSlides, setCarouselSlides] = useState([]);
   const [events, setEvents] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
   const [downloadedBooks, setDownloadedBooks] = useState([]);
@@ -48,7 +42,6 @@ export const BookProvider = ({ children }) => {
             const parsed = JSON.parse(cachedCatalog);
             if (Array.isArray(parsed.books)) setBooks(parsed.books);
             if (Array.isArray(parsed.events)) setEvents(parsed.events);
-            if (Array.isArray(parsed.carouselSlides)) setCarouselSlides(parsed.carouselSlides);
             if (Array.isArray(parsed.subscriptions)) setSubscriptions(parsed.subscriptions);
             if (parsed.lastSyncedAt) setLastSyncedAt(parsed.lastSyncedAt);
           } catch (_) {}
@@ -75,7 +68,6 @@ export const BookProvider = ({ children }) => {
       const endpoints = [
         apiRequest('/api/books').catch(() => null),
         apiRequest('/api/events').catch(() => null),
-        apiRequest('/api/carousel').catch(() => null),
       ];
 
       // Jika user sudah login, ambil juga riwayat langganan
@@ -84,7 +76,7 @@ export const BookProvider = ({ children }) => {
       }
 
       const results = await Promise.all(endpoints);
-      const [booksRes, eventsRes, carouselRes, subsRes] = results;
+      const [booksRes, eventsRes, subsRes] = results;
 
       let nextBooks = books;
       if (booksRes && Array.isArray(booksRes.books)) {
@@ -96,12 +88,6 @@ export const BookProvider = ({ children }) => {
       if (eventsRes && Array.isArray(eventsRes.events)) {
         nextEvents = eventsRes.events.map(normalizeEvent).filter(Boolean);
         setEvents(nextEvents);
-      }
-
-      let nextSlides = carouselSlides;
-      if (carouselRes && Array.isArray(carouselRes.slides)) {
-        nextSlides = carouselRes.slides.map(normalizeSlide).filter(Boolean);
-        setCarouselSlides(nextSlides);
       }
 
       let nextSubs = subscriptions;
@@ -126,7 +112,6 @@ export const BookProvider = ({ children }) => {
         JSON.stringify({
           books: nextBooks,
           events: nextEvents,
-          carouselSlides: nextSlides,
           subscriptions: nextSubs,
           lastSyncedAt: syncTime,
         }),
@@ -140,7 +125,7 @@ export const BookProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [books, events, carouselSlides, subscriptions, sessionToken]);
+  }, [books, events, subscriptions, sessionToken]);
 
   // 3. Sinkronkan khusus data langganan (misal setelah bayar Pro)
   const refreshSubscriptions = useCallback(async () => {
@@ -230,7 +215,6 @@ export const BookProvider = ({ children }) => {
     <BookContext.Provider
       value={{
         books,
-        carouselSlides,
         events,
         subscriptions,
         downloadedBooks,

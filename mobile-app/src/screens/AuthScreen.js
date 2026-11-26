@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   Alert,
   ScrollView,
@@ -17,6 +16,8 @@ import { theme } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { OAUTH_CONFIG } from '../config/constants';
 import { createSecureOauthState } from '../lib/authUrl';
+import { AuthField } from '../components/AuthField';
+import { ForgotPasswordView } from '../components/ForgotPasswordView';
 import { VerificationScreen } from './VerificationScreen';
 
 export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
@@ -35,8 +36,6 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [noticeMessage, setNoticeMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -284,75 +283,26 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
 
   if (viewMode === 'request-reset') {
     return (
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoid}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.authCard}>
-            <TouchableOpacity
-              style={styles.backButtonInline}
-              onPress={() => setViewMode('auth')}
-              activeOpacity={0.7}
-            >
-              <Feather name="arrow-left" size={18} color="#1D1B17" />
-              <Text style={styles.backButtonInlineText}>Kembali ke Masuk</Text>
-            </TouchableOpacity>
-
-            <View style={styles.brandHeader}>
-              <Text style={styles.brandTitle}>Lupa Kata Sandi</Text>
-              <Text style={styles.brandSubtitle}>
-                Masukkan alamat email atau nomor WhatsApp akun Anda untuk menerima kode pemulihan.
-              </Text>
-            </View>
-
-            {errorMessage ? (
-              <View style={styles.errorAlert}>
-                <Feather name="alert-circle" size={16} color="#C00511" />
-                <Text style={styles.errorAlertText}>{errorMessage}</Text>
-              </View>
-            ) : null}
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>EMAIL ATAU NOMOR WHATSAPP</Text>
-              <View style={styles.inputWrap}>
-                <Feather name="mail" size={18} color="#7C756C" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.textInput}
-                  value={resetIdentifier}
-                  onChangeText={setResetIdentifier}
-                  placeholder="nama@email.com atau 081234..."
-                  placeholderTextColor="#A8A199"
-                  autoCapitalize="none"
-                />
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.primaryButton, isSubmitting && styles.primaryButtonDisabled]}
-              onPress={handleRequestResetSubmit}
-              disabled={isSubmitting}
-              activeOpacity={0.85}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color="#FBF8F3" />
-              ) : (
-                <>
-                  <Text style={styles.primaryButtonText}>Kirim Kode Verifikasi</Text>
-                  <Feather name="arrow-right" size={18} color="#FBF8F3" />
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      <ForgotPasswordView
+        identifier={resetIdentifier}
+        onChangeIdentifier={setResetIdentifier}
+        errorMessage={errorMessage}
+        isSubmitting={isSubmitting}
+        onSubmit={handleRequestResetSubmit}
+        onBack={() => setViewMode('auth')}
+      />
     );
   }
+
+  const updateSharedEmail = (val) => {
+    setSharedEmail(val);
+    setErrorMessage('');
+  };
+
+  const updatePassword = (val) => {
+    setPassword(val);
+    setErrorMessage('');
+  };
 
   return (
     <KeyboardAvoidingView
@@ -420,62 +370,35 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
           {/* Form Content */}
           {activeTab === 'login' ? (
             <View style={styles.formContainer}>
-              {/* Field: Alamat Email */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Alamat email</Text>
-                <View style={styles.inputWrap}>
-                  <Feather name="mail" size={16} color="#7C756C" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.textInput}
-                    value={sharedEmail}
-                    onChangeText={(val) => {
-                      setSharedEmail(val);
-                      setErrorMessage('');
-                    }}
-                    placeholder="nama@email.com"
-                    placeholderTextColor="#A8A199"
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    editable={!isSubmitting}
-                  />
-                </View>
-              </View>
+              <AuthField
+                label="Alamat email"
+                icon="mail"
+                value={sharedEmail}
+                onChangeText={updateSharedEmail}
+                placeholder="nama@email.com"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                editable={!isSubmitting}
+              />
 
-              {/* Field: Password */}
-              <View style={styles.fieldGroup}>
-                <View style={styles.passwordLabelRow}>
-                  <Text style={styles.fieldLabel}>Password</Text>
+              <AuthField
+                label="Password"
+                rightAction={
                   <TouchableOpacity onPress={handleForgotPassword} disabled={isSubmitting}>
                     <Text style={styles.forgotLink}>Lupa password?</Text>
                   </TouchableOpacity>
-                </View>
-                <View style={styles.inputWrap}>
-                  <Feather name="lock" size={16} color="#7C756C" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.textInput}
-                    value={password}
-                    onChangeText={(val) => {
-                      setPassword(val);
-                      setErrorMessage('');
-                    }}
-                    placeholder="Minimal 8 karakter"
-                    placeholderTextColor="#A8A199"
-                    secureTextEntry={!showPassword}
-                    editable={!isSubmitting}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.eyeBtn}
-                    disabled={isSubmitting}
-                  >
-                    <Feather name={showPassword ? 'eye-off' : 'eye'} size={16} color="#7C756C" />
-                  </TouchableOpacity>
-                </View>
-              </View>
+                }
+                icon="lock"
+                value={password}
+                onChangeText={updatePassword}
+                placeholder="Minimal 8 karakter"
+                secureToggle
+                editable={!isSubmitting}
+              />
 
               {/* Submit Masuk */}
               <TouchableOpacity
-                style={styles.primaryButton}
+                style={[styles.primaryButton, isSubmitting && styles.primaryButtonDisabled]}
                 onPress={handleLoginSubmit}
                 disabled={isSubmitting}
                 activeOpacity={0.85}
@@ -492,127 +415,68 @@ export const AuthScreen = ({ initialTab = 'login', onAuthSuccess }) => {
             </View>
           ) : (
             <View style={styles.formContainer}>
-              {/* Field: Nama Lengkap */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Nama lengkap</Text>
-                <View style={styles.inputWrap}>
-                  <Feather name="user" size={16} color="#7C756C" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.textInput}
-                    value={fullName}
-                    onChangeText={(val) => {
-                      setFullName(val);
-                      setErrorMessage('');
-                    }}
-                    placeholder="Nama Anda"
-                    placeholderTextColor="#A8A199"
-                    editable={!isSubmitting}
-                  />
-                </View>
-              </View>
+              <AuthField
+                label="Nama lengkap"
+                icon="user"
+                value={fullName}
+                onChangeText={(val) => {
+                  setFullName(val);
+                  setErrorMessage('');
+                }}
+                placeholder="Nama Anda"
+                editable={!isSubmitting}
+              />
 
-              {/* Field: Alamat Email */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Alamat email</Text>
-                <View style={styles.inputWrap}>
-                  <Feather name="mail" size={16} color="#7C756C" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.textInput}
-                    value={sharedEmail}
-                    onChangeText={(val) => {
-                      setSharedEmail(val);
-                      setErrorMessage('');
-                    }}
-                    placeholder="nama@email.com"
-                    placeholderTextColor="#A8A199"
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    editable={!isSubmitting}
-                  />
-                </View>
-              </View>
+              <AuthField
+                label="Alamat email"
+                icon="mail"
+                value={sharedEmail}
+                onChangeText={updateSharedEmail}
+                placeholder="nama@email.com"
+                autoCapitalize="none"
+                keyboardType="email-address"
+                editable={!isSubmitting}
+              />
 
-              {/* Field: Nomor WhatsApp */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Nomor WhatsApp</Text>
-                <View style={styles.inputWrap}>
-                  <Feather name="phone" size={16} color="#7C756C" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.textInput}
-                    value={phone}
-                    onChangeText={(val) => {
-                      setPhone(val);
-                      setErrorMessage('');
-                    }}
-                    placeholder="081212345678"
-                    placeholderTextColor="#A8A199"
-                    keyboardType="phone-pad"
-                    editable={!isSubmitting}
-                  />
-                </View>
-              </View>
+              <AuthField
+                label="Nomor WhatsApp"
+                icon="phone"
+                value={phone}
+                onChangeText={(val) => {
+                  setPhone(val);
+                  setErrorMessage('');
+                }}
+                placeholder="081212345678"
+                keyboardType="phone-pad"
+                editable={!isSubmitting}
+              />
 
-              {/* Field: Password */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Password</Text>
-                <View style={styles.inputWrap}>
-                  <Feather name="lock" size={16} color="#7C756C" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.textInput}
-                    value={password}
-                    onChangeText={(val) => {
-                      setPassword(val);
-                      setErrorMessage('');
-                    }}
-                    placeholder="Minimal 8 karakter"
-                    placeholderTextColor="#A8A199"
-                    secureTextEntry={!showPassword}
-                    editable={!isSubmitting}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.eyeBtn}
-                    disabled={isSubmitting}
-                  >
-                    <Feather name={showPassword ? 'eye-off' : 'eye'} size={16} color="#7C756C" />
-                  </TouchableOpacity>
-                </View>
-              </View>
+              <AuthField
+                label="Password"
+                icon="lock"
+                value={password}
+                onChangeText={updatePassword}
+                placeholder="Minimal 8 karakter"
+                secureToggle
+                editable={!isSubmitting}
+              />
 
-              {/* Field: Konfirmasi Password */}
-              <View style={styles.fieldGroup}>
-                <Text style={styles.fieldLabel}>Konfirmasi password</Text>
-                <View style={styles.inputWrap}>
-                  <Feather name="lock" size={16} color="#7C756C" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.textInput}
-                    value={confirmPassword}
-                    onChangeText={(val) => {
-                      setConfirmPassword(val);
-                      setErrorMessage('');
-                    }}
-                    placeholder="Tulis ulang password"
-                    placeholderTextColor="#A8A199"
-                    secureTextEntry={!showConfirmPassword}
-                    editable={!isSubmitting}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                    style={styles.eyeBtn}
-                    disabled={isSubmitting}
-                  >
-                    <Feather
-                      name={showConfirmPassword ? 'eye-off' : 'eye'}
-                      size={16}
-                      color="#7C756C"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
+              <AuthField
+                label="Konfirmasi password"
+                icon="lock"
+                value={confirmPassword}
+                onChangeText={(val) => {
+                  setConfirmPassword(val);
+                  setErrorMessage('');
+                }}
+                placeholder="Tulis ulang password"
+                secureToggle
+                editable={!isSubmitting}
+              />
 
               {/* Submit Daftar */}
               <TouchableOpacity
-                style={styles.primaryButton}
+                style={[styles.primaryButton, isSubmitting && styles.primaryButtonDisabled]}
                 onPress={handleRegisterSubmit}
                 disabled={isSubmitting}
                 activeOpacity={0.85}
@@ -690,14 +554,6 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.serif,
     letterSpacing: -0.5,
   },
-  brandSubtitle: {
-    fontSize: 12,
-    color: '#5A544C',
-    textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 17,
-    maxWidth: 290,
-  },
   tabSwitcher: {
     flexDirection: 'row',
     backgroundColor: '#F0E8DA',
@@ -765,45 +621,10 @@ const styles = StyleSheet.create({
   formContainer: {
     gap: 12,
   },
-  fieldGroup: {
-    gap: 5,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#2B2823',
-  },
-  passwordLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
   forgotLink: {
     fontSize: 11,
     fontWeight: '700',
     color: '#14523A',
-  },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFDF9',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#E4D9C6',
-    paddingHorizontal: 12,
-    height: 48,
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  textInput: {
-    flex: 1,
-    fontSize: 13,
-    color: '#1D1B17',
-    fontWeight: '500',
-  },
-  eyeBtn: {
-    padding: 6,
   },
   primaryButton: {
     flexDirection: 'row',
@@ -819,6 +640,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 3,
+  },
+  primaryButtonDisabled: {
+    opacity: 0.6,
   },
   primaryButtonText: {
     fontSize: 14,
@@ -844,18 +668,6 @@ const styles = StyleSheet.create({
   googleButtonText: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#1D1B17',
-  },
-  backButtonInline: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
-    alignSelf: 'flex-start',
-  },
-  backButtonInlineText: {
-    fontSize: 13,
-    fontWeight: '700',
     color: '#1D1B17',
   },
 });

@@ -10,7 +10,7 @@ const AuthContext = createContext(null);
 
 const MAX_TIMEOUT_MS = 2_147_483_647;
 
-export const hasActiveProEntitlement = (user, now = Date.now()) => {
+const hasActiveProEntitlement = (user, now = Date.now()) => {
   const hasProFlag =
     user?.is_pro === true ||
     user?.is_pro === 1 ||

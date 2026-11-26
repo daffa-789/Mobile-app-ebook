@@ -1,13 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
 import { apiJson, readableError } from '@lib/api';
 import { takeWarmCatalogResponse } from '@lib/catalogWarmup';
-import { normalizeBook, normalizeEvent, normalizeCarouselSlide } from '@lib/normalizers';
+import { normalizeBook, normalizeEvent } from '@lib/normalizers';
 
-export const useCatalogSlice = ({ navigateTo }) => {
+export const useCatalogSlice = () => {
   const [books, setBooks] = useState([]);
-  const [activeBook, setActiveBook] = useState(null);
   const [events, setEvents] = useState([]);
-  const [carouselSlides, setCarouselSlides] = useState([]);
   const [catalogError, setCatalogError] = useState(null);
   const [agendaError, setAgendaError] = useState(null);
   const [loadingCatalog, setLoadingCatalog] = useState(true);
@@ -20,7 +18,6 @@ export const useCatalogSlice = ({ navigateTo }) => {
       const payload = await (warm ?? apiJson('/api/books', { cache: 'no-store' }));
       const nextBooks = (payload.books || []).map(normalizeBook);
       setBooks(nextBooks);
-      setActiveBook((current) => nextBooks.find((book) => book.id === current?.id) || null);
       setCatalogError(null);
       return nextBooks;
     } catch (loadError) {
@@ -48,40 +45,19 @@ export const useCatalogSlice = ({ navigateTo }) => {
     }
   }, []);
 
-  const refreshCarousel = useCallback(async () => {
-    setCarouselSlides([]);
-  }, []);
-
-  const openReader = useCallback(
-    (book) => {
-      setActiveBook(book);
-      navigateTo('reader');
-    },
-    [navigateTo],
-  );
-
   useEffect(() => {
     refreshBooks().catch(() => {});
     refreshEvents().catch(() => {});
-    refreshCarousel().catch(() => {});
-  }, [refreshBooks, refreshEvents, refreshCarousel]);
+  }, [refreshBooks, refreshEvents]);
 
   return {
     books,
-    setBooks,
-    activeBook,
-    setActiveBook,
     loadingCatalog,
     catalogError,
     refreshBooks,
-    openReader,
     events,
-    setEvents,
     loadingAgenda,
     agendaError,
     refreshEvents,
-    carouselSlides,
-    setCarouselSlides,
-    refreshCarousel,
   };
 };

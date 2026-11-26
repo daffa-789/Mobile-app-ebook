@@ -119,20 +119,6 @@ export const useAdminEventEditor = ({ headers, loadDashboard }) => {
     setEventForm({ ...EMPTY_EVENT_FORM, event_date: selectedCalDate });
   };
 
-  const toggleEventCarousel = (event) =>
-    withToast(
-      async () => {
-        await apiJsonSend(
-          `/api/events/${encodeURIComponent(event.id)}`,
-          { ...toEventForm(event), show_in_carousel: !event.showInCarousel },
-          { method: 'PUT', headers },
-        );
-        await loadDashboard();
-      },
-      'Status carousel agenda gagal diubah.',
-      event.showInCarousel ? 'Agenda dikeluarkan dari carousel.' : 'Agenda masuk ke carousel.',
-    );
-
   const deleteEvent = (event) => {
     if (!window.confirm(`Hapus agenda “${event.title}”?`)) return undefined;
     return withToast(
@@ -159,7 +145,6 @@ export const useAdminEventEditor = ({ headers, loadDashboard }) => {
     submitEvent,
     editEvent,
     cancelEditEvent,
-    toggleEventCarousel,
     deleteEvent,
   };
 };

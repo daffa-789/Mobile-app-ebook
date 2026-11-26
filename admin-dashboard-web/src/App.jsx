@@ -29,19 +29,11 @@ function AdminDashboardContent() {
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const {
-    user,
-    sessionToken,
-    books,
-    refreshBooks,
-    refreshEvents,
-    updateUserRole,
-    refreshCarousel,
-    logout,
-  } = useApp();
+  const { user, sessionToken, books, refreshBooks, refreshEvents, updateUserRole, logout } =
+    useApp();
 
   const { stats, users, transactions, events, error, headers, loadDashboard } =
-    useAdminDashboardData({ sessionToken, refreshBooks, refreshEvents, refreshCarousel });
+    useAdminDashboardData({ sessionToken, refreshBooks, refreshEvents });
 
   const eventEditor = useAdminEventEditor({ headers, loadDashboard });
   const bookEditor = useAdminBookEditor({ headers, loadDashboard });

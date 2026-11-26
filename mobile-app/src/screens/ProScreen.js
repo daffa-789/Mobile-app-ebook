@@ -19,11 +19,12 @@ import {
   getQrImageUrl,
 } from '../api/payments.js';
 import { generateQrPng } from '../lib/qr.js';
-import { formatRupiah } from '../lib/catalog.js';
+import { formatRupiah, formatPurchaseDate } from '../lib/catalog.js';
+import { getProDurationSummary } from '../lib/proMembership.js';
 import { copyTextWithToast } from '../lib/clipboard.js';
 
 export const ProScreen = ({ onOpenAuth }) => {
-  const { user, isPro, refreshSession } = useAuth();
+  const { user, isPro, entitlementNow, refreshSession } = useAuth();
   const { refreshSubscriptions } = useBooks();
 
   const [activeOrder, setActiveOrder] = useState(null);
@@ -187,6 +188,16 @@ export const ProScreen = ({ onOpenAuth }) => {
     activeOrder?.qrMidtransUrl ||
     (activeOrder?.qrImageUrl && activeOrder?.orderId ? getQrImageUrl(activeOrder.orderId) : null) ||
     '';
+  /* Ringkasan durasi paket (30 hari) atau sisa hari langganan untuk badge di
+   * sebelah "Paket Bulanan" dan panel status saat membership Pro aktif. */
+  const durationSummary = getProDurationSummary({
+    isPro,
+    user,
+    now: entitlementNow,
+  });
+  const expiryText = durationSummary.expiresAtIso
+    ? `Berlaku hingga ${formatPurchaseDate(durationSummary.expiresAtIso)}`
+    : null;
   /* Satu-satunya aksi di kartu QRIS: salin tautan gambar, lalu popup
    * "berhasil di salin". Detailnya ada di lib/clipboard.js supaya layar
    * ini tetap fokus pada tampilan. */
@@ -205,8 +216,23 @@ export const ProScreen = ({ onOpenAuth }) => {
     >
       <View style={styles.cardWrapper}>
         <View style={styles.proCard}>
-          {/* Header Paket */}
-          <Text style={styles.planTitle}>Paket Bulanan</Text>
+          {/* Header Paket + Durasi Masa Langganan */}
+          <View style={styles.planHeaderRow}>
+            <Text style={styles.planTitle}>Paket Bulanan</Text>
+            <View
+              style={[styles.durationBadge, isPro && styles.durationBadgeActive]}
+              accessibilityLabel={`Masa langganan: ${durationSummary.badgeLabel}`}
+            >
+              <Feather
+                name={isPro ? 'check-circle' : 'clock'}
+                size={12}
+                color={isPro ? '#14523A' : '#854D0E'}
+              />
+              <Text style={[styles.durationBadgeText, isPro && styles.durationBadgeTextActive]}>
+                {durationSummary.badgeLabel}
+              </Text>
+            </View>
+          </View>
 
           {/* Harga */}
           <View style={styles.priceRow}>
@@ -330,14 +356,32 @@ export const ProScreen = ({ onOpenAuth }) => {
               ) : null}
             </View>
           ) : isPro ? (
-            <TouchableOpacity
-              style={styles.activePlanButton}
-              onPress={handleSubscribePress}
-              activeOpacity={0.8}
-            >
-              <Feather name="check" size={16} color="#14523A" />
-              <Text style={styles.activePlanText}>Paket Sedang Aktif</Text>
-            </TouchableOpacity>
+            <View style={styles.activeMembershipWrap}>
+              {durationSummary.detailTitle ? (
+                <View style={styles.membershipInfoBox}>
+                  <Feather
+                    name="calendar"
+                    size={14}
+                    color="#14523A"
+                    style={styles.membershipInfoIcon}
+                  />
+                  <View style={styles.membershipInfoContent}>
+                    <Text style={styles.membershipInfoTitle}>{durationSummary.detailTitle}</Text>
+                    {expiryText ? (
+                      <Text style={styles.membershipInfoDate}>{expiryText}</Text>
+                    ) : null}
+                  </View>
+                </View>
+              ) : null}
+              <TouchableOpacity
+                style={styles.activePlanButton}
+                onPress={handleSubscribePress}
+                activeOpacity={0.8}
+              >
+                <Feather name="check" size={16} color="#14523A" />
+                <Text style={styles.activePlanText}>Paket Sedang Aktif</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <TouchableOpacity
               style={[styles.subscribeButton, isGenerating && styles.subscribeButtonDisabled]}
@@ -391,11 +435,41 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 3,
   },
+  planHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 12,
+  },
   planTitle: {
     fontSize: 20,
     fontWeight: '900',
     color: '#1D1B17',
-    marginBottom: 12,
+  },
+  durationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#FBF4DC',
+    borderWidth: 1,
+    borderColor: '#E5C877',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  durationBadgeActive: {
+    backgroundColor: '#DCEDE4',
+    borderColor: '#B9DBC9',
+  },
+  durationBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#854D0E',
+  },
+  durationBadgeTextActive: {
+    color: '#14523A',
   },
   priceRow: {
     flexDirection: 'row',
@@ -509,6 +583,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#FBF8F3',
+  },
+  activeMembershipWrap: {
+    gap: 12,
+  },
+  membershipInfoBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    backgroundColor: '#F0F7F3',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#B9DBC9',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  membershipInfoIcon: {
+    marginTop: 2,
+  },
+  membershipInfoContent: {
+    flex: 1,
+  },
+  membershipInfoTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#14523A',
+    lineHeight: 17,
+  },
+  membershipInfoDate: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#5A544C',
+    marginTop: 2,
+    lineHeight: 16,
   },
   activePlanButton: {
     flexDirection: 'row',

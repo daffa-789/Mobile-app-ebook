@@ -54,7 +54,7 @@ export const VerificationScreen = ({
       const res = await resendVerification({
         identifier: identifier.trim(),
         method,
-        purpose: mode === 'reset-password' ? 'password_reset' : 'registration',
+        purpose: mode === 'reset-password' ? 'reset' : 'register',
       });
       if (res.success) {
         setCountdown(60);

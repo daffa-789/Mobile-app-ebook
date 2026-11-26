@@ -56,4 +56,15 @@ test('Audit fixes: admin AppContext, mobile AuthScreen styles, and Profile serve
     assert.ok(!bookCtxSrc.includes('/api/carousel'), 'Dead /api/carousel fetch removed');
     assert.ok(!bookCtxSrc.includes('carouselSlides'), 'Unused carouselSlides state removed');
   });
+
+  await t.test('VerificationScreen & otp_resend_service align reset OTP purpose', () => {
+    const verificationSrc = read('mobile-app/src/screens/VerificationScreen.js');
+    const resendSrc = read('server/services/auth/otp_resend_service.js');
+
+    assert.match(verificationSrc, /mode === 'reset-password' \? 'reset' : 'register'/);
+    assert.match(
+      resendSrc,
+      /rawPurpose === 'reset' \|\| rawPurpose === 'password_reset' \? 'reset' : 'register'/,
+    );
+  });
 });

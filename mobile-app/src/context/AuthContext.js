@@ -551,6 +551,7 @@ export const AuthProvider = ({ children }) => {
         loading,
         isAuthenticated: !!user,
         isPro: hasActiveProEntitlement(user, entitlementNow),
+        entitlementNow,
         login,
         register,
         verifyRegistration,

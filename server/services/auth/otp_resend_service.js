@@ -29,7 +29,7 @@ export async function resendVerificationOtp({
   clientIp,
 }) {
   const target = method === 'whatsapp' ? normalizePhone(rawTarget) : normalizeEmail(rawTarget);
-  const purpose = rawPurpose === 'reset' ? 'reset' : 'register';
+  const purpose = rawPurpose === 'reset' || rawPurpose === 'password_reset' ? 'reset' : 'register';
 
   if (!target) {
     return { ok: false, status: 400, message: 'Identitas tujuan verifikasi tidak valid.' };

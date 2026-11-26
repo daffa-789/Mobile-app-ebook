@@ -7,4 +7,5 @@ export const DEFAULT_PLAN = {
   price: 25000,
   formattedPrice: formatRupiah(25000),
   period: '/bulan',
+  durationDays: 30,
 };

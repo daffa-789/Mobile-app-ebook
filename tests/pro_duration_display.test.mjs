@@ -33,49 +33,71 @@ test('Durasi masa langganan Pro mobile (sebelah Paket Bulanan)', async (t) => {
     assert.equal(freeUser.detailTitle, null);
   });
 
-  await t.test('getProDurationSummary: pengguna Pro berbatas waktu melihat sisa hari aktif', () => {
-    const now = Date.parse('2026-11-26T04:00:00.000Z');
-    const thirtyDaysLater = new Date(now + 30 * MS_PER_DAY).toISOString();
-    const summary30 = getProDurationSummary({
-      isPro: true,
-      user: { subscription_expires_at: thirtyDaysLater },
-      now,
-    });
-    assert.equal(summary30.badgeLabel, 'Sisa 30 hari');
-    assert.equal(summary30.remainingDays, 30);
-    assert.equal(summary30.detailTitle, 'Sisa masa aktif: 30 hari (paket 30 hari)');
-    assert.equal(summary30.expiresAtIso, thirtyDaysLater);
+  await t.test(
+    'getProDurationSummary: pengguna Pro membandingkan tanggal beli & kedaluwarsa dengan format X hari lagi',
+    () => {
+      const now = Date.parse('2026-11-26T04:00:00.000Z');
+      const thirtyDaysLater = new Date(now + 30 * MS_PER_DAY).toISOString();
+      const summary30 = getProDurationSummary({
+        isPro: true,
+        user: { subscription_expires_at: thirtyDaysLater },
+        now,
+      });
+      assert.equal(summary30.badgeLabel, '30 hari lagi');
+      assert.equal(summary30.remainingDays, 30);
+      assert.equal(summary30.detailTitle, 'Sisa masa aktif: 30 hari lagi (paket 30 hari)');
+      assert.equal(summary30.expiresAtIso, thirtyDaysLater);
 
-    const fractionalExpiry = new Date(now + 14 * MS_PER_DAY + 2 * 60 * 60 * 1000).toISOString();
-    const summary15 = getProDurationSummary({
-      isPro: true,
-      user: { subscriptionExpiresAt: fractionalExpiry },
-      now,
-    });
-    assert.equal(summary15.badgeLabel, 'Sisa 15 hari');
-    assert.equal(summary15.remainingDays, 15);
+      // Contoh 20 hari lagi sesuai spesifikasi pengguna
+      const twentyDaysLater = new Date(now + 20 * MS_PER_DAY).toISOString();
+      const summary20 = getProDurationSummary({
+        isPro: true,
+        user: { subscription_expires_at: twentyDaysLater },
+        now,
+      });
+      assert.equal(summary20.badgeLabel, '20 hari lagi');
+      assert.equal(summary20.remainingDays, 20);
 
-    const finalHours = new Date(now + 30 * 1000).toISOString();
-    const summaryLastDay = getProDurationSummary({
-      isPro: true,
-      user: { subscription_expires_at: finalHours },
-      now,
-    });
-    assert.equal(summaryLastDay.badgeLabel, 'Sisa 1 hari');
-    assert.equal(summaryLastDay.remainingDays, 1);
-  });
+      const fractionalExpiry = new Date(now + 14 * MS_PER_DAY + 2 * 60 * 60 * 1000).toISOString();
+      const summary15 = getProDurationSummary({
+        isPro: true,
+        user: { subscriptionExpiresAt: fractionalExpiry },
+        now,
+      });
+      assert.equal(summary15.badgeLabel, '15 hari lagi');
+      assert.equal(summary15.remainingDays, 15);
+
+      const finalHours = new Date(now + 30 * 1000).toISOString();
+      const summaryLastDay = getProDurationSummary({
+        isPro: true,
+        user: { subscription_expires_at: finalHours },
+        now,
+      });
+      assert.equal(summaryLastDay.badgeLabel, '1 hari lagi');
+      assert.equal(summaryLastDay.remainingDays, 1);
+    },
+  );
 
   await t.test(
-    'getProDurationSummary: akses Pro manual tanpa expiry berlabel Aktif permanen',
+    'getProDurationSummary: akun Pro tanpa subscription_expires_at membandingkan dari tanggal beli/pendaftaran',
     () => {
-      const lifetime = getProDurationSummary({
+      const now = Date.parse('2026-11-26T04:00:00.000Z');
+      const purchaseDate = new Date(now - 10 * MS_PER_DAY).toISOString();
+      const computedFromCreated = getProDurationSummary({
+        isPro: true,
+        user: { is_pro: true, created_at: purchaseDate, subscription_expires_at: null },
+        now,
+      });
+      assert.equal(computedFromCreated.badgeLabel, '20 hari lagi');
+      assert.equal(computedFromCreated.remainingDays, 20);
+
+      const defaultFallback = getProDurationSummary({
         isPro: true,
         user: { is_pro: true, subscription_expires_at: null },
-        now: Date.now(),
+        now,
       });
-      assert.equal(lifetime.badgeLabel, 'Aktif permanen');
-      assert.equal(lifetime.detailTitle, 'Akses Member Pro aktif tanpa batas waktu');
-      assert.equal(lifetime.isLifetime, true);
+      assert.equal(defaultFallback.badgeLabel, '30 hari lagi');
+      assert.equal(defaultFallback.remainingDays, 30);
     },
   );
 

@@ -106,10 +106,6 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profil</Text>
-        </View>
-
         <View style={styles.guestCard}>
           <View style={styles.guestIconBox}>
             <Feather name="user" size={26} color="#14523A" />
@@ -148,19 +144,6 @@ export const ProfileScreen = ({ onOpenRiwayat, onOpenPro, onOpenAuth }) => {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Profil dengan Badge Member Pro */}
-        <View style={styles.header}>
-          <View style={styles.headerRow}>
-            <Text style={styles.headerTitle}>Profil</Text>
-            {isPro && (
-              <View style={styles.proBadge}>
-                <Feather name="award" size={13} color="#B8860B" />
-                <Text style={styles.proBadgeText}>Member Pro</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
         {/* 1:1 SECTION: DATA AKUN */}
         <ProfileAccountCard user={user} onUpdateUser={updateUser} />
 

@@ -6,8 +6,7 @@ export const PRO_PLAN_DURATION_DAYS = Number(DEFAULT_PLAN?.durationDays) || 30;
 /**
  * Menghitung ringkasan masa langganan Pro untuk ditampilkan di sebelah judul Paket Bulanan.
  * - Belum Pro: menampilkan durasi paket standar (`Masa 30 hari`).
- * - Pro berbatas waktu: menghitung sisa hari aktif (`Sisa X hari`) dari `subscription_expires_at`.
- * - Pro manual tanpa kedaluwarsa: menampilkan status aktif permanen.
+ * - Pro: membandingkan tanggal beli dan tanggal kedaluwarsa langganan (`X hari lagi`, misal `20 hari lagi`).
  */
 export function getProDurationSummary({ isPro, user, now = Date.now() } = {}) {
   if (!isPro) {
@@ -25,40 +24,41 @@ export function getProDurationSummary({ isPro, user, now = Date.now() } = {}) {
   const hasExpiryValue =
     rawExpiresAt !== null && rawExpiresAt !== undefined && String(rawExpiresAt).trim() !== '';
 
-  if (!hasExpiryValue) {
-    return {
-      badgeLabel: 'Aktif permanen',
-      detailTitle: 'Akses Member Pro aktif tanpa batas waktu',
-      durationDays: PRO_PLAN_DURATION_DAYS,
-      remainingDays: null,
-      expiresAtIso: null,
-      isLifetime: true,
-    };
-  }
-
-  const expiresAtMs =
-    rawExpiresAt instanceof Date ? rawExpiresAt.getTime() : Date.parse(rawExpiresAt);
   const nowMs = now instanceof Date ? now.getTime() : Number(now);
 
-  if (!Number.isFinite(expiresAtMs) || !Number.isFinite(nowMs) || expiresAtMs <= nowMs) {
-    return {
-      badgeLabel: `Masa ${PRO_PLAN_DURATION_DAYS} hari`,
-      detailTitle: null,
-      durationDays: PRO_PLAN_DURATION_DAYS,
-      remainingDays: 0,
-      expiresAtIso: null,
-      isLifetime: false,
-    };
+  let expiresAtMs = hasExpiryValue
+    ? rawExpiresAt instanceof Date
+      ? rawExpiresAt.getTime()
+      : Date.parse(rawExpiresAt)
+    : null;
+
+  // Jika tanggal kedaluwarsa belum terisi langsung, hitung dari tanggal beli / pendaftaran (created_at) + durasi paket
+  if (!Number.isFinite(expiresAtMs)) {
+    const rawCreatedAt = user?.subscription_created_at ?? user?.created_at ?? null;
+    const createdAtMs = rawCreatedAt ? Date.parse(rawCreatedAt) : null;
+    if (Number.isFinite(createdAtMs)) {
+      expiresAtMs = createdAtMs + PRO_PLAN_DURATION_DAYS * MS_PER_DAY;
+    }
   }
 
-  const remainingDays = Math.max(1, Math.ceil((expiresAtMs - nowMs) / MS_PER_DAY));
+  let remainingDays = PRO_PLAN_DURATION_DAYS;
+  let expiresAtIso = null;
+
+  if (Number.isFinite(expiresAtMs) && Number.isFinite(nowMs)) {
+    expiresAtIso = new Date(expiresAtMs).toISOString();
+    if (expiresAtMs > nowMs) {
+      remainingDays = Math.max(1, Math.ceil((expiresAtMs - nowMs) / MS_PER_DAY));
+    } else {
+      remainingDays = 1;
+    }
+  }
 
   return {
-    badgeLabel: `Sisa ${remainingDays} hari`,
-    detailTitle: `Sisa masa aktif: ${remainingDays} hari (paket ${PRO_PLAN_DURATION_DAYS} hari)`,
+    badgeLabel: `${remainingDays} hari lagi`,
+    detailTitle: `Sisa masa aktif: ${remainingDays} hari lagi (paket ${PRO_PLAN_DURATION_DAYS} hari)`,
     durationDays: PRO_PLAN_DURATION_DAYS,
     remainingDays,
-    expiresAtIso: new Date(expiresAtMs).toISOString(),
+    expiresAtIso,
     isLifetime: false,
   };
 }
